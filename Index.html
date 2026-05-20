@@ -1,3 +1,89 @@
+// ─────────────────────────────────────────────
+//  LINK CSS LESSONS
+// ─────────────────────────────────────────────
+const cssCourse = savedCourses.find(c => c.title === 'CSS');
+for (let i = 0; i < cssLessons.length; i++) {
+  const lessonData = cssLessons[i];
+  const lesson = new Lesson({
+    courseId: cssCourse._id,
+    title: lessonData.title,
+    content: lessonData.content,
+    videoUrl: lessonData.videoUrl,
+    quiz: lessonData.quiz,
+    xpValue: lessonData.xpValue,
+    order: i + 1
+  });
+  await lesson.save();
+  cssCourse.lessons.push(lesson._id);
+}
+await cssCourse.save();
+console.log(`✅ CSS: added ${cssLessons.length} lessons`);
+
+// ─────────────────────────────────────────────
+//  LINK JAVASCRIPT LESSONS
+// ─────────────────────────────────────────────
+const jsCourse = savedCourses.find(c => c.title === 'JavaScript');
+for (let i = 0; i < jsLessons.length; i++) {
+  const lessonData = jsLessons[i];
+  const lesson = new Lesson({
+    courseId: jsCourse._id,
+    title: lessonData.title,
+    content: lessonData.content,
+    videoUrl: lessonData.videoUrl,
+    quiz: lessonData.quiz,
+    xpValue: lessonData.xpValue,
+    order: i + 1
+  });
+  await lesson.save();
+  jsCourse.lessons.push(lesson._id);
+}
+await jsCourse.save();
+console.log(`✅ JavaScript: added ${jsLessons.length} lessons`);
+
+// ─────────────────────────────────────────────
+//  LINK NODE.JS LESSONS
+// ─────────────────────────────────────────────
+const nodeCourse = savedCourses.find(c => c.title === 'Node.js');
+for (let i = 0; i < nodejsLessons.length; i++) {
+  const lessonData = nodejsLessons[i];
+  const lesson = new Lesson({
+    courseId: nodeCourse._id,
+    title: lessonData.title,
+    content: lessonData.content,
+    videoUrl: lessonData.videoUrl,
+    quiz: lessonData.quiz,
+    xpValue: lessonData.xpValue,
+    order: i + 1
+  });
+  await lesson.save();
+  nodeCourse.lessons.push(lesson._id);
+}
+await nodeCourse.save();
+console.log(`✅ Node.js: added ${nodejsLessons.length} lessons`);
+
+// ─────────────────────────────────────────────
+//  LINK VIBE CODING LESSONS
+// ─────────────────────────────────────────────
+const vibeCourse = savedCourses.find(c => c.title === 'Vibe Coding');
+for (let i = 0; i < vibeLessons.length; i++) {
+  const lessonData = vibeLessons[i];
+  const lesson = new Lesson({
+    courseId: vibeCourse._id,
+    title: lessonData.title,
+    content: lessonData.content,
+    videoUrl: lessonData.videoUrl,
+    quiz: lessonData.quiz,
+    xpValue: lessonData.xpValue,
+    order: i + 1
+  });
+  await lesson.save();
+  vibeCourse.lessons.push(lesson._id);
+}
+await vibeCourse.save();
+console.log(`✅ Vibe Coding: added ${vibeLessons.length} lessons`);
+
+
+
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Course from './models/Course.js';
