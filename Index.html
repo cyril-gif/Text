@@ -4,6 +4,31 @@ import Course from './models/Course.js';
 import Lesson from './models/Lesson.js';
 
 dotenv.config();
+async function seedData() {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('✅ Connected to MongoDB');
+    
+    await Lesson.deleteMany();
+    await Course.deleteMany();
+    console.log('✅ Cleared existing data');
+    
+    // Courses
+    const courses = [
+      { title: 'HTML', description: 'Learn the structure of the web. Master every HTML tag and semantic markup.', icon: '🌐', xpReward: 1000 },
+      { title: 'CSS', description: 'Style websites like a pro. Flexbox, Grid, animations, and responsive design.', icon: '🎨', xpReward: 1000 },
+      { title: 'JavaScript', description: 'Master the language of the web. ES6+, DOM, async programming, and more.', icon: '⚡', xpReward: 1200 },
+      { title: 'Node.js', description: 'Build backend APIs, authentication, databases, and deploy full-stack apps.', icon: '🚀', xpReward: 1200 },
+      { title: 'Vibe Coding', description: 'Real-world projects: portfolio, weather app, todo, full-stack app, and deployment.', icon: '🎵', xpReward: 1500 }
+    ];
+    
+    const savedCourses = [];
+    for (const courseData of courses) {
+      const course = new Course(courseData);
+      await course.save();
+      savedCourses.push(course);
+      console.log(`📚 Created course: ${course.title}`);
+    }
 
 // ─────────────────────────────────────────────
 //  HELPER
