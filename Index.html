@@ -4,6 +4,113 @@ import Course from './models/Course.js';
 import Lesson from './models/Lesson.js';
 
 dotenv.config();
+
+async function seedData() {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('✅ Connected to MongoDB');
+
+    await Lesson.deleteMany();
+    await Course.deleteMany();
+    console.log('✅ Cleared existing data');
+
+    const courses = [
+      { title: 'HTML', description: 'Learn the structure of the web.', icon: '🌐', xpReward: 500 },
+      { title: 'CSS', description: 'Style websites beautifully.', icon: '🎨', xpReward: 500 },
+      { title: 'JavaScript', description: 'Make websites interactive.', icon: '⚡', xpReward: 600 },
+      { title: 'Node.js', description: 'Build backend APIs.', icon: '🚀', xpReward: 600 },
+      { title: 'Vibe Coding', description: 'Real‑world projects.', icon: '🎵', xpReward: 700 },
+    ];
+
+    const savedCourses = [];
+    for (const c of courses) {
+      const course = new Course(c);
+      await course.save();
+      savedCourses.push(course);
+      console.log(`📚 Created course: ${course.title}`);
+    }
+
+    // Helper to create a lesson
+    function createLesson(title, content, quiz, xp = 50) {
+      return { title, content, quiz, xpValue: xp };
+    }
+
+    // Define 3 lessons for each course (you can add more later)
+    const lessonsData = {
+      HTML: [
+        createLesson('HTML Basics', '<h2>What is HTML?</h2><p>HTML is the standard markup language...</p><pre><code>&lt;h1&gt;Hello&lt;/h1&gt;</code></pre>', [
+          { question: 'What does HTML stand for?', options: ['Hyper Text Markup Language', 'Home Tool Markup Language'], correct: 0 }
+        ]),
+        createLesson('HTML Elements', '<h2>Headings and paragraphs</h2><p>Use &lt;h1&gt; to &lt;h6&gt; for headings...</p>', [
+          { question: 'Which tag creates a paragraph?', options: ['<p>', '<para>'], correct: 0 }
+        ]),
+        createLesson('Links & Images', '<h2>Hyperlinks and images</h2><pre><code>&lt;a href="url"&gt;Link&lt;/a&gt;</code></pre>', [
+          { question: 'Which attribute sets link URL?', options: ['href', 'src'], correct: 0 }
+        ]),
+      ],
+      CSS: [
+        createLesson('CSS Fundamentals', '<h2>What is CSS?</h2><p>CSS styles HTML elements.</p>', [
+          { question: 'What does CSS stand for?', options: ['Cascading Style Sheets', 'Creative Style Sheets'], correct: 0 }
+        ]),
+        createLesson('Colors & Typography', '<h2>Colors and fonts</h2><p>Use hex, rgb, or named colors.</p>', []),
+        createLesson('Box Model', '<h2>Margin, padding, border</h2><p>Every element is a box.</p>', []),
+      ],
+      JavaScript: [
+        createLesson('Variables & Data Types', '<h2>let, const, var</h2><pre><code>let name = "Alice";</code></pre>', []),
+        createLesson('Functions', '<h2>Declaring and calling functions</h2>', []),
+        createLesson('DOM Manipulation', '<h2>Selecting and changing elements</h2>', []),
+      ],
+      'Node.js': [
+        createLesson('What is Node.js?', '<h2>JavaScript on the server</h2>', []),
+        createLesson('NPM & Modules', '<h2>Managing packages</h2>', []),
+        createLesson('Express Basics', '<h2>Building a web server</h2>', []),
+      ],
+      'Vibe Coding': [
+        createLesson('Portfolio Project', '<h2>Build a personal portfolio</h2>', []),
+        createLesson('Weather App', '<h2>Using an API</h2>', []),
+        createLesson('Full‑Stack To‑Do', '<h2>Frontend + Backend</h2>', []),
+      ],
+    };
+
+    for (const course of savedCourses) {
+      const lessons = lessonsData[course.title];
+      if (lessons) {
+        for (let i = 0; i < lessons.length; i++) {
+          const l = lessons[i];
+          const lesson = new Lesson({
+            courseId: course._id,
+            title: l.title,
+            content: l.content,
+            quiz: l.quiz,
+            xpValue: l.xpValue,
+            order: i + 1,
+          });
+          await lesson.save();
+          course.lessons.push(lesson._id);
+        }
+        await course.save();
+        console.log(`✅ ${course.title}: added ${lessons.length} lessons`);
+      }
+    }
+
+    console.log('\n🎉 Database seeded successfully!');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error seeding database:', error);
+    process.exit(1);
+  }
+}
+
+seedData();
+
+
+
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import Course from './models/Course.js';
+import Lesson from './models/Lesson.js';
+
+dotenv.config();
 async function seedData() {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
