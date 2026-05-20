@@ -1,3 +1,1482 @@
+//  VIBE CODING LESSONS (10 lessons)
+// ═══════════════════════════════════════════
+const vibeLessons = [
+
+lesson(
+  '1. Vibe Coding: What It Is & How to Think Like a Builder',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-pink-500/10 to-purple-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-pink-400 mb-2">📖 What You Will Learn</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>What vibe coding means and why it's changing how software is built</li>
+        <li>How to go from idea to working product fast</li>
+        <li>The builder mindset vs the learner mindset</li>
+        <li>Setting up your ultimate developer environment</li>
+        <li>How to use AI as your co-pilot without becoming dependent on it</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🎵 What is Vibe Coding?</h2>
+      <p class="text-gray-300 mb-3">Vibe coding is the art of building real products at high speed by combining your technical knowledge with AI tools, good taste, and ruthless focus on what matters. It is not about cutting corners — it is about shipping real value fast.</p>
+      <p class="text-gray-300 mb-3">The best vibe coders have three traits:</p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-pink-500/10 p-4 rounded-lg">
+          <p class="text-pink-300 font-semibold">🎯 Clarity</p>
+          <p class="text-gray-400 text-sm">They know exactly what they are building and who it is for before writing a single line of code.</p>
+        </div>
+        <div class="bg-purple-500/10 p-4 rounded-lg">
+          <p class="text-purple-300 font-semibold">⚡ Speed</p>
+          <p class="text-gray-400 text-sm">They ship a working version in days not months. Then they improve based on real feedback.</p>
+        </div>
+        <div class="bg-blue-500/10 p-4 rounded-lg">
+          <p class="text-blue-300 font-semibold">🧠 Taste</p>
+          <p class="text-gray-400 text-sm">They know when something is good enough to ship and when it needs more work.</p>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🛠️ The Ultimate Dev Environment</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code># Core tools every vibe coder needs
+
+# 1. VS Code with these extensions:
+#    - GitHub Copilot (AI autocomplete)
+#    - Prettier (auto-format on save)
+#    - ESLint (catch bugs before runtime)
+#    - GitLens (see who wrote what)
+#    - Thunder Client (test APIs without Postman)
+#    - Live Server (instant HTML preview)
+#    - Error Lens (inline error highlights)
+
+# 2. Terminal setup
+brew install zsh          # better shell
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+# Oh My Zsh: git shortcuts, syntax highlighting, autocomplete
+
+# 3. Node version manager
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+nvm install 20
+nvm use 20
+
+# 4. Git config
+git config --global user.name "Your Name"
+git config --global user.email "you@email.com"
+git config --global core.editor "code --wait"
+git config --global init.defaultBranch main
+
+# 5. Key shortcuts to memorize
+# VS Code:
+# Ctrl+P          → open any file
+# Ctrl+Shift+P    → command palette
+# Ctrl+`          → toggle terminal
+# Alt+Shift+F     → format document
+# Ctrl+D          → select next occurrence
+# F2              → rename all occurrences</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🗺️ The Vibe Coding Process</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code># The 5-step vibe coding loop
+
+# Step 1: DEFINE (30 minutes max)
+# - Who is this for? (one specific person)
+# - What is the ONE problem it solves?
+# - What does v1 look like? (list only essential features)
+# - What does success look like?
+
+# Step 2: DESIGN (1-2 hours)
+# - Rough wireframe on paper or Figma
+# - Pick your tech stack (match to the problem, not the hype)
+# - Define your data models
+# - Plan your API routes
+
+# Step 3: BUILD (timebox it)
+# - Backend first: models → routes → controllers
+# - Frontend second: layout → data → interactions
+# - Use AI to generate boilerplate, NOT logic
+# - Commit every 30-60 minutes
+
+# Step 4: SHIP (same day if possible)
+# - Deploy to Railway/Vercel/Netlify
+# - Share with 3 real people
+# - Get feedback BEFORE adding more features
+
+# Step 5: ITERATE
+# - Fix the top 3 complaints
+# - Add only what users actually ask for
+# - Repeat</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+      <p class="text-gray-300">Set up your full dev environment: VS Code with all 7 extensions, Oh My Zsh, Node 20 via nvm, and Git configured. Then do the 30-minute DEFINE exercise for one app idea you have. Write it in a README.md: problem, target user, v1 features (max 5), success metric. Share it in the community for feedback before building anything.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What is the most important thing to do BEFORE writing any code on a new project?', options: ['Choose a framework', 'Clearly define the problem, target user, and v1 feature set', 'Set up the database', 'Write tests'], correct: 1 },
+    { question: 'What does "shipping" mean in vibe coding?', options: ['Sending code to a colleague', 'Deploying a working version to a real URL that real users can access', 'Committing to git', 'Completing all planned features'], correct: 1 },
+    { question: 'What is the role of AI in vibe coding?', options: ['AI writes all the code', 'AI is a co-pilot for boilerplate and suggestions — the developer drives decisions and logic', 'AI replaces the need to learn programming', 'AI is only for debugging'], correct: 1 },
+    { question: 'What does "timebox" mean in the build step?', options: ['Building a timer app', 'Setting a fixed time limit for a task to prevent over-engineering', 'Using setTimeout in code', 'Scheduling meetings'], correct: 1 },
+    { question: 'Why should you get user feedback BEFORE adding more features?', options: ['To save time writing code', 'Users reveal what actually matters — features you think are important often are not', 'It is a legal requirement', 'Feedback improves code quality'], correct: 1 },
+    { question: 'What does the Prettier extension do in VS Code?', options: ['Makes code run faster', 'Automatically formats code to a consistent style on save', 'Finds security issues', 'Generates documentation'], correct: 1 },
+    { question: 'What is the correct order in the vibe coding build step?', options: ['Frontend first, then backend', 'Backend first (models, routes, controllers), then frontend', 'Tests first, then code', 'Database last'], correct: 1 },
+    { question: 'What makes a good v1 (first version) of a product?', options: ['Every feature the user might ever want', 'Only the essential features that solve the core problem — nothing more', 'A perfect UI', 'Full test coverage'], correct: 1 }
+  ],
+  50,
+  'https://www.youtube.com/embed/MM7CAsquMOs'
+),
+
+lesson(
+  '2. Build a Weather App: API Integration from Scratch',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-pink-500/10 to-purple-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-pink-400 mb-2">📖 What You Will Build</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>A fully functional weather PWA with real data</li>
+        <li>Geolocation to auto-detect user location</li>
+        <li>Open-Meteo API (free, no key needed)</li>
+        <li>Search any city with OpenStreetMap geocoding</li>
+        <li>5-day forecast with weather icons</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🌦️ Project Architecture</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code">weather-app/
+├── index.html
+├── styles.css
+└── app.js
+
+// ── Geocoding: city name → coordinates ──
+async function geocodeCity(cityName) {
+  const url = \`https://nominatim.openstreetmap.org/search?q=\${encodeURIComponent(cityName)}&format=json&limit=1\`;
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'WeatherApp/1.0' }
+  });
+  const data = await res.json();
+  if (!data.length) throw new Error('City not found');
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: data[0].display_name };
+}
+
+// ── Weather: coordinates → weather data ──
+async function getWeather(lat, lng) {
+  const url = new URL('https://api.open-meteo.com/v1/forecast');
+  url.searchParams.set('latitude',  lat);
+  url.searchParams.set('longitude', lng);
+  url.searchParams.set('current', [
+    'temperature_2m', 'relative_humidity_2m',
+    'wind_speed_10m', 'weather_code', 'apparent_temperature'
+  ].join(','));
+  url.searchParams.set('daily', [
+    'temperature_2m_max', 'temperature_2m_min',
+    'weather_code', 'precipitation_sum'
+  ].join(','));
+  url.searchParams.set('timezone', 'auto');
+  url.searchParams.set('forecast_days', '5');
+
+  const res = await fetch(url);
+  return res.json();
+}
+
+// ── Weather code → emoji + description ──
+function getWeatherInfo(code) {
+  const codes = {
+    0: { icon: '☀️', desc: 'Clear sky' },
+    1: { icon: '🌤️', desc: 'Mainly clear' },
+    2: { icon: '⛅', desc: 'Partly cloudy' },
+    3: { icon: '☁️', desc: 'Overcast' },
+    51: { icon: '🌦️', desc: 'Light drizzle' },
+    61: { icon: '🌧️', desc: 'Light rain' },
+    71: { icon: '❄️', desc: 'Light snow' },
+    80: { icon: '🌦️', desc: 'Rain showers' },
+    95: { icon: '⛈️', desc: 'Thunderstorm' },
+  };
+  // Find closest code
+  const key = Object.keys(codes).reverse().find(k => code >= +k);
+  return codes[key] || { icon: '🌡️', desc: 'Unknown' };
+}
+
+// ── Main app flow ──
+async function loadWeather(lat, lng, locationName) {
+  showSkeleton();
+  try {
+    const weather = await getWeather(lat, lng);
+    renderCurrent(weather.current, locationName);
+    renderForecast(weather.daily);
+    cacheWeather(lat, lng, weather); // localStorage cache
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+// ── Auto-detect location ──
+document.querySelector('#detect-btn').addEventListener('click', () => {
+  navigator.geolocation.getCurrentPosition(
+    async ({ coords }) => {
+      const { lat, lng } = { lat: coords.latitude, lng: coords.longitude };
+      const geo = await geocodeCity(\`\${lat},\${lng}\`); // reverse geocode
+      loadWeather(lat, lng, geo.name);
+    },
+    () => showError('Location access denied')
+  );
+});
+
+// ── Search ──
+const searchInput = document.querySelector('#city-search');
+searchInput.addEventListener('keydown', async (e) => {
+  if (e.key !== 'Enter') return;
+  const city = searchInput.value.trim();
+  if (!city) return;
+  try {
+    const { lat, lng, name } = await geocodeCity(city);
+    loadWeather(lat, lng, name);
+  } catch (err) {
+    showError(err.message);
+  }
+});</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🎨 Render Functions</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>function renderCurrent(current, locationName) {
+  const info = getWeatherInfo(current.weather_code);
+  document.querySelector('#current-weather').innerHTML = \`
+    <div class="weather-card">
+      <p class="location">\${locationName.split(',')[0]}</p>
+      <p class="icon">\${info.icon}</p>
+      <h1 class="temp">\${Math.round(current.temperature_2m)}°C</h1>
+      <p class="desc">\${info.desc}</p>
+      <div class="details">
+        <span>💧 \${current.relative_humidity_2m}%</span>
+        <span>💨 \${current.wind_speed_10m} km/h</span>
+        <span>🌡️ Feels \${Math.round(current.apparent_temperature)}°C</span>
+      </div>
+    </div>
+  \`;
+}
+
+function renderForecast(daily) {
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const html = daily.time.map((date, i) => {
+    const info = getWeatherInfo(daily.weather_code[i]);
+    const day = days[new Date(date).getDay()];
+    return \`
+      <div class="forecast-card">
+        <p class="day">\${i === 0 ? 'Today' : day}</p>
+        <p class="icon">\${info.icon}</p>
+        <p class="high">\${Math.round(daily.temperature_2m_max[i])}°</p>
+        <p class="low">\${Math.round(daily.temperature_2m_min[i])}°</p>
+        \${daily.precipitation_sum[i] > 0
+          ? \`<p class="rain">🌧 \${daily.precipitation_sum[i]}mm</p>\`
+          : ''}
+      </div>
+    \`;
+  }).join('');
+  document.querySelector('#forecast').innerHTML = html;
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Full Build Challenge</h2>
+      <p class="text-gray-300">Build the complete weather app in one sitting (4-6 hours): Geolocation auto-detect, city search, current weather display, 5-day forecast cards, loading skeleton, error handling, localStorage cache (refresh shows cached data instantly), dark/light theme toggle, PWA manifest + service worker. Deploy to GitHub Pages or Netlify. Share the live URL.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What API is used for weather data in this project?', options: ['OpenWeatherMap', 'Open-Meteo (free, no API key required)', 'WeatherAPI', 'AccuWeather'], correct: 1 },
+    { question: 'What does the Nominatim API (OpenStreetMap) do in this project?', options: ['Provides weather data', 'Converts city names to coordinates (geocoding) and coordinates to city names (reverse geocoding)', 'Displays maps', 'Provides timezone data'], correct: 1 },
+    { question: 'Why cache the weather response in localStorage?', options: ['APIs require caching', 'So the app shows data instantly on reload without waiting for a new API call', 'To save API costs', 'localStorage is faster than fetch'], correct: 1 },
+    { question: 'What does encodeURIComponent() do in the geocoding URL?', options: ['Encodes the URL for security', 'Safely encodes special characters in the city name so they are valid in a URL', 'Compresses the request', 'Validates the city name'], correct: 1 },
+    { question: 'What event should trigger the city search?', options: ['click on the input', 'keydown with key === "Enter"', 'input event', 'blur event'], correct: 1 },
+    { question: 'What is a loading skeleton UI?', options: ['A CSS animation bug', 'Placeholder content that shows the layout while real data is loading, improving perceived performance', 'A loading spinner only', 'An empty page'], correct: 1 },
+    { question: 'What does url.searchParams.set() do?', options: ['Sets a cookie', 'Adds or updates a query parameter on a URL object safely', 'Sets the base URL', 'Validates URL parameters'], correct: 1 },
+    { question: 'Why split the app into separate functions (geocodeCity, getWeather, renderCurrent)?', options: ['JavaScript requires it', 'Separation of concerns — each function does one thing, making code testable and reusable', 'It is faster', 'APIs require function separation'], correct: 1 }
+  ],
+  50,
+  'https://www.youtube.com/embed/MIYQR-Ybrn4'
+),
+
+lesson(
+  '3. Build a Full-Stack Todo App with Node, Express & MongoDB',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-pink-500/10 to-purple-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-pink-400 mb-2">📖 What You Will Build</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>A real full-stack CRUD app from zero to deployed</li>
+        <li>Express REST API with MongoDB storage</li>
+        <li>User authentication with JWT</li>
+        <li>Vanilla JS frontend that talks to your own API</li>
+        <li>Deployed backend on Railway, frontend on Netlify</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🏗️ Backend: Express + MongoDB</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>// models/Todo.js
+import mongoose from 'mongoose';
+const todoSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  text: { type: String, required: true, trim: true, maxlength: 500 },
+  completed: { type: Boolean, default: false },
+  priority: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
+  dueDate: { type: Date }
+}, { timestamps: true });
+
+export const Todo = mongoose.model('Todo', todoSchema);
+
+// routes/todo.routes.js
+import { Router } from 'express';
+import { protect } from '../middleware/auth.js';
+import * as Todo from '../controllers/todo.controller.js';
+
+const router = Router();
+router.use(protect); // all todo routes require login
+
+router.route('/')
+  .get(Todo.getAll)
+  .post(Todo.create);
+
+router.route('/:id')
+  .patch(Todo.update)
+  .delete(Todo.remove);
+
+router.patch('/:id/toggle', Todo.toggle);
+export default router;
+
+// controllers/todo.controller.js
+import { catchAsync } from '../utils/catchAsync.js';
+import { AppError } from '../utils/AppError.js';
+import { Todo } from '../models/Todo.js';
+
+export const getAll = catchAsync(async (req, res) => {
+  const { completed, priority, sort = '-createdAt' } = req.query;
+  const filter = { user: req.user._id };
+  if (completed !== undefined) filter.completed = completed === 'true';
+  if (priority) filter.priority = priority;
+
+  const todos = await Todo.find(filter).sort(sort).lean();
+  res.json({ success: true, count: todos.length, data: todos });
+});
+
+export const create = catchAsync(async (req, res) => {
+  const todo = await Todo.create({ ...req.body, user: req.user._id });
+  res.status(201).json({ success: true, data: todo });
+});
+
+export const toggle = catchAsync(async (req, res, next) => {
+  const todo = await Todo.findOne({ _id: req.params.id, user: req.user._id });
+  if (!todo) return next(new AppError('Todo not found', 404));
+  todo.completed = !todo.completed;
+  await todo.save();
+  res.json({ success: true, data: todo });
+});</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">💻 Frontend: Vanilla JS SPA</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code">// api.js — all fetch calls in one place
+const BASE = 'https://your-api.railway.app/api/v1';
+
+const api = {
+  headers: () => ({
+    'Content-Type': 'application/json',
+    'Authorization': \`Bearer \${localStorage.getItem('token')}\`
+  }),
+
+  async get(path) {
+    const res = await fetch(BASE + path, { headers: this.headers() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    return data;
+  },
+
+  async post(path, body) {
+    const res = await fetch(BASE + path, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    return data;
+  },
+
+  async patch(path, body = {}) {
+    const res = await fetch(BASE + path, {
+      method: 'PATCH',
+      headers: this.headers(),
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    return data;
+  },
+
+  async delete(path) {
+    const res = await fetch(BASE + path, {
+      method: 'DELETE',
+      headers: this.headers()
+    });
+    if (res.status === 204) return null;
+    return res.json();
+  }
+};
+
+// app.js
+let todos = [];
+
+async function loadTodos() {
+  showSkeleton();
+  const { data } = await api.get('/todos');
+  todos = data;
+  renderTodos();
+}
+
+function renderTodos(filter = 'all') {
+  const filtered = filter === 'all' ? todos
+    : todos.filter(t => filter === 'completed' ? t.completed : !t.completed);
+
+  document.querySelector('#todo-list').innerHTML = filtered.map(todo => \`
+    <li class="todo-item \${todo.completed ? 'completed' : ''}" data-id="\${todo._id}">
+      <button class="toggle-btn" data-action="toggle">\${todo.completed ? '✅' : '⬜'}</button>
+      <span class="todo-text">\${todo.text}</span>
+      <span class="priority priority--\${todo.priority}">\${todo.priority}</span>
+      <button class="delete-btn" data-action="delete">🗑️</button>
+    </li>
+  \`).join('');
+}
+
+// Event delegation
+document.querySelector('#todo-list').addEventListener('click', async (e) => {
+  const action = e.target.dataset.action;
+  const id = e.target.closest('[data-id]')?.dataset.id;
+  if (!id) return;
+
+  if (action === 'toggle') {
+    await api.patch(\`/todos/\${id}/toggle\`);
+    await loadTodos();
+  }
+  if (action === 'delete') {
+    await api.delete(\`/todos/\${id}\`);
+    todos = todos.filter(t => t._id !== id);
+    renderTodos();
+  }
+});</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Full Build Challenge</h2>
+      <p class="text-gray-300">Build and deploy the full-stack todo app in one day: Backend — Express + MongoDB + JWT auth, all CRUD routes, filter and sort. Frontend — login/register forms, todo list with filter tabs (All/Active/Completed), add form, toggle and delete, priority badges, due date display, item count. Deploy backend to Railway, frontend to Netlify. Share the live URL.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'Why put all API fetch calls in a single api.js module?', options: ['JavaScript requires it', 'Centralizes the base URL and auth headers so you only update them in one place', 'It is faster', 'Fetch only works from one file'], correct: 1 },
+    { question: 'Why filter todos by user: req.user._id in the database query?', options: ['For performance', 'To ensure users can only see and modify their own todos — data isolation', 'MongoDB requires it', 'Mongoose needs the user reference'], correct: 1 },
+    { question: 'What does the toggle route (PATCH /:id/toggle) do?', options: ['Toggles the visibility of the todo', 'Flips the completed boolean on the todo document', 'Toggles between priority levels', 'Shows/hides the todo in the UI'], correct: 1 },
+    { question: 'What is the advantage of using event delegation on the todo list?', options: ['It is required for dynamic elements', 'One listener handles all todo actions (toggle, delete) even for todos added after page load', 'It prevents event bubbling', 'It is faster than individual listeners'], correct: 1 },
+    { question: 'Why deploy the frontend and backend separately?', options: ['They cannot run on the same server', 'Separate deployment allows independent scaling, different hosting optimizations, and cleaner architecture', 'Netlify requires it', 'MongoDB requires separate hosting'], correct: 1 },
+    { question: 'What does the lean() method do on a Mongoose query in the controller?', options: ['Reduces query complexity', 'Returns plain JS objects instead of Mongoose Documents — faster for read-only operations', 'Removes empty fields', 'Enables lazy loading'], correct: 1 },
+    { question: 'How do you check which HTTP method the request used in Express?', options: ['req.type', 'req.method', 'req.httpMethod', 'req.verb'], correct: 1 },
+    { question: 'What does CORS need to be configured for when frontend and backend are on different domains?', options: ['CORS is not needed for separate domains', 'The backend must allow the frontend origin so browsers permit cross-origin requests', 'Only the frontend needs CORS', 'CORS is automatic with JWT'], correct: 1 }
+  ],
+  50,
+  'https://www.youtube.com/embed/98BzS5Oz5E4'
+),
+
+lesson(
+  '4. Build a Real-Time Chat App with Socket.io',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-pink-500/10 to-purple-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-pink-400 mb-2">📖 What You Will Build</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>A real-time group chat application</li>
+        <li>Multiple chat rooms with join/leave</li>
+        <li>Typing indicators and online user list</li>
+        <li>Message history from MongoDB</li>
+        <li>File/image sharing capability</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">💬 Chat Server</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import mongoose from 'mongoose';
+
+// Message model
+const messageSchema = new mongoose.Schema({
+  room: { type: String, required: true, index: true },
+  sender: { name: String, id: String },
+  text: String,
+  type: { type: String, enum: ['text', 'image', 'system'], default: 'text' },
+  imageUrl: String,
+  readBy: [String]
+}, { timestamps: true });
+const Message = mongoose.model('Message', messageSchema);
+
+const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: { origin: '*' },
+  pingTimeout: 60000
+});
+
+// Track online users per room
+const rooms = new Map(); // roomId → Set of { socketId, name, userId }
+
+io.on('connection', (socket) => {
+  let currentRoom = null;
+  let currentUser = null;
+
+  // Join a room
+  socket.on('join:room', async ({ room, user }) => {
+    // Leave previous room
+    if (currentRoom) {
+      socket.leave(currentRoom);
+      rooms.get(currentRoom)?.delete(socket.id);
+      io.to(currentRoom).emit('room:users', [...(rooms.get(currentRoom) || [])]);
+    }
+
+    // Join new room
+    socket.join(room);
+    currentRoom = room;
+    currentUser = user;
+
+    if (!rooms.has(room)) rooms.set(room, new Map());
+    rooms.get(room).set(socket.id, { ...user, socketId: socket.id });
+
+    // Send last 50 messages
+    const history = await Message.find({ room })
+      .sort({ createdAt: -1 }).limit(50).lean();
+    socket.emit('message:history', history.reverse());
+
+    // Notify room of new user
+    const systemMsg = await Message.create({
+      room, type: 'system',
+      text: \`\${user.name} joined the room\`,
+      sender: { name: 'System', id: 'system' }
+    });
+    io.to(room).emit('message:new', systemMsg);
+    io.to(room).emit('room:users', [...rooms.get(room).values()]);
+  });
+
+  // Send message
+  socket.on('message:send', async ({ text, imageUrl }) => {
+    if (!currentRoom) return;
+    const msg = await Message.create({
+      room: currentRoom,
+      sender: currentUser,
+      text,
+      imageUrl,
+      type: imageUrl ? 'image' : 'text'
+    });
+    io.to(currentRoom).emit('message:new', msg);
+  });
+
+  // Typing indicators
+  socket.on('typing:start', () => {
+    socket.to(currentRoom).emit('typing:start', currentUser.name);
+  });
+  socket.on('typing:stop', () => {
+    socket.to(currentRoom).emit('typing:stop', currentUser.name);
+  });
+
+  // Disconnect
+  socket.on('disconnect', () => {
+    if (!currentRoom) return;
+    rooms.get(currentRoom)?.delete(socket.id);
+    io.to(currentRoom).emit('room:users', [...(rooms.get(currentRoom)?.values() || [])]);
+    socket.to(currentRoom).emit('typing:stop', currentUser?.name);
+  });
+});
+
+httpServer.listen(5000);</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">💻 Chat Frontend</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>const socket = io('https://your-chat-api.railway.app');
+const user = { id: crypto.randomUUID(), name: prompt('Enter your name:') };
+
+// Join room
+socket.emit('join:room', { room: 'general', user });
+
+// Receive messages
+socket.on('message:new', (msg) => appendMessage(msg));
+socket.on('message:history', (msgs) => msgs.forEach(appendMessage));
+
+// Typing indicator with debounce
+let typingTimer;
+const msgInput = document.querySelector('#msg-input');
+
+msgInput.addEventListener('input', () => {
+  socket.emit('typing:start');
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => socket.emit('typing:stop'), 1000);
+});
+
+socket.on('typing:start', (name) => {
+  document.querySelector('#typing').textContent = \`\${name} is typing...\`;
+});
+socket.on('typing:stop', () => {
+  document.querySelector('#typing').textContent = '';
+});
+
+// Online users list
+socket.on('room:users', (users) => {
+  document.querySelector('#users').innerHTML =
+    users.map(u => \`<li>\${u.name}</li>\`).join('');
+});
+
+// Send message
+document.querySelector('#send-btn').addEventListener('click', () => {
+  const text = msgInput.value.trim();
+  if (!text) return;
+  socket.emit('message:send', { text });
+  msgInput.value = '';
+  socket.emit('typing:stop');
+});
+
+function appendMessage(msg) {
+  const isOwn = msg.sender.id === user.id;
+  const div = document.createElement('div');
+  div.className = \`message \${isOwn ? 'own' : 'other'} \${msg.type}\`;
+  div.innerHTML = \`
+    \${!isOwn ? \`<span class="sender">\${msg.sender.name}</span>\` : ''}
+    \${msg.type === 'image'
+      ? \`<img src="\${msg.imageUrl}" alt="shared image">\`
+      : \`<p>\${msg.text}</p>\`}
+    <span class="time">\${new Date(msg.createdAt).toLocaleTimeString()}</span>
+  \`;
+  document.querySelector('#messages').appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth' });
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Full Build Challenge</h2>
+      <p class="text-gray-300">Build the complete chat app: Multiple rooms (general, tech, ghana-devs). Username prompt on entry. Real-time messages with sender name and timestamp. Typing indicators that clear after 1 second. Online users sidebar. Last 50 messages on room join. Image sharing via Cloudinary upload. Message read receipts. Deploy and test with 3 friends simultaneously in the same room.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What does socket.to(room).emit() do differently from io.to(room).emit()?', options: ['They are identical', 'socket.to() sends to everyone in the room EXCEPT the sender; io.to() sends to everyone including sender', 'io.to() is deprecated', 'socket.to() requires authentication'], correct: 1 },
+    { question: 'Why debounce the typing:start event?', options: ['Socket.io requires debouncing', 'To avoid emitting a typing event on every single keystroke — batch them into one', 'Debounce is required for keyboard events', 'To prevent message sending'], correct: 1 },
+    { question: 'Why save messages to MongoDB instead of only keeping them in memory?', options: ['Socket.io requires a database', 'So message history persists when the server restarts and new users joining can see past messages', 'MongoDB is faster than memory', 'To enable real-time features'], correct: 1 },
+    { question: 'What does socket.leave(room) do?', options: ['Removes the socket from the server', 'Removes the socket from the named room so it no longer receives events emitted to that room', 'Disconnects the socket', 'Removes all listeners'], correct: 1 },
+    { question: 'Why use a Map instead of an array to track online users per room?', options: ['Arrays don\'t support socket IDs', 'Maps allow O(1) lookup, add, and delete by socketId key — arrays require O(n) search', 'Maps are required by Socket.io', 'Arrays cannot store objects'], correct: 1 },
+    { question: 'What is the purpose of the system message when a user joins a room?', options: ['Required by Socket.io', 'Notifies all room members that someone joined without having to check the users list', 'For logging purposes', 'MongoDB requires it'], correct: 1 },
+    { question: 'How do you send a message only to the sender and not to others?', options: ['socket.sendSelf()', 'socket.emit() — emitting on the socket without a room targets only that socket', 'io.private(socket.id).emit()', 'socket.personal.emit()'], correct: 1 },
+    { question: 'What does scrollIntoView({ behavior: "smooth" }) do?', options: ['Validates scroll position', 'Smoothly scrolls the element into the visible viewport area', 'Removes the element from DOM', 'Hides the scrollbar'], correct: 1 }
+  ],
+  50,
+  'https://www.youtube.com/embed/ZwFA3eu4Lzc'
+),
+
+lesson(
+  '5. Build an E-Commerce Product Page with Cart',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-pink-500/10 to-purple-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-pink-400 mb-2">📖 What You Will Build</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>Product listing page with filter and search</li>
+        <li>Product detail page with image gallery</li>
+        <li>Shopping cart with localStorage persistence</li>
+        <li>Checkout form with validation</li>
+        <li>Order confirmation with email</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🛒 Cart State Management</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>// cart.js — pure functions, no side effects
+const CART_KEY = 'wastego_shop_cart';
+
+function getCart() {
+  return JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+}
+
+function saveCart(cart) {
+  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  renderCartBadge(cart.length);
+  renderCartDrawer(cart);
+}
+
+function addToCart(product, quantity = 1) {
+  const cart = getCart();
+  const existing = cart.find(i => i.id === product.id);
+  if (existing) {
+    existing.quantity = Math.min(existing.quantity + quantity, product.stock);
+  } else {
+    cart.push({ ...product, quantity });
+  }
+  saveCart(cart);
+  showToast(\`\${product.name} added to cart!\`);
+}
+
+function removeFromCart(productId) {
+  saveCart(getCart().filter(i => i.id !== productId));
+}
+
+function updateQuantity(productId, quantity) {
+  const cart = getCart();
+  const item = cart.find(i => i.id === productId);
+  if (!item) return;
+  if (quantity <= 0) return removeFromCart(productId);
+  item.quantity = quantity;
+  saveCart(cart);
+}
+
+function getCartTotals() {
+  const cart = getCart();
+  const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const tax = subtotal * 0.15; // 15% VAT
+  const shipping = subtotal > 200 ? 0 : 15; // free shipping over GHS 200
+  return {
+    subtotal,
+    tax,
+    shipping,
+    total: subtotal + tax + shipping,
+    itemCount: cart.reduce((sum, i) => sum + i.quantity, 0)
+  };
+}
+
+function clearCart() {
+  saveCart([]);
+}
+
+// ── Product filtering ──
+function filterProducts(products, { search, category, maxPrice, sort }) {
+  let result = [...products];
+  if (search) {
+    const q = search.toLowerCase();
+    result = result.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q)
+    );
+  }
+  if (category && category !== 'all') {
+    result = result.filter(p => p.category === category);
+  }
+  if (maxPrice) {
+    result = result.filter(p => p.price <= maxPrice);
+  }
+  if (sort === 'price-asc')  result.sort((a, b) => a.price - b.price);
+  if (sort === 'price-desc') result.sort((a, b) => b.price - a.price);
+  if (sort === 'name')       result.sort((a, b) => a.name.localeCompare(b.name));
+  return result;
+}</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🎨 Product Card & Cart Drawer</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>function renderProducts(products) {
+  document.querySelector('#products').innerHTML = products.length
+    ? products.map(p => \`
+        <div class="product-card" data-id="\${p.id}">
+          <div class="product-img">
+            <img src="\${p.image}" alt="\${p.name}" loading="lazy">
+            \${p.badge ? \`<span class="badge">\${p.badge}</span>\` : ''}
+          </div>
+          <div class="product-info">
+            <p class="category">\${p.category}</p>
+            <h3 class="name">\${p.name}</h3>
+            <div class="price-row">
+              <span class="price">GHS \${p.price}</span>
+              \${p.originalPrice ? \`<span class="original">GHS \${p.originalPrice}</span>\` : ''}
+            </div>
+            <div class="rating">\${'⭐'.repeat(Math.round(p.rating))} (\${p.reviews})</div>
+            <button class="add-to-cart-btn \${p.stock === 0 ? 'out-of-stock' : ''}"
+              data-action="add-to-cart" \${p.stock === 0 ? 'disabled' : ''}>
+              \${p.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+            </button>
+          </div>
+        </div>
+      \`).join('')
+    : '<p class="no-results">No products found</p>';
+}
+
+function renderCartDrawer(cart) {
+  const totals = getCartTotals();
+  document.querySelector('#cart-items').innerHTML = cart.length
+    ? cart.map(item => \`
+        <div class="cart-item">
+          <img src="\${item.image}" alt="\${item.name}">
+          <div class="item-info">
+            <p class="item-name">\${item.name}</p>
+            <p class="item-price">GHS \${item.price}</p>
+          </div>
+          <div class="item-qty">
+            <button data-action="decrease" data-id="\${item.id}">-</button>
+            <span>\${item.quantity}</span>
+            <button data-action="increase" data-id="\${item.id}">+</button>
+          </div>
+          <button data-action="remove" data-id="\${item.id}">🗑️</button>
+        </div>
+      \`).join('')
+    : '<p class="empty-cart">Your cart is empty</p>';
+
+  document.querySelector('#cart-subtotal').textContent = \`GHS \${totals.subtotal.toFixed(2)}\`;
+  document.querySelector('#cart-total').textContent   = \`GHS \${totals.total.toFixed(2)}\`;
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Full Build Challenge</h2>
+      <p class="text-gray-300">Build a WasteGo Shop selling eco-friendly products (reusable bags, compost bins, etc): Product grid with search, category filter, price range slider, sort dropdown. Product detail page with image gallery (click to zoom). Sliding cart drawer with quantity controls. Checkout form with Zod-like validation. Order summary page. Save cart to localStorage. Deploy and share.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'Why store cart data in localStorage instead of a JavaScript variable?', options: ['Variables are slower', 'localStorage persists across page refreshes and browser sessions', 'JavaScript arrays cannot hold cart items', 'localStorage is more secure'], correct: 1 },
+    { question: 'What does the pure function pattern for cart operations achieve?', options: ['Better performance', 'Predictable behavior — same input always gives same output, making bugs easier to find', 'Required by localStorage', 'Faster rendering'], correct: 1 },
+    { question: 'Why use loading="lazy" on product images?', options: ['It is required for <img>', 'Images below the fold only load when they are about to enter the viewport, reducing initial load time', 'It adds a loading animation', 'Lazy images are higher quality'], correct: 1 },
+    { question: 'How do you calculate the item count in a cart with multiple quantities?', options: ['cart.length', 'cart.reduce((sum, item) => sum + item.quantity, 0)', 'Object.keys(cart).length', 'cart.count()'], correct: 1 },
+    { question: 'What does localeCompare() do when sorting products by name?', options: ['Compares local currency', 'Compares strings alphabetically in a locale-aware way (handles accented characters correctly)', 'Compares object references', 'Returns the locale of the string'], correct: 1 },
+    { question: 'What is the purpose of data-action attributes on buttons?', options: ['CSS targeting', 'Allows event delegation to identify which action a clicked button should trigger', 'Required for accessibility', 'Sets the button type'], correct: 1 },
+    { question: 'Why apply Math.min(quantity, product.stock) when adding to cart?', options: ['Math.min is required', 'Prevents adding more items than are actually in stock', 'For price calculation', 'Mongoose requires it'], correct: 1 },
+    { question: 'What should happen when a user clicks "Add to Cart" on an already-carted item?', options: ['Show an error', 'Replace the item', 'Increase the quantity of the existing item instead of adding a duplicate', 'Remove the item'], correct: 2 }
+  ],
+  50,
+  'https://www.youtube.com/embed/b3Gqq_k-g24'
+),
+
+lesson(
+  '6. Build a Portfolio Website That Gets You Hired',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-pink-500/10 to-purple-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-pink-400 mb-2">📖 What You Will Build</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>A stunning portfolio that stands out from the crowd</li>
+        <li>Animated hero with your personal brand</li>
+        <li>Dynamic project showcase with live demo links</li>
+        <li>Skills visualization and timeline</li>
+        <li>Contact form connected to email API</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🎨 What Makes a Portfolio Stand Out</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code">/* Most portfolios look the same. Here is what makes yours different: */
+
+/* 1. A clear personal brand statement */
+/* BAD:  "I'm a developer who loves coding" */
+/* GOOD: "I build fast, offline-capable web apps for West African businesses" */
+
+/* 2. Projects with REAL outcomes, not just tech lists */
+/* BAD:  "Weather App — HTML, CSS, JavaScript, API" */
+/* GOOD: "WasteGo — Reduced collection admin time by 60% for 50+ Accra households.
+          Built with Node.js, MongoDB, Socket.io. 2000+ pickups processed." */
+
+/* 3. Live demos for EVERYTHING */
+/* If it is not deployed, it does not exist to a hiring manager */
+
+/* 4. Clean design with one accent color */
+/* 5. Fast loading — Lighthouse score 90+ */
+/* 6. Mobile-first and fully responsive */</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">⚡ Animated Hero Section</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code">/* HTML */
+&lt;section id="hero"&gt;
+  &lt;div class="hero-content"&gt;
+    &lt;p class="hero-greeting"&gt;Hello, I'm&lt;/p&gt;
+    &lt;h1 class="hero-name"&gt;Cyril Asante&lt;/h1&gt;
+    &lt;div class="hero-role"&gt;
+      &lt;span&gt;I build &lt;/span&gt;
+      &lt;span id="typed-text" class="accent"&gt;&lt;/span&gt;
+      &lt;span class="cursor"&gt;|&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;p class="hero-desc"&gt;Full-stack developer building tech for Ghana's fastest-growing businesses.&lt;/p&gt;
+    &lt;div class="hero-btns"&gt;
+      &lt;a href="#projects" class="btn btn--primary"&gt;See My Work&lt;/a&gt;
+      &lt;a href="/resume.pdf" class="btn btn--ghost" download&gt;Download CV&lt;/a&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class="hero-image"&gt;
+    &lt;img src="profile.jpg" alt="Cyril Asante — Full Stack Developer"&gt;
+    &lt;div class="status-badge"&gt;🟢 Open to work&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+
+// Typing animation
+const roles = [
+  'PWAs that work offline.',
+  'REST APIs at scale.',
+  'real-time apps with Socket.io.',
+  'solutions for Africa.'
+];
+
+let roleIdx = 0, charIdx = 0, deleting = false;
+const typedEl = document.querySelector('#typed-text');
+
+function type() {
+  const current = roles[roleIdx];
+  if (!deleting) {
+    typedEl.textContent = current.slice(0, ++charIdx);
+    if (charIdx === current.length) {
+      deleting = true;
+      return setTimeout(type, 2000); // pause before deleting
+    }
+  } else {
+    typedEl.textContent = current.slice(0, --charIdx);
+    if (charIdx === 0) {
+      deleting = false;
+      roleIdx = (roleIdx + 1) % roles.length;
+    }
+  }
+  setTimeout(type, deleting ? 50 : 100);
+}
+type();</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">📬 Contact Form with Email</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code">// Simple serverless contact form with Formspree (free)
+document.querySelector('#contact-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.textContent = 'Sending...';
+  btn.disabled = true;
+
+  const data = Object.fromEntries(new FormData(e.target));
+
+  try {
+    const res = await fetch('https://formspree.io/f/YOUR_FORM_ID', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (res.ok) {
+      showToast('Message sent! I will reply within 24 hours.');
+      e.target.reset();
+    } else {
+      throw new Error('Failed to send');
+    }
+  } catch {
+    showToast('Failed to send. Please email me directly.', 'error');
+  } finally {
+    btn.textContent = 'Send Message';
+    btn.disabled = false;
+  }
+});</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Full Build Challenge</h2>
+      <p class="text-gray-300">Build your personal portfolio this week: Hero with typing animation. Projects section with 3+ real projects (live demo + GitHub link for each). Skills section with animated progress bars or icons. Timeline of your learning journey. Contact form via Formspree. Dark/light theme toggle. SEO meta tags and Open Graph. Lighthouse score above 90 on all metrics. Custom domain on Netlify. Share with 5 developers for feedback.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What is the most important element of a developer portfolio?', options: ['A list of technologies', 'Live, deployed projects with real outcomes and impact described', 'A professional photo', 'A long bio'], correct: 1 },
+    { question: 'What does new FormData(form) do?', options: ['Validates the form', 'Creates a key-value collection of all form field values by their name attributes', 'Submits the form to a server', 'Resets the form'], correct: 1 },
+    { question: 'What does Object.fromEntries(formData) convert it into?', options: ['An array of values', 'A plain JavaScript object with field names as keys', 'A JSON string', 'An HTML form'], correct: 1 },
+    { question: 'What is Formspree?', options: ['A form validation library', 'A service that handles form submissions and sends email notifications without requiring a backend', 'A CSS form styling framework', 'A browser form API'], correct: 1 },
+    { question: 'Why disable the submit button after clicking and re-enable it in finally?', options: ['Required for forms', 'Prevents duplicate submissions and ensures the button is always re-enabled after the request', 'To improve performance', 'Formspree requires it'], correct: 1 },
+    { question: 'What is a Lighthouse score?', options: ['A GitHub star rating', 'Google Chrome\'s audit tool scoring performance, accessibility, SEO, and best practices (0-100)', 'A server uptime metric', 'A CSS specificity score'], correct: 1 },
+    { question: 'What does a typing animation achieve on a portfolio hero?', options: ['Improves SEO', 'Creates dynamic interest, shows multiple skills, and makes the site feel interactive and alive', 'Required for accessibility', 'Improves page speed'], correct: 1 },
+    { question: 'Why should every portfolio project have a live demo link?', options: ['GitHub requires it', 'Hiring managers want to see it working — a deployed project proves you can ship, not just code', 'Netlify requires it', 'For SEO purposes'], correct: 1 }
+  ],
+  50,
+  'https://www.youtube.com/embed/xV7S8BhIeBo'
+),
+
+lesson(
+  '7. Build a Dashboard with Charts & Real Data',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-pink-500/10 to-purple-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-pink-400 mb-2">📖 What You Will Build</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>A real analytics dashboard with live data</li>
+        <li>Line, bar, and pie charts with Chart.js</li>
+        <li>KPI cards with animated counters</li>
+        <li>Date range picker and data filtering</li>
+        <li>Exportable CSV reports</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">📊 Chart.js Setup</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code">import Chart from 'chart.js/auto';
+
+// ── Revenue Line Chart ──
+function createRevenueChart(labels, data) {
+  const ctx = document.querySelector('#revenue-chart').getContext('2d');
+
+  // Destroy existing chart before recreating
+  Chart.getChart(ctx)?.destroy();
+
+  return new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Revenue (GHS)',
+        data,
+        borderColor: '#00ff88',
+        backgroundColor: 'rgba(0, 255, 136, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,       // smooth curves
+        pointRadius: 4,
+        pointHoverRadius: 8,
+        pointBackgroundColor: '#00ff88'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => \` GHS \${ctx.parsed.y.toLocaleString()}\`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: '#1a1a1a' }, ticks: { color: '#666' } },
+        y: {
+          grid: { color: '#1a1a1a' },
+          ticks: { color: '#666', callback: (val) => \`GHS \${val.toLocaleString()}\` }
+        }
+      }
+    }
+  });
+}
+
+// ── Waste Type Doughnut Chart ──
+function createWasteTypeChart(data) {
+  const ctx = document.querySelector('#waste-type-chart').getContext('2d');
+  Chart.getChart(ctx)?.destroy();
+
+  return new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Organic', 'Plastic', 'Electronic', 'Mixed'],
+      datasets: [{
+        data: [data.organic, data.plastic, data.electronic, data.mixed],
+        backgroundColor: ['#00ff88', '#4f46e5', '#f59e0b', '#ef4444'],
+        borderWidth: 0,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#999', padding: 20 } }
+      },
+      cutout: '70%'
+    }
+  });
+}
+
+// ── Animated KPI Counter ──
+function animateCounter(element, target, duration = 1500, prefix = '', suffix = '') {
+  const start = parseInt(element.textContent.replace(/\D/g, '')) || 0;
+  const range = target - start;
+  const startTime = performance.now();
+
+  function update(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+    const current = Math.round(start + range * ease);
+    element.textContent = prefix + current.toLocaleString() + suffix;
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+// ── CSV Export ──
+function exportToCSV(data, filename = 'report.csv') {
+  const headers = Object.keys(data[0]);
+  const rows = data.map(row => headers.map(h => \`"\${row[h]}"\`).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Full Build Challenge</h2>
+      <p class="text-gray-300">Build the WasteGo Admin Dashboard: 4 KPI cards (total pickups, revenue, active riders, completion rate) with animated counters. Line chart for daily revenue (last 30 days). Bar chart for pickups by region. Doughnut chart for waste type breakdown. Date range picker that refetches and re-renders all charts. Sortable data table with all pickups. Export to CSV button. Responsive layout using CSS Grid.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What does Chart.getChart(ctx)?.destroy() do before creating a new chart?', options: ['Clears the canvas visually', 'Destroys the existing Chart.js instance to prevent memory leaks and duplicate charts', 'Resets the canvas size', 'Required by Chart.js API'], correct: 1 },
+    { question: 'What does tension: 0.4 do on a Chart.js line dataset?', options: ['Sets line thickness', 'Makes the line curve smoothly between points instead of being angular', 'Sets data point size', 'Controls animation speed'], correct: 1 },
+    { question: 'What does requestAnimationFrame() do in the counter animation?', options: ['Delays execution', 'Schedules the next animation frame to run at the screen\'s refresh rate (60fps) for smooth animation', 'Formats numbers', 'Requests permission to animate'], correct: 1 },
+    { question: 'What does URL.createObjectURL(blob) do?', options: ['Uploads a file', 'Creates a temporary URL pointing to an in-memory Blob, usable for downloads or previews', 'Validates a URL', 'Opens a URL in a new tab'], correct: 1 },
+    { question: 'Why call URL.revokeObjectURL() after triggering the download?', options: ['Required by browsers', 'Releases the memory used by the temporary URL to prevent memory leaks', 'Prevents re-downloading', 'Closes the download dialog'], correct: 1 },
+    { question: 'What does maintainAspectRatio: false do in Chart.js options?', options: ['Distorts the chart', 'Allows the chart to fill its container\'s height freely instead of maintaining a fixed ratio', 'Disables responsiveness', 'Sets aspect ratio to 1:1'], correct: 1 },
+    { question: 'What is an ease-out cubic animation curve?', options: ['Animation that speeds up at end', 'Animation that starts fast and slows down smoothly at the end, feeling natural', 'A constant speed animation', 'Animation with a bounce effect'], correct: 1 },
+    { question: 'What does responsive: true do in Chart.js?', options: ['Makes the chart work on mobile only', 'Automatically resizes the chart when its container size changes', 'Enables touch events', 'Loads a mobile-friendly theme'], correct: 1 }
+  ],
+  50,
+  'https://www.youtube.com/embed/sE08f4iuOhA'
+),
+
+lesson(
+  '8. Build & Deploy a SaaS Landing Page',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-pink-500/10 to-purple-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-pink-400 mb-2">📖 What You Will Build</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>A high-converting SaaS product landing page</li>
+        <li>Hero, features, pricing, testimonials, FAQ, CTA sections</li>
+        <li>Email waitlist with a backend endpoint</li>
+        <li>Scroll-driven animations</li>
+        <li>A/B tested headlines with localStorage</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🚀 Landing Page Structure</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code">/* The anatomy of a high-converting SaaS landing page */
+
+/* 1. NAV */
+/* Logo left, nav links center, CTA button right */
+/* Sticky on scroll with subtle background on scroll */
+
+/* 2. HERO — the most important section */
+/* Above the fold: headline, subheadline, CTA, social proof */
+/* Headline formula: [OUTCOME] for [AUDIENCE] without [PAIN] */
+/* Example: "Get waste collected in 30 minutes — without phone calls" */
+
+/* 3. SOCIAL PROOF */
+/* Logos of notable customers or "Trusted by X households in Accra" */
+
+/* 4. PROBLEM section */
+/* Describe the painful status quo so clearly users feel seen */
+
+/* 5. FEATURES / HOW IT WORKS */
+/* 3-4 features with icon, title, description */
+/* Alternate layout: feature text left, screenshot right */
+
+/* 6. DEMO / SCREENSHOT section */
+/* Animated product screenshot or embedded video */
+
+/* 7. PRICING */
+/* 3 tiers: Starter, Pro, Business */
+/* Highlight the recommended tier visually */
+/* Annual/Monthly toggle */
+
+/* 8. TESTIMONIALS */
+/* Real quotes with photo, name, company */
+/* Star ratings */
+
+/* 9. FAQ */
+/* Top 6-8 questions using &lt;details&gt;/&lt;summary&gt; */
+
+/* 10. FINAL CTA */
+/* Repeat the main value prop + waitlist/signup form */
+
+/* 11. FOOTER */
+/* Links, social, copyright, privacy policy */</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">📧 Email Waitlist Backend</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code">// Express route for email capture
+import { Resend } from 'resend';
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Store emails (use MongoDB in production)
+const waitlist = new Set();
+
+app.post('/api/waitlist', async (req, res) => {
+  const { email, name } = req.body;
+
+  // Validate
+  if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+    return res.status(422).json({ error: 'Valid email required' });
+  }
+
+  if (waitlist.has(email)) {
+    return res.json({ message: 'You are already on the waitlist!' });
+  }
+
+  waitlist.add(email);
+
+  // Send welcome email
+  await resend.emails.send({
+    from: 'WasteGo <hello@wastego.gh>',
+    to: email,
+    subject: 'You\'re on the WasteGo waitlist! 🚛',
+    html: \`
+      &lt;h1&gt;Welcome \${name || 'there'}!&lt;/h1&gt;
+      &lt;p&gt;You are #\${waitlist.size} on our waitlist.&lt;/p&gt;
+      &lt;p&gt;We will email you the moment we launch in your area.&lt;/p&gt;
+      &lt;p&gt;In the meantime, share with friends to move up the list!&lt;/p&gt;
+    \`
+  });
+
+  res.json({
+    message: 'You are on the list!',
+    position: waitlist.size
+  });
+});</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Full Build Challenge</h2>
+      <p class="text-gray-300">Build the WasteGo landing page in 2 days: All 11 sections above. Scroll-driven section reveals (CSS animation-timeline or Intersection Observer). Sticky nav that adds a background on scroll. Pricing toggle (monthly/annual). FAQ accordion with smooth CSS transitions. Email waitlist with the backend endpoint above. Google Analytics or Plausible for traffic. Deploy to Netlify with a custom domain. Share in the community.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What is the most important section on a SaaS landing page?', options: ['Pricing', 'The Hero — it is the first thing visitors see and determines if they stay', 'Testimonials', 'FAQ'], correct: 1 },
+    { question: 'What is the headline formula for SaaS landing pages?', options: ['List all features', '[OUTCOME] for [AUDIENCE] without [PAIN]', 'Name the product and version', 'Show the price first'], correct: 1 },
+    { question: 'What does the Intersection Observer API do?', options: ['Observes database intersections', 'Fires a callback when an element enters or leaves the viewport — used for scroll animations', 'Tracks user mouse position', 'Observes network requests'], correct: 1 },
+    { question: 'Why use a Set to store waitlist emails?', options: ['Sets are faster than arrays', 'Sets automatically prevent duplicate entries', 'MongoDB requires Sets', 'Arrays cannot store emails'], correct: 1 },
+    { question: 'What makes a pricing page convert well?', options: ['Show all features', 'Visually highlight a recommended plan, keep tiers simple, show annual savings, include a money-back guarantee', 'Show enterprise pricing', 'Hide pricing until signup'], correct: 1 },
+    { question: 'What is social proof in a landing page context?', options: ['Social media links', 'Evidence that others trust and use the product — testimonials, logos, user counts, reviews', 'Open source code', 'A social login button'], correct: 1 },
+    { question: 'Why send a confirmation email immediately when someone joins the waitlist?', options: ['It is required by law', 'Confirms their spot, sets expectations, and starts building a relationship before launch', 'Email APIs require it', 'To verify the email address'], correct: 1 },
+    { question: 'What does A/B testing headlines mean?', options: ['Testing the page on two browsers', 'Showing different headlines to different visitors and measuring which converts better', 'Testing with two developers', 'Running the page on two servers'], correct: 1 }
+  ],
+  50,
+  'https://www.youtube.com/embed/eqXans7Ikb0'
+),
+
+lesson(
+  '9. Git, GitHub & Team Collaboration Workflows',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-pink-500/10 to-purple-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-pink-400 mb-2">📖 What You Will Learn</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>Git fundamentals: commit, branch, merge, rebase</li>
+        <li>GitHub flow for solo and team projects</li>
+        <li>Pull requests, code reviews, and merge strategies</li>
+        <li>Resolving merge conflicts confidently</li>
+        <li>Git hooks and conventional commits</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🌿 Git Workflow Mastery</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code"># ── Daily workflow ──
+git status                      # what changed?
+git diff                        # see exact changes
+git add .                       # stage all changes
+git add src/routes/pickup.js    # stage specific file
+git commit -m "feat: add pickup filtering by region"
+git push origin main
+
+# ── Branching ──
+git checkout -b feat/rider-matching   # create + switch to branch
+git branch                            # list branches
+git checkout main                     # switch back
+git merge feat/rider-matching         # merge into main
+git branch -d feat/rider-matching     # delete merged branch
+
+# ── Conventional Commits (industry standard) ──
+# Format: type(scope): description
+git commit -m "feat(pickups): add weight-based pricing"
+git commit -m "fix(auth): resolve token refresh race condition"
+git commit -m "docs: update API documentation"
+git commit -m "refactor(db): extract query builder utility"
+git commit -m "test(auth): add login rate limit tests"
+git commit -m "chore: upgrade mongoose to v8"
+git commit -m "style: format all files with prettier"
+
+# ── Undoing mistakes ──
+git restore --staged file.js    # unstage a file
+git restore file.js             # discard working changes
+git reset --soft HEAD~1         # undo last commit, keep changes staged
+git reset --mixed HEAD~1        # undo last commit, keep changes unstaged
+git reset --hard HEAD~1         # undo last commit, DESTROY changes (careful!)
+git revert abc1234              # create new commit that undoes abc1234 (safe!)
+
+# ── Viewing history ──
+git log --oneline --graph --all # visual branch history
+git log -p src/auth.js          # changes to a specific file
+git blame src/auth.js           # who wrote each line?
+git stash                       # temporarily shelve changes
+git stash pop                   # restore stashed changes
+
+# ── Remote operations ──
+git fetch origin                # download remote changes (don't merge)
+git pull origin main            # fetch + merge
+git pull --rebase origin main   # fetch + rebase (cleaner history)
+git push --force-with-lease     # safer force push (only if your understanding is current)</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🔀 Resolving Merge Conflicts</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code"># A merge conflict happens when two branches change the same line
+# Git marks the conflict like this:
+
+<<<<<<< HEAD (your changes)
+const price = calculatePrice(weight, 'organic');
+=======
+const price = calculatePrice(weight, type);
+>>>>>>> feat/dynamic-pricing (incoming changes)
+
+# Step 1: Open the file and decide which version is correct
+# (or combine both)
+
+# RESOLVED:
+const price = calculatePrice(weight, type || 'organic');
+
+# Step 2: Stage the resolved file
+git add src/utils/pricing.js
+
+# Step 3: Complete the merge
+git commit -m "merge: resolve pricing calculation conflict"
+
+# VS Code makes this easier with the conflict editor UI:
+# Click "Accept Current", "Accept Incoming", or "Accept Both"</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+      <p class="text-gray-300">Practice the full GitHub flow: Create a repo for WasteGo. Make 3 feature branches (feat/auth, feat/pickups, feat/dashboard). Make changes on each, create pull requests on GitHub with a description. Review your own PR (add comments). Merge with squash. Deliberately create a merge conflict between two branches and resolve it. Set up a branch protection rule on main requiring PR reviews.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What does git reset --soft HEAD~1 do?', options: ['Deletes the last commit permanently', 'Undoes the last commit but keeps the changes staged, ready to recommit', 'Resets to the initial commit', 'Soft-deletes the branch'], correct: 1 },
+    { question: 'What is the conventional commits format?', options: ['Any descriptive message', 'type(scope): description — e.g. feat(auth): add JWT refresh tokens', 'File name: change description', 'Version: change description'], correct: 1 },
+    { question: 'What is a merge conflict?', options: ['Two people pushing at the same time', 'When two branches have changed the same part of the same file and Git cannot auto-merge', 'A failed git push', 'A deleted branch conflict'], correct: 1 },
+    { question: 'What does git stash do?', options: ['Deletes uncommitted changes', 'Temporarily saves uncommitted changes so you can switch branches with a clean working directory', 'Stashes the git history', 'Saves a branch as a zip'], correct: 1 },
+    { question: 'What is the difference between git fetch and git pull?', options: ['They are identical', 'fetch downloads remote changes without merging; pull downloads AND merges into your current branch', 'fetch is faster', 'pull only works on main branch'], correct: 1 },
+    { question: 'What does a Pull Request (PR) on GitHub allow?', options: ['Pulls code from forks only', 'Proposes merging a branch, enables code review, discussion, and CI checks before merging', 'Requests someone to pull your repo', 'Automatically merges branches'], correct: 1 },
+    { question: 'What does git revert do differently from git reset?', options: ['They are identical', 'revert creates a new commit that undoes changes — safe for shared branches; reset rewrites history', 'reset is safer', 'revert only works on file changes'], correct: 1 },
+    { question: 'What is branch protection on GitHub main?', options: ['Encrypts the main branch', 'A rule requiring PRs and passing CI before anything can be merged into main', 'Prevents force pushes by everyone', 'Makes the branch read-only permanently'], correct: 1 }
+  ],
+  50,
+  'https://www.youtube.com/embed/RGOj5yH7evk'
+),
+
+lesson(
+  '10. Final Vibe Coding Project: Ship Your Own SaaS MVP',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-pink-500/10 to-purple-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-pink-400 mb-2">🏆 Final Project: Your SaaS MVP</h2>
+      <p class="text-gray-300">Everything you have built leads to this. You will ideate, design, build, and ship a real SaaS product from zero in 2 weeks. This is the project you will show in job interviews.</p>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">📋 MVP Requirements</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-black/60 p-4 rounded-lg">
+          <p class="text-orange-400 font-semibold mb-2">Product</p>
+          <ul class="text-gray-300 text-sm space-y-1 list-disc list-inside">
+            <li>Solves a real problem for a specific audience</li>
+            <li>One core feature done extremely well</li>
+            <li>Live at a real URL (not localhost)</li>
+            <li>At least 3 real users testing it</li>
+          </ul>
+        </div>
+        <div class="bg-black/60 p-4 rounded-lg">
+          <p class="text-purple-400 font-semibold mb-2">Technical</p>
+          <ul class="text-gray-300 text-sm space-y-1 list-disc list-inside">
+            <li>Full-stack: Express API + MongoDB + Vanilla JS or basic framework</li>
+            <li>User auth (register, login, protected routes)</li>
+            <li>At least one real-time feature or external API</li>
+            <li>Mobile-responsive design</li>
+            <li>Error handling and loading states</li>
+          </ul>
+        </div>
+        <div class="bg-black/60 p-4 rounded-lg">
+          <p class="text-cyan-400 font-semibold mb-2">Ship</p>
+          <ul class="text-gray-300 text-sm space-y-1 list-disc list-inside">
+            <li>Backend on Railway or Render</li>
+            <li>Frontend on Netlify or Vercel</li>
+            <li>Custom domain (optional but impressive)</li>
+            <li>CI/CD: GitHub Actions runs tests on push</li>
+          </ul>
+        </div>
+        <div class="bg-black/60 p-4 rounded-lg">
+          <p class="text-green-400 font-semibold mb-2">Document</p>
+          <ul class="text-gray-300 text-sm space-y-1 list-disc list-inside">
+            <li>README with demo GIF, tech stack, setup steps</li>
+            <li>API documentation (Swagger or Postman collection)</li>
+            <li>At least 10 tests passing</li>
+            <li>Retrospective: what you learned and what you would do differently</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">💡 MVP Ideas for Ghana</h2>
+      <div class="bg-black/60 rounded-xl p-5">
+        <ul class="text-gray-300 space-y-2">
+          <li>🚛 <strong class="text-green-400">WasteGo</strong> — on-demand waste collection (you are already building this!)</li>
+          <li>🍽️ <strong class="text-orange-400">MealPlan GH</strong> — weekly meal planning + ingredient delivery</li>
+          <li>📚 <strong class="text-blue-400">TutorMatch</strong> — connect students with tutors in Ghana</li>
+          <li>🏠 <strong class="text-purple-400">RentEase</strong> — apartment listings with virtual tours</li>
+          <li>💊 <strong class="text-red-400">MedRemind</strong> — medication reminder for elderly relatives</li>
+          <li>🔧 <strong class="text-yellow-400">ArtisanHub</strong> — book electricians, plumbers, carpenters on demand</li>
+          <li>📦 <strong class="text-cyan-400">StoreFront</strong> — no-code store builder for Accra market traders</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="bg-yellow-500/10 p-4 rounded-lg">
+      <p class="text-yellow-300">🎓 <strong>You have completed Vibe Coding.</strong> You can now take any idea from concept to deployed product. You have shipped weather apps, todo apps, chat apps, dashboards, e-commerce, portfolios, and landing pages. The only thing left: AI Prompting — learning to work 10x faster with AI tools.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What is an MVP?', options: ['Most Valuable Player', 'Minimum Viable Product — the smallest version of your product that delivers the core value to real users', 'Maximum Viable Product', 'Minimum Viable Prototype'], correct: 1 },
+    { question: 'What is the most important metric for an MVP?', options: ['Lines of code', 'Whether real users find it valuable enough to use repeatedly', 'Test coverage', 'Page speed score'], correct: 1 },
+    { question: 'Why build for a specific audience instead of "everyone"?', options: ['It is easier to market', 'Specific audiences have specific needs you can solve deeply — trying to serve everyone leads to a mediocre product for nobody', 'General products don\'t sell', 'It reduces development time'], correct: 1 },
+    { question: 'What should a good project README include?', options: ['Only the license', 'Demo GIF/screenshot, description, tech stack, setup instructions, live URL, and contribution guide', 'Just the install command', 'The full source code'], correct: 1 },
+    { question: 'Why is a GitHub Actions CI/CD pipeline important for a portfolio project?', options: ['It is required by GitHub', 'It shows employers you understand professional software development practices beyond just writing code', 'It speeds up the app', 'GitHub requires tests'], correct: 1 },
+    { question: 'What is a project retrospective?', options: ['A code review', 'A reflection on what went well, what went wrong, and what you would do differently next time', 'A user feedback session', 'A performance audit'], correct: 1 },
+    { question: 'What is the biggest mistake first-time builders make with their MVP?', options: ['Deploying too early', 'Building too many features before getting any real user feedback', 'Using too many technologies', 'Making it too simple'], correct: 1 },
+    { question: 'What does "ship it" mean in developer culture?', options: ['Send the code by mail', 'Deploy a working version to production for real users to access — done is better than perfect', 'Ship the codebase to a client', 'Complete 100% of planned features'], correct: 1 }
+  ],
+  100,
+  'https://www.youtube.com/embed/kxIdSwkjFKo'
+)
+
+]; // end vibeLessons
+
+
+
+PASCAL
 const expressCourse = savedCourses.find(c => c.title === 'Express.js');
 for (let i = 0; i < expressLessons.length; i++) {
   const lessonData = expressLessons[i];
