@@ -1,0 +1,3614 @@
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import Course from './models/Course.js';
+import Lesson from './models/Lesson.js';
+
+dotenv.config();
+
+// ─────────────────────────────────────────────
+//  HELPER
+// ─────────────────────────────────────────────
+function lesson(title, content, quiz, xp = 50, videoUrl = '') {
+  return { title, content, videoUrl, xpValue: xp, quiz };
+}
+
+// ─────────────────────────────────────────────
+//  HTML LESSONS
+// ─────────────────────────────────────────────
+const htmlLessons = [
+  // ── Lesson 1 ──
+  lesson(
+    '1. HTML Fundamentals: How the Web Works & Your First Page',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-orange-500/10 to-red-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-orange-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>How browsers and servers communicate (HTTP basics)</li>
+          <li>What HTML really is and why it matters</li>
+          <li>The anatomy of every HTML document</li>
+          <li>Tags, elements, and attributes explained clearly</li>
+          <li>How to create and open your first web page</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🌐 How the Web Works</h2>
+        <p class="text-gray-300 mb-3">When you type a URL into your browser, this is what happens: your browser sends an <strong class="text-orange-400">HTTP request</strong> to a server. The server responds with an <strong class="text-orange-400">HTML file</strong>. Your browser reads that file and paints the page you see.</p>
+        <p class="text-gray-300 mb-3">Three languages power every website:</p>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li><strong class="text-orange-400">HTML</strong> – the structure (skeleton)</li>
+          <li><strong class="text-purple-400">CSS</strong> – the style (skin and clothes)</li>
+          <li><strong class="text-yellow-400">JavaScript</strong> – the behaviour (muscles)</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📄 Anatomy of an HTML Document</h2>
+        <p class="text-gray-300 mb-3">Every valid HTML page has the same skeleton. Let's break each part down:</p>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;!DOCTYPE html&gt;         &lt;!-- Tells the browser this is HTML5 --&gt;
+&lt;html lang="en"&gt;        &lt;!-- Root element. lang="en" helps screen readers --&gt;
+  &lt;head&gt;               &lt;!-- Invisible metadata about your page --&gt;
+    &lt;meta charset="UTF-8"&gt;            &lt;!-- Character encoding --&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;My First Page&lt;/title&gt;      &lt;!-- Shows in browser tab --&gt;
+  &lt;/head&gt;
+  &lt;body&gt;               &lt;!-- Everything visible lives here --&gt;
+    &lt;h1&gt;Hello, World!&lt;/h1&gt;
+    &lt;p&gt;This is my first paragraph.&lt;/p&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+        </div>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-blue-500/10 p-4 rounded-lg">
+            <p class="text-blue-300 font-semibold">🔵 &lt;head&gt;</p>
+            <p class="text-gray-400 text-sm">Contains page metadata: title, character set, links to CSS files, SEO tags. Nothing inside &lt;head&gt; appears on screen.</p>
+          </div>
+          <div class="bg-green-500/10 p-4 rounded-lg">
+            <p class="text-green-300 font-semibold">🟢 &lt;body&gt;</p>
+            <p class="text-gray-400 text-sm">Everything the user sees: headings, text, images, buttons, forms. This is your canvas.</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🏷️ Tags, Elements & Attributes</h2>
+        <p class="text-gray-300 mb-3">An <strong>element</strong> is everything from the opening tag to the closing tag:</p>
+        <div class="bg-black/60 rounded-xl p-4 overflow-x-auto">
+          <pre class="text-green-400 text-sm"><code>&lt;p class="intro"&gt;This is a paragraph element.&lt;/p&gt;
+ ↑ opening tag   ↑ content                     ↑ closing tag
+
+&lt;img src="photo.jpg" alt="My photo"&gt;   &lt;!-- Self-closing: no closing tag needed --&gt;
+      ↑ attribute  ↑ attribute value</code></pre>
+        </div>
+        <p class="text-gray-300 mt-3">Attributes always go inside the opening tag as <code class="text-yellow-400">name="value"</code> pairs. They add extra information or configuration to elements.</p>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">💻 Your First Web Page – Step by Step</h2>
+        <ol class="list-decimal list-inside text-gray-300 space-y-2">
+          <li>Open VS Code (or any text editor)</li>
+          <li>Create a new file and save it as <code class="text-yellow-400">index.html</code></li>
+          <li>Type the boilerplate above (type it — don't copy; your fingers need to learn it)</li>
+          <li>Double-click the file in your file explorer — it opens in your browser</li>
+          <li>Every time you save changes, refresh the browser to see the update</li>
+        </ol>
+        <div class="bg-yellow-500/10 p-4 rounded-lg mt-4">
+          <p class="text-yellow-300">⚡ <strong>Install the Live Server extension in VS Code</strong> — it auto-refreshes your browser every time you save. Life-changing for beginners.</p>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Create <code>index.html</code> with a proper HTML5 boilerplate. In the body, add an H1 with your name, an H2 saying "My Goals", and three paragraphs describing what you want to build after this course. Open it in your browser. Then edit the title tag and watch the browser tab change.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What does HTML stand for?', options: ['Hyper Text Markup Language', 'High Tech Modern Language', 'Hyper Transfer Markup Language', 'Home Tool Markup Language'], correct: 0 },
+      { question: 'Which part of the HTML document contains visible content?', options: ['<head>', '<meta>', '<body>', '<html>'], correct: 2 },
+      { question: 'What does the <!DOCTYPE html> declaration do?', options: ['Links a stylesheet', 'Declares the document as HTML5', 'Creates a comment', 'Defines the page title'], correct: 1 },
+      { question: 'Where does the page title (shown in the browser tab) go?', options: ['Inside <body>', 'Inside <title> in <head>', 'Inside <h1>', 'Inside <meta>'], correct: 1 },
+      { question: 'What is an HTML attribute?', options: ['A closing tag', 'Extra info added inside an opening tag', 'The text content of an element', 'A CSS rule'], correct: 1 },
+      { question: 'Which of these is a self-closing tag?', options: ['<p>', '<div>', '<img>', '<section>'], correct: 2 },
+      { question: 'What does the lang="en" attribute on <html> do?', options: ['Sets text color to English theme', 'Helps screen readers and search engines identify the language', 'Loads an English font', 'Translates the page to English'], correct: 1 },
+      { question: 'What is the correct file extension for an HTML file?', options: ['.htm or .html', '.hml', '.web', '.page'], correct: 0 }
+    ],
+    50,
+    'https://www.youtube.com/embed/UB1O30fR-EE'
+  ),
+
+  // ── Lesson 2 ──
+  lesson(
+    '2. Headings, Paragraphs, Text Formatting & Semantic Meaning',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-orange-500/10 to-red-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-orange-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>The six heading levels and when to use each</li>
+          <li>How to create well-structured paragraphs</li>
+          <li>The difference between semantic and presentational formatting</li>
+          <li>Inline vs block-level elements</li>
+          <li>Special characters and HTML entities</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📰 Headings: The Outline of Your Page</h2>
+        <p class="text-gray-300 mb-3">Headings create a hierarchy — like a newspaper. Search engines and screen readers rely on this hierarchy to understand your page. <strong>Never skip heading levels</strong> (e.g., don't go from H1 straight to H3).</p>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;h1&gt;Ghana's Waste Crisis — And How Tech Is Solving It&lt;/h1&gt;  &lt;!-- ONE per page --&gt;
+&lt;h2&gt;The Problem in Accra&lt;/h2&gt;
+  &lt;h3&gt;The Role of Tricycles&lt;/h3&gt;
+    &lt;h4&gt;Cost Breakdown&lt;/h4&gt;
+      &lt;h5&gt;Government Subsidies&lt;/h5&gt;
+        &lt;h6&gt;Local NGO Partners&lt;/h6&gt;</code></pre>
+        </div>
+        <div class="bg-red-500/10 p-4 rounded-lg mt-3">
+          <p class="text-red-300">⚠️ <strong>Common Mistake:</strong> Using headings just to make text big. That's CSS's job. Use headings for <em>structure and meaning</em>, not for styling.</p>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📝 Paragraphs, Breaks & Horizontal Rules</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;p&gt;Paragraphs have automatic top and bottom margins. Browsers handle spacing.&lt;/p&gt;
+&lt;p&gt;A second paragraph. Notice the gap above — that's the default margin.&lt;/p&gt;
+
+&lt;p&gt;Use &lt;br&gt; for a line break&lt;br&gt;within the same paragraph.&lt;/p&gt;
+
+&lt;hr&gt;  &lt;!-- A thematic break — a horizontal rule. Not just a decorative line. --&gt;</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">✍️ Semantic vs Presentational Formatting</h2>
+        <p class="text-gray-300 mb-3">This is critical. Two tags can look the same but have <em>completely different meaning</em>:</p>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;!-- SEMANTIC (preferred) --&gt;
+&lt;strong&gt;Warning: Do not delete this file.&lt;/strong&gt;   &lt;!-- important text --&gt;
+&lt;em&gt;Please read this carefully.&lt;/em&gt;                  &lt;!-- emphasis --&gt;
+&lt;mark&gt;Highlighted term&lt;/mark&gt;                          &lt;!-- highlighted --&gt;
+&lt;del&gt;Old price: $50&lt;/del&gt; &lt;ins&gt;New price: $35&lt;/ins&gt;  &lt;!-- edits --&gt;
+&lt;abbr title="Progressive Web App"&gt;PWA&lt;/abbr&gt;          &lt;!-- abbreviation --&gt;
+&lt;code&gt;localStorage.getItem('key')&lt;/code&gt;               &lt;!-- inline code --&gt;
+&lt;sub&gt;2&lt;/sub&gt; and &lt;sup&gt;2&lt;/sup&gt;                        &lt;!-- subscript/superscript --&gt;
+
+&lt;!-- PRESENTATIONAL (avoid for meaning) --&gt;
+&lt;b&gt;Bold without importance&lt;/b&gt;
+&lt;i&gt;Italic without emphasis&lt;/i&gt;</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔡 Block vs Inline Elements</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-purple-500/10 p-4 rounded-lg">
+            <p class="text-purple-300 font-semibold">Block Elements</p>
+            <p class="text-gray-400 text-sm">Take the full width of their container. Start on a new line. Examples: &lt;p&gt;, &lt;h1&gt;–&lt;h6&gt;, &lt;div&gt;, &lt;section&gt;, &lt;article&gt;</p>
+          </div>
+          <div class="bg-pink-500/10 p-4 rounded-lg">
+            <p class="text-pink-300 font-semibold">Inline Elements</p>
+            <p class="text-gray-400 text-sm">Flow within text. Take only as much width as needed. Examples: &lt;strong&gt;, &lt;em&gt;, &lt;a&gt;, &lt;span&gt;, &lt;code&gt;, &lt;img&gt;</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔣 HTML Entities</h2>
+        <p class="text-gray-300 mb-3">Some characters are reserved in HTML (like &lt; and &gt;). Use entities instead:</p>
+        <div class="bg-black/60 rounded-xl p-4 overflow-x-auto">
+          <pre class="text-green-400 text-sm"><code>&amp;lt;    → &lt;
+&amp;gt;    → &gt;
+&amp;amp;   → &amp;
+&amp;copy;  → ©
+&amp;nbsp;  → non-breaking space</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Write a news article page about a tech topic you like. Use H1 for the title, H2 for each section heading, and H3 for sub-sections. Mark at least one word as &lt;strong&gt;, one as &lt;em&gt;, and include a &lt;mark&gt; highlight. Add an &lt;abbr&gt; for any acronym. Add a copyright line using the &amp;copy; entity.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'How many heading levels does HTML have?', options: ['4', '5', '6', '8'], correct: 2 },
+      { question: 'What is the main difference between <strong> and <b>?', options: ['They are identical', '<strong> has semantic importance; <b> is purely visual', '<b> is for screen readers', '<strong> only works in forms'], correct: 1 },
+      { question: 'Which of the following is a block-level element?', options: ['<span>', '<em>', '<a>', '<p>'], correct: 3 },
+      { question: 'What does the <abbr> tag do?', options: ['Makes text italic', 'Defines an abbreviation with a full tooltip', 'Creates a link', 'Centers text'], correct: 1 },
+      { question: 'How do you display the < character in HTML without it being treated as a tag?', options: ['\\lt', '&lt;', '<char>', '(lt)'], correct: 1 },
+      { question: 'What does <br> do?', options: ['Creates a new paragraph', 'Inserts a line break within the current element', 'Adds bold text', 'Creates a horizontal rule'], correct: 1 },
+      { question: 'What is the correct use of <hr>?', options: ['Decorative divider for looks', 'A thematic break between content sections', 'It creates a table row', 'It is the same as <br>'], correct: 1 },
+      { question: 'Which element is used for inline code snippets?', options: ['<pre>', '<code>', '<script>', '<kbd>'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/yTHTo28hwTQ'
+  ),
+
+  // ── Lesson 3 ──
+  lesson(
+    '3. Links, Images & Embedding Media',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-orange-500/10 to-red-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-orange-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>How hyperlinks work (absolute vs relative URLs)</li>
+          <li>Linking to sections on the same page with anchor IDs</li>
+          <li>Embedding images with proper alt text and dimensions</li>
+          <li>Responsive images with srcset</li>
+          <li>Embedding video, audio, and iframes</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔗 Hyperlinks In Depth</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;!-- Absolute URL (full address) --&gt;
+&lt;a href="https://www.google.com"&gt;Visit Google&lt;/a&gt;
+
+&lt;!-- Relative URL (same website, different page) --&gt;
+&lt;a href="about.html"&gt;About Us&lt;/a&gt;
+&lt;a href="../pages/contact.html"&gt;Contact&lt;/a&gt;   &lt;!-- ../ goes up one folder --&gt;
+
+&lt;!-- Open in new tab (always add rel="noopener" for security) --&gt;
+&lt;a href="https://github.com" target="_blank" rel="noopener noreferrer"&gt;GitHub&lt;/a&gt;
+
+&lt;!-- Email link --&gt;
+&lt;a href="mailto:hello@wastego.gh"&gt;Email Us&lt;/a&gt;
+
+&lt;!-- Phone link (great for mobile) --&gt;
+&lt;a href="tel:+233244000000"&gt;Call Us&lt;/a&gt;
+
+&lt;!-- Anchor link (jumps to section on same page) --&gt;
+&lt;a href="#services"&gt;See Our Services&lt;/a&gt;
+...
+&lt;section id="services"&gt;...&lt;/section&gt;</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🖼️ Images: The Right Way</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;!-- Basic image --&gt;
+&lt;img src="images/rider.jpg" alt="WasteGo rider on a tricycle in Accra" width="600" height="400"&gt;
+
+&lt;!-- Always set width and height to prevent layout shift (CLS) --&gt;
+&lt;!-- Alt text describes the image for screen readers and if the image fails to load --&gt;
+
+&lt;!-- Decorative image (skip alt text with empty string) --&gt;
+&lt;img src="decoration.svg" alt=""&gt;
+
+&lt;!-- Responsive image (serves different sizes for different screens) --&gt;
+&lt;img
+  src="photo-800.jpg"
+  srcset="photo-400.jpg 400w, photo-800.jpg 800w, photo-1200.jpg 1200w"
+  sizes="(max-width: 600px) 400px, (max-width: 1000px) 800px, 1200px"
+  alt="A busy street in Accra"&gt;
+
+&lt;!-- Image with caption --&gt;
+&lt;figure&gt;
+  &lt;img src="chart.png" alt="Waste collection growth chart 2024"&gt;
+  &lt;figcaption&gt;WasteGo collection volume grew 300% in 2024.&lt;/figcaption&gt;
+&lt;/figure&gt;</code></pre>
+        </div>
+        <div class="bg-blue-500/10 p-4 rounded-lg mt-3">
+          <p class="text-blue-300">💡 <strong>Supported formats:</strong> JPEG (photos), PNG (logos/transparency), SVG (icons/illustrations), WebP (modern — smaller files, great quality). Use WebP when possible.</p>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🎬 Video, Audio & iframes</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;!-- HTML5 Video --&gt;
+&lt;video controls width="720" poster="thumbnail.jpg"&gt;
+  &lt;source src="demo.mp4" type="video/mp4"&gt;
+  &lt;source src="demo.webm" type="video/webm"&gt;
+  &lt;p&gt;Your browser doesn't support video. &lt;a href="demo.mp4"&gt;Download instead&lt;/a&gt;.&lt;/p&gt;
+&lt;/video&gt;
+
+&lt;!-- HTML5 Audio --&gt;
+&lt;audio controls&gt;
+  &lt;source src="notification.mp3" type="audio/mpeg"&gt;
+&lt;/audio&gt;
+
+&lt;!-- Embed YouTube video --&gt;
+&lt;iframe
+  width="560" height="315"
+  src="https://www.youtube.com/embed/UB1O30fR-EE"
+  title="HTML Tutorial"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen&gt;
+&lt;/iframe&gt;</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Build a "Media Gallery" page. Include: a navigation bar with anchor links to three sections (Photos, Videos, Contact). Each section has at least two images with proper alt text wrapped in &lt;figure&gt;. Embed one YouTube video. Add a mailto link in the contact section. All images should link to a larger version using &lt;a&gt; wrapping &lt;img&gt;.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What attribute on <a> specifies the destination URL?', options: ['src', 'href', 'link', 'url'], correct: 1 },
+      { question: 'What does target="_blank" do on a link?', options: ['Downloads the file', 'Opens the link in a new tab/window', 'Opens in an iframe', 'Opens in the parent frame'], correct: 1 },
+      { question: 'Why should you add rel="noopener noreferrer" when using target="_blank"?', options: ['For SEO ranking', 'To prevent security vulnerabilities', 'To improve page speed', 'To fix broken links'], correct: 1 },
+      { question: 'What is the purpose of the alt attribute on an image?', options: ['Sets the image title tooltip', 'Describes the image for screen readers and when image fails', 'Links the image to another page', 'Sets the image file format'], correct: 1 },
+      { question: 'Which element should you use to group an image with its caption?', options: ['<picture>', '<figure>', '<section>', '<div>'], correct: 1 },
+      { question: 'What does the srcset attribute on an <img> allow you to do?', options: ['Set multiple alt texts', 'Provide different image sizes for different screen resolutions', 'Add multiple images in a slideshow', 'Set fallback images'], correct: 1 },
+      { question: 'Which HTML element is used to embed external content like YouTube videos?', options: ['<embed>', '<video>', '<iframe>', '<object>'], correct: 2 },
+      { question: 'How do you create a link that opens the user\'s email client?', options: ['<a href="email:user@example.com">', '<a href="mailto:user@example.com">', '<a email="user@example.com">', '<mail>user@example.com</mail>'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/GNmX2-uLU_E'
+  ),
+
+  // ── Lesson 4 ──
+  lesson(
+    '4. Lists, Tables & Structuring Data',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-orange-500/10 to-red-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-orange-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Unordered, ordered, and definition lists</li>
+          <li>Nested lists for complex hierarchies</li>
+          <li>Building full HTML tables with headers, body, and footer</li>
+          <li>Merging cells with rowspan and colspan</li>
+          <li>Accessible tables with scope and caption</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📋 The Three Types of Lists</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;!-- Unordered List (bullets) --&gt;
+&lt;ul&gt;
+  &lt;li&gt;Collect waste&lt;/li&gt;
+  &lt;li&gt;Sort recyclables&lt;/li&gt;
+  &lt;li&gt;Dispatch to landfill&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;!-- Ordered List (numbers) --&gt;
+&lt;ol start="1" type="1"&gt;  &lt;!-- type can be 1, A, a, I, i --&gt;
+  &lt;li&gt;Register on WasteGo&lt;/li&gt;
+  &lt;li&gt;Book a pickup&lt;/li&gt;
+  &lt;li&gt;Rider arrives in 30 minutes&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;!-- Definition List (term + description) --&gt;
+&lt;dl&gt;
+  &lt;dt&gt;PWA&lt;/dt&gt;
+  &lt;dd&gt;Progressive Web App — a website that behaves like a mobile app.&lt;/dd&gt;
+  &lt;dt&gt;API&lt;/dt&gt;
+  &lt;dd&gt;Application Programming Interface — how software talks to software.&lt;/dd&gt;
+&lt;/dl&gt;
+
+&lt;!-- Nested List --&gt;
+&lt;ul&gt;
+  &lt;li&gt;Ghana Regions
+    &lt;ul&gt;
+      &lt;li&gt;Greater Accra
+        &lt;ol&gt;
+          &lt;li&gt;Tema&lt;/li&gt;
+          &lt;li&gt;Madina&lt;/li&gt;
+        &lt;/ol&gt;
+      &lt;/li&gt;
+      &lt;li&gt;Ashanti&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📊 HTML Tables — Complete Guide</h2>
+        <p class="text-gray-300 mb-3">Tables are for tabular data — not for page layout (that's CSS Grid's job). A well-structured table has a head, body, and foot.</p>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;table&gt;
+  &lt;caption&gt;Monthly Waste Collection Stats — WasteGo 2024&lt;/caption&gt;
+
+  &lt;colgroup&gt;
+    &lt;col style="background:#1a1a2e"&gt;
+    &lt;col span="3" style="background:#16213e"&gt;
+  &lt;/colgroup&gt;
+
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th scope="col"&gt;Month&lt;/th&gt;
+      &lt;th scope="col"&gt;Pickups&lt;/th&gt;
+      &lt;th scope="col"&gt;Tonnage (kg)&lt;/th&gt;
+      &lt;th scope="col"&gt;Revenue (GHS)&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;January&lt;/td&gt;
+      &lt;td&gt;420&lt;/td&gt;
+      &lt;td rowspan="2"&gt;8,500&lt;/td&gt;  &lt;!-- Merges 2 rows --&gt;
+      &lt;td&gt;12,600&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;February&lt;/td&gt;
+      &lt;td&gt;380&lt;/td&gt;
+      &lt;td&gt;11,400&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td colspan="2"&gt;Q1 Totals&lt;/td&gt;  &lt;!-- Merges 2 columns --&gt;
+      &lt;td&gt;17,000&lt;/td&gt;
+      &lt;td&gt;24,000&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+
+  &lt;tfoot&gt;
+    &lt;tr&gt;
+      &lt;td colspan="4"&gt;Data verified by GhanaData Analytics&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tfoot&gt;
+&lt;/table&gt;</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Create a "Skills Tracker" page. Include: an ordered list of courses you are studying. A definition list of 5 tech terms you've learned. A table of your weekly study schedule (days as columns, time slots as rows) with at least one colspan and one rowspan. Add a caption to the table.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'Which tag creates an unordered (bullet) list?', options: ['<ol>', '<ul>', '<li>', '<dl>'], correct: 1 },
+      { question: 'Which tag creates a numbered list?', options: ['<ul>', '<nl>', '<ol>', '<list>'], correct: 2 },
+      { question: 'Which attribute merges multiple table columns?', options: ['rowspan', 'merge', 'colspan', 'colmerge'], correct: 2 },
+      { question: 'What is the correct structure for a definition list item?', options: ['<li> inside <dl>', '<dt> for term and <dd> for description', '<term> and <def>', '<h3> inside <dl>'], correct: 1 },
+      { question: 'Which element adds an accessible title/caption to a table?', options: ['<title>', '<caption>', '<thead>', '<summary>'], correct: 1 },
+      { question: 'What is <tfoot> used for?', options: ['The first row of a table', 'The footer/summary rows at the bottom of a table', 'Styling the table', 'Creating table borders'], correct: 1 },
+      { question: 'Can you nest a list inside another list item?', options: ['No, lists cannot be nested', 'Yes, any list type can be nested inside <li>', 'Only ordered inside unordered', 'Only if you add a special attribute'], correct: 1 },
+      { question: 'What does the scope attribute on <th> improve?', options: ['Visual styling', 'Accessibility by associating headers with data cells', 'Colspan functionality', 'Column sorting'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/3PHXvlpOkf4'
+  ),
+
+  // ── Lesson 5 ──
+  lesson(
+    '5. HTML Forms: Collecting User Input',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-orange-500/10 to-red-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-orange-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Form action and method attributes</li>
+          <li>All important input types with real examples</li>
+          <li>Labels, fieldsets, and accessibility best practices</li>
+          <li>Validation attributes (required, min, max, pattern)</li>
+          <li>Dropdowns, textareas, and file uploads</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📝 The Form Element</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;form action="/submit" method="POST" enctype="multipart/form-data"&gt;
+  &lt;!-- action: where data is sent (URL or server endpoint) --&gt;
+  &lt;!-- method: GET (data in URL, for searches) or POST (hidden in body, for sensitive data) --&gt;
+  &lt;!-- enctype: needed when uploading files --&gt;
+&lt;/form&gt;</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔤 Input Types — All the Important Ones</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;!-- Always link label to input via id/for --&gt;
+&lt;label for="name"&gt;Full Name&lt;/label&gt;
+&lt;input type="text" id="name" name="name" placeholder="Kwame Mensah" required
+       minlength="2" maxlength="100"&gt;
+
+&lt;label for="email"&gt;Email&lt;/label&gt;
+&lt;input type="email" id="email" name="email" required&gt;
+
+&lt;label for="phone"&gt;Phone (Ghana)&lt;/label&gt;
+&lt;input type="tel" id="phone" name="phone" pattern="0[235][0-9]{8}"
+       placeholder="0244000000"&gt;
+
+&lt;label for="password"&gt;Password&lt;/label&gt;
+&lt;input type="password" id="password" name="password" minlength="8" required&gt;
+
+&lt;label for="age"&gt;Age&lt;/label&gt;
+&lt;input type="number" id="age" name="age" min="16" max="99" step="1"&gt;
+
+&lt;label for="pickup"&gt;Pickup Date&lt;/label&gt;
+&lt;input type="date" id="pickup" name="pickup" min="2024-01-01"&gt;
+
+&lt;label for="time"&gt;Preferred Time&lt;/label&gt;
+&lt;input type="time" id="time" name="time"&gt;
+
+&lt;label for="avatar"&gt;Profile Photo&lt;/label&gt;
+&lt;input type="file" id="avatar" name="avatar" accept="image/*" multiple&gt;
+
+&lt;label for="weight"&gt;Waste Weight Estimate&lt;/label&gt;
+&lt;input type="range" id="weight" name="weight" min="1" max="100" value="20"&gt;
+
+&lt;input type="color" id="themeColor" name="themeColor" value="#00ff88"&gt;
+
+&lt;input type="hidden" name="userId" value="usr_abc123"&gt;
+
+&lt;input type="checkbox" id="terms" name="terms" required&gt;
+&lt;label for="terms"&gt;I agree to the Terms of Service&lt;/label&gt;
+
+&lt;!-- Radio group: same name attribute --&gt;
+&lt;fieldset&gt;
+  &lt;legend&gt;Waste Type&lt;/legend&gt;
+  &lt;input type="radio" id="organic" name="wasteType" value="organic"&gt;
+  &lt;label for="organic"&gt;Organic&lt;/label&gt;
+  &lt;input type="radio" id="plastic" name="wasteType" value="plastic"&gt;
+  &lt;label for="plastic"&gt;Plastic&lt;/label&gt;
+&lt;/fieldset&gt;
+
+&lt;!-- Dropdown --&gt;
+&lt;label for="region"&gt;Region&lt;/label&gt;
+&lt;select id="region" name="region"&gt;
+  &lt;option value=""&gt;-- Select Region --&lt;/option&gt;
+  &lt;optgroup label="Southern"&gt;
+    &lt;option value="gr"&gt;Greater Accra&lt;/option&gt;
+    &lt;option value="cr"&gt;Central Region&lt;/option&gt;
+  &lt;/optgroup&gt;
+&lt;/select&gt;
+
+&lt;!-- Multiline text --&gt;
+&lt;label for="notes"&gt;Special Instructions&lt;/label&gt;
+&lt;textarea id="notes" name="notes" rows="4" cols="50" maxlength="500"&gt;&lt;/textarea&gt;
+
+&lt;!-- Buttons --&gt;
+&lt;button type="submit"&gt;Book Pickup&lt;/button&gt;
+&lt;button type="reset"&gt;Clear Form&lt;/button&gt;
+&lt;button type="button" onclick="doSomething()"&gt;Custom Action&lt;/button&gt;</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Build a complete "Waste Pickup Booking Form" with: Full name, email, Ghana phone (with pattern), pickup date and time, waste type radio buttons (organic/plastic/e-waste), region dropdown, a file upload for photo evidence, a range slider for estimated weight, a notes textarea, terms checkbox, and a submit button. Make all required fields actually required.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is the difference between GET and POST form methods?', options: ['GET is faster; POST is slower', 'GET appends data to the URL; POST sends it in the request body', 'GET is for files; POST is for text', 'They are identical'], correct: 1 },
+      { question: 'Why should every <input> have a matching <label>?', options: ['It makes forms look nicer', 'It is required by HTML spec', 'It improves accessibility and usability (clicking label focuses input)', 'Labels are optional decoration'], correct: 2 },
+      { question: 'What does the required attribute do?', options: ['Adds a red border', 'Prevents form submission if the field is empty', 'Makes the field read-only', 'Sets a default value'], correct: 1 },
+      { question: 'How do radio buttons in a group work together?', options: ['They share the same id', 'They share the same name attribute', 'They share the same value', 'They share the same class'], correct: 1 },
+      { question: 'Which input type creates a slider control?', options: ['<input type="slide">', '<input type="range">', '<input type="slider">', '<input type="scale">'], correct: 1 },
+      { question: 'What enctype is needed when your form uploads files?', options: ['text/plain', 'application/json', 'multipart/form-data', 'application/x-www-form-urlencoded'], correct: 2 },
+      { question: 'What does the pattern attribute on an input do?', options: ['Sets a CSS pattern background', 'Validates input against a regular expression', 'Creates a template', 'Groups similar inputs'], correct: 1 },
+      { question: 'What element groups related form controls with a visible border and legend?', options: ['<group>', '<section>', '<fieldset>', '<formgroup>'], correct: 2 }
+    ],
+    50,
+    'https://www.youtube.com/embed/SBmUPnzjGEc'
+  ),
+
+  // ── Lesson 6 ──
+  lesson(
+    '6. Semantic HTML5: Structure That Means Something',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-orange-500/10 to-red-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-orange-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Why semantic HTML matters for SEO and accessibility</li>
+          <li>All major HTML5 semantic elements and their exact purpose</li>
+          <li>The difference between &lt;div&gt; soup and meaningful structure</li>
+          <li>Building a real page layout with semantic tags</li>
+          <li>ARIA roles and when to use them</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🧠 Why Semantics Matter</h2>
+        <p class="text-gray-300 mb-3">A screen reader used by a blind person doesn't see your design — it reads your HTML. Google's crawler doesn't see colors — it reads your structure. <strong class="text-orange-400">Semantic HTML communicates meaning</strong>, not just appearance.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-red-500/10 p-4 rounded-lg">
+            <p class="text-red-400 font-semibold">❌ Div Soup (bad)</p>
+            <pre class="text-gray-400 text-xs mt-2"><code>&lt;div class="header"&gt;...&lt;/div&gt;
+&lt;div class="nav"&gt;...&lt;/div&gt;
+&lt;div class="main"&gt;...&lt;/div&gt;
+&lt;div class="sidebar"&gt;...&lt;/div&gt;
+&lt;div class="footer"&gt;...&lt;/div&gt;</code></pre>
+          </div>
+          <div class="bg-green-500/10 p-4 rounded-lg">
+            <p class="text-green-400 font-semibold">✅ Semantic (correct)</p>
+            <pre class="text-gray-400 text-xs mt-2"><code>&lt;header&gt;...&lt;/header&gt;
+&lt;nav&gt;...&lt;/nav&gt;
+&lt;main&gt;...&lt;/main&gt;
+&lt;aside&gt;...&lt;/aside&gt;
+&lt;footer&gt;...&lt;/footer&gt;</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🏗️ Every Semantic Element Explained</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;header&gt;
+  &lt;!-- Introductory content for the page or a section --&gt;
+  &lt;!-- Contains: logo, site title, top nav, hero area --&gt;
+  &lt;h1&gt;WasteGo — Ghana's Waste Revolution&lt;/h1&gt;
+  &lt;nav&gt;
+    &lt;!-- Primary navigation links --&gt;
+    &lt;ul&gt;
+      &lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href="/book"&gt;Book Pickup&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href="/about"&gt;About&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/nav&gt;
+&lt;/header&gt;
+
+&lt;main&gt;  &lt;!-- ONE per page — the main content --&gt;
+
+  &lt;section&gt;  &lt;!-- Thematic grouping with a heading --&gt;
+    &lt;h2&gt;How WasteGo Works&lt;/h2&gt;
+
+    &lt;article&gt;  &lt;!-- Self-contained, reusable content (blog post, card, news item) --&gt;
+      &lt;h3&gt;Step 1: Book Online&lt;/h3&gt;
+      &lt;p&gt;Request a pickup in 30 seconds...&lt;/p&gt;
+      &lt;footer&gt;Posted by Admin | 12 Jan 2024&lt;/footer&gt;  &lt;!-- footer inside article --&gt;
+    &lt;/article&gt;
+
+    &lt;article&gt;
+      &lt;h3&gt;Step 2: Rider Arrives&lt;/h3&gt;
+      &lt;p&gt;Your assigned rider shows up within 30 minutes...&lt;/p&gt;
+    &lt;/article&gt;
+  &lt;/section&gt;
+
+  &lt;section&gt;
+    &lt;h2&gt;Impact Statistics&lt;/h2&gt;
+    &lt;!-- Stats, charts, etc. --&gt;
+  &lt;/section&gt;
+
+&lt;/main&gt;
+
+&lt;aside&gt;
+  &lt;!-- Tangentially related content: sidebar, related links, ads --&gt;
+  &lt;h2&gt;Recent News&lt;/h2&gt;
+  &lt;p&gt;WasteGo wins Ghana Tech Award 2024&lt;/p&gt;
+&lt;/aside&gt;
+
+&lt;footer&gt;
+  &lt;!-- Page footer: copyright, links, contact --&gt;
+  &lt;address&gt;
+    &lt;!-- Contact info (not mailing address only) --&gt;
+    &lt;a href="mailto:info@wastego.gh"&gt;info@wastego.gh&lt;/a&gt;
+    &lt;a href="tel:+233244000000"&gt;+233 24 400 0000&lt;/a&gt;
+  &lt;/address&gt;
+  &lt;p&gt;&amp;copy; 2024 WasteGo Ltd. All rights reserved.&lt;/p&gt;
+&lt;/footer&gt;
+
+&lt;!-- Other semantic elements --&gt;
+&lt;time datetime="2024-06-15"&gt;15 June 2024&lt;/time&gt;
+&lt;details&gt;
+  &lt;summary&gt;What areas do you cover?&lt;/summary&gt;
+  &lt;p&gt;We currently serve Greater Accra, Kumasi, and Tema.&lt;/p&gt;
+&lt;/details&gt;</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Rewrite a previous practice page completely replacing all &lt;div&gt; elements with the correct semantic tags. Add a &lt;details&gt;/&lt;summary&gt; FAQ section with 3 questions. Use &lt;time&gt; for any dates. Add an &lt;address&gt; in the footer. Validate your HTML at validator.w3.org.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is the main benefit of semantic HTML?', options: ['Makes pages load faster', 'Communicates meaning to browsers, screen readers, and search engines', 'Reduces file size', 'Removes the need for CSS'], correct: 1 },
+      { question: 'How many <main> elements should a page have?', options: ['As many as needed', 'One per section', 'Exactly one', 'Two — one for desktop, one for mobile'], correct: 2 },
+      { question: 'What is the difference between <section> and <article>?', options: ['They are identical', '<article> is self-contained and reusable; <section> groups thematic content', '<section> is for navigation', '<article> is for images only'], correct: 1 },
+      { question: 'What element is best for a sidebar or related content panel?', options: ['<div class="sidebar">', '<aside>', '<section>', '<extra>'], correct: 1 },
+      { question: 'What does the <details> element do?', options: ['Shows developer details in console', 'Creates an expandable/collapsible disclosure widget', 'Provides metadata to search engines', 'Defines table details'], correct: 1 },
+      { question: 'Which element should wrap contact information like email and phone?', options: ['<contact>', '<footer>', '<address>', '<info>'], correct: 2 },
+      { question: 'What does the datetime attribute on <time> do?', options: ['Sets a countdown timer', 'Provides machine-readable date/time for bots and parsers', 'Formats the displayed time', 'Links to a calendar event'], correct: 1 },
+      { question: 'When should you use a <div>?', options: ['Never — always use semantic elements', 'When no semantic element appropriately describes the content', 'For every container on the page', 'Only for navigation'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/kGW8Al_cga4'
+  ),
+
+  // ── Lesson 7 ──
+  lesson(
+    '7. HTML5 APIs: LocalStorage, Geolocation & Drag-and-Drop',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-orange-500/10 to-red-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-orange-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Store data in the browser with localStorage and sessionStorage</li>
+          <li>Get the user's GPS location with the Geolocation API</li>
+          <li>Build drag-and-drop interfaces natively in HTML5</li>
+          <li>The Web Notifications API</li>
+          <li>Real-world use cases for PWA development</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">💾 localStorage vs sessionStorage</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// localStorage — persists FOREVER until manually cleared
+localStorage.setItem('userName', 'Kwame');
+const name = localStorage.getItem('userName');  // 'Kwame'
+localStorage.removeItem('userName');
+localStorage.clear();  // remove everything
+
+// Storing objects — must stringify first
+const user = { id: 'usr_1', role: 'rider', region: 'accra' };
+localStorage.setItem('currentUser', JSON.stringify(user));
+const retrieved = JSON.parse(localStorage.getItem('currentUser'));
+console.log(retrieved.role);  // 'rider'
+
+// sessionStorage — cleared when browser tab is closed
+sessionStorage.setItem('tempToken', 'abc123');
+
+// Check if key exists
+if (localStorage.getItem('currentUser')) {
+  console.log('User is logged in');
+} else {
+  console.log('Please log in');
+}
+
+// Get all keys
+for (let i = 0; i &lt; localStorage.length; i++) {
+  const key = localStorage.key(i);
+  console.log(key, localStorage.getItem(key));
+}</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📍 Geolocation API</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// Check if supported
+if ('geolocation' in navigator) {
+  // Get current position (prompts user for permission)
+  navigator.geolocation.getCurrentPosition(
+    function(position) {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const accuracy = position.coords.accuracy;  // in metres
+      console.log(\`Location: \${lat}, \${lng} (±\${accuracy}m)\`);
+      // Store for WasteGo rider matching
+      localStorage.setItem('userLocation', JSON.stringify({ lat, lng }));
+    },
+    function(error) {
+      switch(error.code) {
+        case error.PERMISSION_DENIED: console.log('User denied location'); break;
+        case error.POSITION_UNAVAILABLE: console.log('GPS unavailable'); break;
+        case error.TIMEOUT: console.log('Request timed out'); break;
+      }
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+  );
+
+  // Watch position in real-time (for rider tracking)
+  const watchId = navigator.geolocation.watchPosition(successFn, errorFn);
+  // Stop watching
+  navigator.geolocation.clearWatch(watchId);
+}</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🖱️ Drag and Drop API</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;!-- HTML --&gt;
+&lt;div id="item" draggable="true"&gt;Drag me&lt;/div&gt;
+&lt;div id="dropzone"&gt;Drop here&lt;/div&gt;
+
+&lt;script&gt;
+const item = document.getElementById('item');
+const zone = document.getElementById('dropzone');
+
+item.addEventListener('dragstart', e =&gt; {
+  e.dataTransfer.setData('text/plain', e.target.id);
+  e.target.style.opacity = '0.5';
+});
+
+item.addEventListener('dragend', e =&gt; {
+  e.target.style.opacity = '1';
+});
+
+zone.addEventListener('dragover', e =&gt; {
+  e.preventDefault();  // REQUIRED to allow dropping
+  zone.style.background = '#00ff8840';
+});
+
+zone.addEventListener('drop', e =&gt; {
+  e.preventDefault();
+  const id = e.dataTransfer.getData('text/plain');
+  zone.appendChild(document.getElementById(id));
+  zone.style.background = '';
+});
+&lt;/script&gt;</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Build a "WasteGo Lite" app: a page that gets the user's location and displays latitude/longitude. Saves the user's name to localStorage and greets them by name on return. Has a drag-and-drop waste sorter with three zones: Organic, Plastic, Electronic — drag waste items into the correct zone and store the sorted result in localStorage.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is the key difference between localStorage and sessionStorage?', options: ['localStorage is faster', 'sessionStorage clears when the tab is closed; localStorage persists', 'sessionStorage holds more data', 'They are identical'], correct: 1 },
+      { question: 'How do you store an object in localStorage?', options: ['localStorage.setItem("key", myObject)', 'localStorage.setItem("key", JSON.stringify(myObject))', 'localStorage.store(myObject)', 'localStorage.save("key", myObject)'], correct: 1 },
+      { question: 'Which navigator API provides GPS coordinates?', options: ['navigator.location', 'navigator.gps', 'navigator.geolocation', 'navigator.position'], correct: 2 },
+      { question: 'What method is needed in a dragover event handler to allow dropping?', options: ['e.allowDrop()', 'e.preventDefault()', 'e.stopPropagation()', 'e.permit()'], correct: 1 },
+      { question: 'What attribute makes an HTML element draggable?', options: ['drag="true"', 'movable="yes"', 'draggable="true"', 'ondrag="start"'], correct: 2 },
+      { question: 'What method watches the user\'s position continuously for real-time tracking?', options: ['navigator.geolocation.track()', 'navigator.geolocation.watchPosition()', 'navigator.geolocation.streamPosition()', 'navigator.geolocation.follow()'], correct: 1 },
+      { question: 'What does localStorage.clear() do?', options: ['Clears only the last saved item', 'Removes all key-value pairs from localStorage', 'Resets all values to null', 'Clears sessionStorage'], correct: 1 },
+      { question: 'What happens if the user denies the Geolocation permission?', options: ['The page crashes', 'The success callback runs with null', 'The error callback runs with PERMISSION_DENIED', 'The browser retries automatically'], correct: 2 }
+    ],
+    50,
+    'https://www.youtube.com/embed/AQn22gjtSWQ'
+  ),
+
+  // ── Lesson 8 ──
+  lesson(
+    '8. Accessibility (a11y): Building for Everyone',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-orange-500/10 to-red-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-orange-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Why accessibility is a legal and moral requirement</li>
+          <li>WCAG guidelines overview</li>
+          <li>ARIA roles, labels, and live regions</li>
+          <li>Keyboard navigation and focus management</li>
+          <li>Testing your page with accessibility tools</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">♿ Why Accessibility Matters</h2>
+        <p class="text-gray-300 mb-3">1 in 6 people worldwide has some form of disability. Visual, motor, cognitive, auditory. Building accessible websites means <strong class="text-orange-400">your app works for everyone</strong>. In many countries it is also a legal requirement (ADA, WCAG 2.1).</p>
+        <p class="text-gray-300">Good accessibility also means better SEO, better mobile experience, and cleaner code. There is no downside.</p>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔖 ARIA — Accessible Rich Internet Applications</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;!-- aria-label: describes element when no visible text exists --&gt;
+&lt;button aria-label="Close modal"&gt;&lt;svg&gt;...&lt;/svg&gt;&lt;/button&gt;
+
+&lt;!-- aria-labelledby: references another element as the label --&gt;
+&lt;section aria-labelledby="stats-heading"&gt;
+  &lt;h2 id="stats-heading"&gt;Impact Statistics&lt;/h2&gt;
+  ...
+&lt;/section&gt;
+
+&lt;!-- aria-describedby: additional description --&gt;
+&lt;input type="password" aria-describedby="pw-hint"&gt;
+&lt;p id="pw-hint"&gt;Must be 8+ characters with a number.&lt;/p&gt;
+
+&lt;!-- aria-hidden: hides from screen readers (decorative icons) --&gt;
+&lt;span aria-hidden="true"&gt;🚀&lt;/span&gt;
+
+&lt;!-- aria-live: announce dynamic changes to screen readers --&gt;
+&lt;div aria-live="polite" id="status"&gt;&lt;/div&gt;
+&lt;script&gt;
+  document.getElementById('status').textContent = 'Rider is on the way!';
+  // Screen reader announces this change automatically
+&lt;/script&gt;
+
+&lt;!-- role: when you cannot use native elements --&gt;
+&lt;div role="button" tabindex="0" aria-pressed="false"&gt;Toggle&lt;/div&gt;
+
+&lt;!-- aria-expanded: for dropdowns/accordions --&gt;
+&lt;button aria-expanded="false" aria-controls="menu"&gt;Menu&lt;/button&gt;
+&lt;ul id="menu" hidden&gt;...&lt;/ul&gt;</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">⌨️ Keyboard Navigation</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;!-- tabindex: controls keyboard focus order --&gt;
+&lt;div tabindex="0"&gt;Focusable div (follows DOM order)&lt;/div&gt;
+&lt;div tabindex="-1"&gt;Focusable by JS only (skip tab)&lt;/div&gt;
+
+&lt;!-- Skip navigation link (jump to main content) --&gt;
+&lt;a href="#main-content" class="skip-link"&gt;Skip to main content&lt;/a&gt;
+
+&lt;!-- Always show focus outlines — never do this: --&gt;
+/* BAD */
+* { outline: none; }
+
+/* GOOD — custom visible focus style */
+button:focus-visible {
+  outline: 3px solid #00ff88;
+  outline-offset: 4px;
+}
+
+&lt;!-- Manage focus programmatically --&gt;
+&lt;script&gt;
+  document.getElementById('modal').focus();
+  document.getElementById('closeBtn').addEventListener('click', () =&gt; {
+    document.getElementById('openBtn').focus();  // Return focus
+  });
+&lt;/script&gt;</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Take your portfolio or booking form. Run it through the WAVE accessibility checker (wave.webaim.org). Fix all errors. Add aria-label to all icon-only buttons. Add a skip-to-main-content link at the top. Make sure all form inputs have proper &lt;label&gt; elements. Test navigating the entire page using only the keyboard (Tab, Enter, Space).</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What does ARIA stand for?', options: ['Accessible Rich Internet Applications', 'Automatic Resource Interaction API', 'Advanced Rendering and Interface Architecture', 'Application Rendering Integration API'], correct: 0 },
+      { question: 'What does aria-label do?', options: ['Adds a visible text label', 'Provides a text description for screen readers when no visible label exists', 'Links to a help page', 'Labels a CSS class'], correct: 1 },
+      { question: 'What value of tabindex makes an element focusable only via JavaScript (skipped by Tab)?', options: ['tabindex="0"', 'tabindex="1"', 'tabindex="-1"', 'tabindex="skip"'], correct: 2 },
+      { question: 'What is a "skip navigation" link used for?', options: ['To skip loading slow images', 'To allow keyboard users to jump past the navbar to main content', 'To skip page animations', 'To bypass form validation'], correct: 1 },
+      { question: 'What does aria-live="polite" do?', options: ['Makes the page speak immediately on load', 'Announces dynamic content changes to screen readers after the user finishes their current task', 'Hides the element from visual users', 'Sets animation speed to polite/slow'], correct: 1 },
+      { question: 'Why should you never use * { outline: none; } in CSS?', options: ['It slows down the browser', 'It removes focus indicators, making keyboard navigation impossible for many users', 'It breaks CSS specificity', 'It is deprecated in CSS3'], correct: 1 },
+      { question: 'What does aria-hidden="true" do?', options: ['Makes the element invisible visually', 'Hides the element from screen readers while keeping it visible', 'Removes the element from the DOM', 'Disables all click events on the element'], correct: 1 },
+      { question: 'What WCAG guideline level is typically required for legal compliance?', options: ['Level A only', 'Level AA', 'Level AAA', 'There are no legal requirements'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/1A6SrPwmGpg'
+  ),
+
+  // ── Lesson 9 ──
+  lesson(
+    '9. SEO Fundamentals: HTML That Search Engines Love',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-orange-500/10 to-red-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-orange-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>How search engines crawl and index HTML</li>
+          <li>Meta tags that actually matter</li>
+          <li>Open Graph tags for social sharing</li>
+          <li>Structured data with JSON-LD</li>
+          <li>Performance and Core Web Vitals basics</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔍 Meta Tags That Matter</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;head&gt;
+  &lt;!-- Character encoding — always first --&gt;
+  &lt;meta charset="UTF-8"&gt;
+
+  &lt;!-- Viewport — critical for mobile (responsive design) --&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+
+  &lt;!-- Page title: most important SEO element. 50-60 chars ideal --&gt;
+  &lt;title&gt;Book Waste Pickup in Accra | WasteGo Ghana&lt;/title&gt;
+
+  &lt;!-- Meta description: shown in search results. 150-160 chars --&gt;
+  &lt;meta name="description" content="WasteGo connects you with tricycle waste collectors in Accra, Kumasi, and Tema. Book a pickup in 30 seconds. Serving 50,000+ households across Ghana."&gt;
+
+  &lt;!-- Robots --&gt;
+  &lt;meta name="robots" content="index, follow"&gt;  &lt;!-- default --&gt;
+  &lt;meta name="robots" content="noindex, nofollow"&gt;  &lt;!-- admin pages --&gt;
+
+  &lt;!-- Canonical URL (prevents duplicate content) --&gt;
+  &lt;link rel="canonical" href="https://wastego.gh/book"&gt;
+
+  &lt;!-- Favicon --&gt;
+  &lt;link rel="icon" type="image/png" href="/icons/favicon.png"&gt;
+  &lt;link rel="apple-touch-icon" href="/icons/apple-icon-180.png"&gt;
+
+  &lt;!-- Open Graph (Facebook, WhatsApp, LinkedIn previews) --&gt;
+  &lt;meta property="og:title" content="WasteGo — Waste Collection Made Easy"&gt;
+  &lt;meta property="og:description" content="Book a waste pickup in Accra in 30 seconds."&gt;
+  &lt;meta property="og:image" content="https://wastego.gh/og-image.jpg"&gt;
+  &lt;meta property="og:url" content="https://wastego.gh"&gt;
+  &lt;meta property="og:type" content="website"&gt;
+
+  &lt;!-- Twitter/X Cards --&gt;
+  &lt;meta name="twitter:card" content="summary_large_image"&gt;
+  &lt;meta name="twitter:title" content="WasteGo — Waste Collection Made Easy"&gt;
+  &lt;meta name="twitter:image" content="https://wastego.gh/og-image.jpg"&gt;
+
+  &lt;!-- PWA Manifest --&gt;
+  &lt;link rel="manifest" href="/manifest.json"&gt;
+  &lt;meta name="theme-color" content="#00ff88"&gt;
+&lt;/head&gt;</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📊 Structured Data (JSON-LD)</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;script type="application/ld+json"&gt;
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "WasteGo Ghana",
+  "description": "On-demand waste collection in Ghana",
+  "url": "https://wastego.gh",
+  "telephone": "+233244000000",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Accra",
+    "addressCountry": "GH"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 5.6037,
+    "longitude": -0.1870
+  },
+  "openingHours": "Mo-Fr 06:00-20:00",
+  "priceRange": "GHS 5-50"
+}
+&lt;/script&gt;</code></pre>
+        </div>
+        <p class="text-gray-300 mt-3">Structured data gives Google rich result features — star ratings, address panels, FAQ dropdowns in search results. It's free SEO juice.</p>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Add a complete &lt;head&gt; section to your portfolio with: a keyword-rich title, meta description, viewport tag, canonical URL, Open Graph tags with a real OG image URL, Twitter card tags, a favicon link, and a JSON-LD schema for "Person" with your name, url, and job title. Test the OG tags at opengraph.xyz.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is the ideal character length for a page <title> tag for SEO?', options: ['20-30 characters', '50-60 characters', '100-120 characters', 'No limit'], correct: 1 },
+      { question: 'What does the viewport meta tag do?', options: ['Sets the browser window size', 'Controls how the page scales on mobile devices', 'Loads different CSS for mobile', 'Defines the page resolution'], correct: 1 },
+      { question: 'What are Open Graph meta tags used for?', options: ['Google search ranking directly', 'Controlling how pages appear when shared on social media', 'Setting page permissions', 'Defining page animations'], correct: 1 },
+      { question: 'What does a canonical URL tag prevent?', options: ['Duplicate content penalties from multiple URLs serving the same content', 'Broken links', 'Slow page loads', 'Cookie tracking'], correct: 0 },
+      { question: 'What is JSON-LD used for in HTML?', options: ['Styling pages with JSON data', 'Providing structured data about a page to search engines for rich results', 'Loading JavaScript modules', 'Configuring server responses'], correct: 1 },
+      { question: 'What meta robots value prevents a page from appearing in search results?', options: ['robots: hide', 'noindex, nofollow', 'private: true', 'crawl: no'], correct: 1 },
+      { question: 'What does the theme-color meta tag do?', options: ['Changes the page background', 'Sets the browser UI color on mobile (address bar, task switcher)', 'Applies a color theme to all elements', 'Sets a brand color variable'], correct: 1 },
+      { question: 'Which element is most important for on-page SEO?', options: ['<meta name="keywords">', '<title>', '<h6>', '<meta name="author">'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/qPn0klJ0bao'
+  ),
+
+  // ── Lesson 10 ──
+  lesson(
+    '10. Final HTML Project: Build a Full Portfolio Website',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-orange-500/10 to-red-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-orange-400 mb-2">🏆 Final Project Brief</h2>
+        <p class="text-gray-300">You've learned everything. Now you will build a complete, production-quality portfolio website from scratch — applying every concept from this course.</p>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📋 Full Requirements Checklist</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-black/60 p-4 rounded-lg">
+            <p class="text-orange-400 font-semibold mb-2">Structure</p>
+            <ul class="text-gray-300 text-sm space-y-1 list-disc list-inside">
+              <li>Valid HTML5 boilerplate with all meta tags</li>
+              <li>Full SEO head (title, description, OG tags, JSON-LD)</li>
+              <li>Semantic layout: header, nav, main, sections, aside, footer</li>
+              <li>Skip-to-content link for keyboard users</li>
+            </ul>
+          </div>
+          <div class="bg-black/60 p-4 rounded-lg">
+            <p class="text-purple-400 font-semibold mb-2">Content Sections</p>
+            <ul class="text-gray-300 text-sm space-y-1 list-disc list-inside">
+              <li>Hero section with your name, role, and CTA</li>
+              <li>About section with a &lt;figure&gt; photo and bio</li>
+              <li>Skills section using a definition list</li>
+              <li>Projects section with 3+ project cards (image, title, desc, links)</li>
+              <li>Timeline using ordered list</li>
+              <li>FAQ using &lt;details&gt;/&lt;summary&gt;</li>
+              <li>Contact form (all inputs, validation, file upload)</li>
+            </ul>
+          </div>
+          <div class="bg-black/60 p-4 rounded-lg">
+            <p class="text-cyan-400 font-semibold mb-2">Technical Requirements</p>
+            <ul class="text-gray-300 text-sm space-y-1 list-disc list-inside">
+              <li>All images: proper alt text, width/height, figure/figcaption</li>
+              <li>Responsive images with srcset for hero image</li>
+              <li>Embedded video (YouTube iframe) in projects</li>
+              <li>Navigation with anchor links to all sections</li>
+              <li>mailto and tel links in contact section</li>
+              <li>localStorage: remember visitor's name</li>
+              <li>Geolocation API: display visitor's city</li>
+            </ul>
+          </div>
+          <div class="bg-black/60 p-4 rounded-lg">
+            <p class="text-green-400 font-semibold mb-2">Accessibility & Validation</p>
+            <ul class="text-gray-300 text-sm space-y-1 list-disc list-inside">
+              <li>WAVE checker: zero errors</li>
+              <li>W3C validator: valid HTML</li>
+              <li>All form labels properly linked</li>
+              <li>ARIA labels on icon-only buttons</li>
+              <li>Full keyboard navigation working</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🚀 Deployment</h2>
+        <ol class="list-decimal list-inside text-gray-300 space-y-2">
+          <li>Create a GitHub account and a new repository called <code class="text-yellow-400">portfolio</code></li>
+          <li>Upload all your files</li>
+          <li>Go to Settings → Pages → Source: main branch</li>
+          <li>Your site is live at <code class="text-yellow-400">yourusername.github.io/portfolio</code></li>
+          <li>Share the live URL — that's your first deployed website!</li>
+        </ol>
+      </div>
+
+      <div class="bg-yellow-500/10 p-4 rounded-lg">
+        <p class="text-yellow-300">🎓 <strong>You have mastered HTML.</strong> Every tag, every attribute, accessibility, SEO, and browser APIs. You are now ready for CSS — where your pages go from structured to stunning.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is the recommended first step when creating a new HTML project?', options: ['Start writing content', 'Set up the HTML5 boilerplate with proper meta tags', 'Link the CSS file', 'Open the browser'], correct: 1 },
+      { question: 'Why should images always have explicit width and height attributes?', options: ['For SEO keywords', 'To prevent layout shift (CLS) while the image loads', 'To make images resize automatically', 'It is a HTML5 requirement'], correct: 1 },
+      { question: 'Which semantic tag best represents an individual project card?', options: ['<div class="card">', '<section>', '<article>', '<card>'], correct: 2 },
+      { question: 'What tool can you use to host a portfolio for free?', options: ['Only paid hosting works', 'GitHub Pages', 'You need a server', 'Only Netlify'], correct: 1 },
+      { question: 'What is the purpose of a skip-to-content link?', options: ['Skips loading slow content', 'Allows keyboard users to bypass the navigation menu', 'Skips to the last viewed section', 'Loads the page faster'], correct: 1 },
+      { question: 'Why should you validate your HTML with the W3C validator?', options: ['Google requires it', 'It catches structural errors that cause inconsistent browser rendering', 'It automatically fixes bugs', 'It compresses your HTML'], correct: 1 },
+      { question: 'What does the WAVE tool check?', options: ['Page speed', 'Web accessibility errors', 'HTML validation', 'CSS errors'], correct: 1 },
+      { question: 'After completing this HTML course, what is the best next step?', options: ['Learn PHP immediately', 'Learn CSS to style your HTML pages', 'Skip to React', 'Learn SQL first'], correct: 1 }
+    ],
+    100,
+    'https://www.youtube.com/embed/mJgBOIoGihA'
+  )
+];
+
+// ─────────────────────────────────────────────
+//  CSS LESSONS
+// ─────────────────────────────────────────────
+const cssLessons = [
+  lesson(
+    '1. CSS Fundamentals: Selectors, Properties & The Cascade',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-purple-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>What CSS is and how it connects to HTML</li>
+          <li>Inline, internal, and external stylesheets</li>
+          <li>Element, class, ID, and attribute selectors</li>
+          <li>Specificity — why one rule beats another</li>
+          <li>The cascade, inheritance, and the C in CSS</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🎨 Three Ways to Add CSS</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;!-- 1. Inline (avoid — hard to maintain) --&gt;
+&lt;p style="color: red; font-size: 18px;"&gt;Red text&lt;/p&gt;
+
+&lt;!-- 2. Internal (OK for demos, not for real projects) --&gt;
+&lt;style&gt;
+  p { color: blue; }
+&lt;/style&gt;
+
+&lt;!-- 3. External (always use this) --&gt;
+&lt;link rel="stylesheet" href="styles.css"&gt;
+
+/* styles.css */
+p {
+  color: #333;
+  font-size: 1rem;
+  line-height: 1.6;
+}</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🎯 Selectors — Targeting HTML Elements</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>/* Element selector */
+h1 { color: orange; }
+
+/* Class selector (reusable) */
+.btn { padding: 12px 24px; border-radius: 8px; }
+.btn-primary { background: #00ff88; }
+
+/* ID selector (unique per page) */
+#hero { background: #0a0a0a; min-height: 100vh; }
+
+/* Descendant combinator */
+nav a { text-decoration: none; }  /* any <a> inside <nav> */
+
+/* Child combinator */
+ul > li { margin-bottom: 8px; }  /* direct children only */
+
+/* Adjacent sibling */
+h2 + p { font-size: 1.2rem; }  /* <p> immediately after <h2> */
+
+/* Attribute selectors */
+input[type="email"] { border-color: blue; }
+a[href^="https"] { color: green; }   /* href starts with https */
+a[href$=".pdf"] { color: red; }     /* href ends with .pdf */
+a[href*="wastego"] { font-weight: bold; } /* href contains wastego */
+
+/* Pseudo-classes */
+a:hover { color: #00ff88; }
+input:focus { outline: 2px solid #00ff88; }
+li:first-child { font-weight: bold; }
+li:last-child { border-bottom: none; }
+li:nth-child(2n) { background: #1a1a1a; }   /* even rows */
+p:not(.intro) { color: #666; }              /* not .intro */
+
+/* Pseudo-elements */
+p::first-line { font-weight: bold; }
+p::before { content: "→ "; color: orange; }
+p::after  { content: " ←"; color: orange; }
+::selection { background: #00ff88; color: black; }
+
+/* Universal selector */
+* { box-sizing: border-box; margin: 0; padding: 0; }</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">⚖️ Specificity — Who Wins?</h2>
+        <p class="text-gray-300 mb-3">When two rules target the same element, specificity determines which wins. Think of it as a 4-part score: (Inline, IDs, Classes, Elements)</p>
+        <div class="bg-black/60 rounded-xl p-4 overflow-x-auto">
+          <pre class="text-green-400 text-sm"><code>p              →  (0, 0, 0, 1)  — lowest
+.text          →  (0, 0, 1, 0)
+p.text         →  (0, 0, 1, 1)
+#main          →  (0, 1, 0, 0)
+#main .text    →  (0, 1, 1, 0)
+style=""       →  (1, 0, 0, 0)  — highest
+!important     →  Nuclear option — avoid it</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Create a stylesheet and style a page with: element selectors for all headings, class selectors for buttons and cards, ID selector for the hero section. Use at least 3 pseudo-classes (:hover, :focus, :nth-child) and one pseudo-element (::before). Calculate the specificity of 5 of your rules and write it in a CSS comment.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'Which method of applying CSS is best for production projects?', options: ['Inline styles', 'Internal <style> tag', 'External stylesheet linked with <link>', 'JavaScript-injected styles'], correct: 2 },
+      { question: 'What is CSS specificity?', options: ['The order rules appear in the file', 'A scoring system that determines which CSS rule applies when multiple rules target the same element', 'How fast CSS is applied', 'The number of properties in a rule'], correct: 1 },
+      { question: 'Which selector has the highest specificity?', options: ['Element selector', 'Class selector', 'ID selector', 'Inline style'], correct: 3 },
+      { question: 'What does the > combinator select?', options: ['All descendants', 'Only direct children', 'Adjacent siblings', 'All siblings'], correct: 1 },
+      { question: 'What does the :nth-child(2n) pseudo-class select?', options: ['Every second element', 'Every even-numbered element', 'The second child only', 'Children with class "2n"'], correct: 1 },
+      { question: 'What is the purpose of * { box-sizing: border-box; }?', options: ['Makes all elements square', 'Includes padding and border in the element\'s total width/height calculation', 'Removes all margins', 'Sets default fonts'], correct: 1 },
+      { question: 'What does the ::before pseudo-element do?', options: ['Selects the element before in the DOM', 'Inserts content before the element\'s content (without adding HTML)', 'Styles the first character', 'Adds a hover effect'], correct: 1 },
+      { question: 'What does !important do in CSS and why should you avoid it?', options: ['Makes the rule load faster', 'Overrides all other rules regardless of specificity, making debugging very difficult', 'Marks a rule as optional', 'Applies the rule to all elements'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/1PnVor36_40'
+  ),
+
+  lesson(
+    '2. The Box Model: Margin, Border, Padding & Display',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-purple-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>The CSS box model — content, padding, border, margin</li>
+          <li>box-sizing: border-box and why it's essential</li>
+          <li>Display values: block, inline, inline-block, none</li>
+          <li>Shorthand properties for efficient CSS</li>
+          <li>Margin collapse — the most confusing CSS behaviour</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📦 The Box Model</h2>
+        <p class="text-gray-300 mb-3">Every single element on a page is a rectangle. Every rectangle has four layers:</p>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>.card {
+  /* CONTENT — width/height applies here */
+  width: 300px;
+  height: 200px;
+
+  /* PADDING — space INSIDE the border (part of the element) */
+  padding-top: 16px;
+  padding-right: 24px;
+  padding-bottom: 16px;
+  padding-left: 24px;
+  padding: 16px 24px;            /* shorthand: top/bottom left/right */
+  padding: 16px 24px 12px 20px; /* top right bottom left (clockwise) */
+
+  /* BORDER — the element's edge */
+  border-width: 2px;
+  border-style: solid;           /* solid, dashed, dotted, double, none */
+  border-color: #00ff88;
+  border: 2px solid #00ff88;     /* shorthand */
+  border-radius: 12px;           /* rounded corners */
+  border-radius: 50%;            /* perfect circle (when width = height) */
+
+  /* MARGIN — space OUTSIDE the border (between elements) */
+  margin: 24px auto;             /* center horizontally + 24px top/bottom */
+
+  /* CRITICAL: border-box makes width/height include padding and border */
+  box-sizing: border-box;
+  /* Without it: final width = 300 + 48 (padding) + 4 (border) = 352px */
+  /* With it: final width = 300px exactly */
+}
+
+/* Apply border-box to everything — the golden rule */
+*, *::before, *::after {
+  box-sizing: border-box;
+}</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🖥️ Display Property</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>display: block;        /* Full width, starts on new line: div, p, h1 */
+display: inline;       /* Flows in text, width/height ignored: span, a, em */
+display: inline-block; /* Flows in text BUT accepts width/height and margin */
+display: none;         /* Completely removed from layout (not just invisible) */
+display: flex;         /* Flexbox container (next lesson) */
+display: grid;         /* Grid container */
+
+/* visibility: hidden vs display: none */
+visibility: hidden;  /* Invisible but STILL takes up space */
+display: none;       /* Invisible AND takes up NO space */
+
+/* opacity: 0 */
+opacity: 0;          /* Invisible but takes space AND still captures clicks */</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🤯 Margin Collapse</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>/* Two vertical margins touching collapse into the LARGER of the two */
+.paragraph-1 { margin-bottom: 32px; }
+.paragraph-2 { margin-top: 20px; }
+/* Gap between them = 32px (not 52px) — this is margin collapse */
+
+/* Margin collapse does NOT happen with: */
+/* - Flexbox or Grid containers */
+/* - Elements with padding or border between them */
+/* - Horizontal margins */</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Build a "Product Card" component with exact dimensions. The card should be 320px wide, have 24px padding, a 1px border, and 16px border-radius. Center it on the page with auto margins. Inside: an image (full width), title (h3), description (p), and a button. Use the browser DevTools to inspect the box model of each element.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What are the four layers of the CSS box model from inside to outside?', options: ['Content, margin, border, padding', 'Content, padding, border, margin', 'Padding, content, border, margin', 'Border, padding, content, margin'], correct: 1 },
+      { question: 'What does box-sizing: border-box do?', options: ['Adds a border to all boxes', 'Makes width and height include padding and border in the calculation', 'Removes the default padding and margin', 'Makes all elements the same size'], correct: 1 },
+      { question: 'What is the shorthand for padding: 16px top/bottom and 24px left/right?', options: ['padding: 24px 16px', 'padding: 16px 24px', 'padding: 16 24', 'padding: top 16px side 24px'], correct: 1 },
+      { question: 'What is the difference between display: none and visibility: hidden?', options: ['They are identical', 'display:none removes the element from layout; visibility:hidden hides it but keeps its space', 'visibility:hidden is for screen readers', 'display:none is for images only'], correct: 1 },
+      { question: 'How do you center a block element horizontally with CSS?', options: ['text-align: center', 'margin: auto', 'margin-left: auto; margin-right: auto (with a set width)', 'align: center'], correct: 2 },
+      { question: 'What is margin collapse?', options: ['When margins get deleted', 'When adjacent vertical margins combine to become the size of the larger margin', 'When margin becomes negative', 'When padding overrides margin'], correct: 1 },
+      { question: 'What display value allows an element to sit inline but still respect width and height?', options: ['block', 'inline', 'inline-block', 'flex'], correct: 2 },
+      { question: 'What does border-radius: 50% create when applied to a square element?', options: ['A rounded rectangle', 'A perfect circle', 'An oval', 'A triangle'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/rIO5326FgPE'
+  ),
+
+  lesson(
+    '3. Colors, Typography & CSS Variables',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-purple-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>All CSS color formats: named, hex, rgb, hsl, oklch</li>
+          <li>Typography: font families, sizes, weights, line-height</li>
+          <li>Loading Google Fonts properly</li>
+          <li>CSS Custom Properties (variables) for design systems</li>
+          <li>Building a complete color and type theme</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🎨 Color Formats</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>/* Named colors (limited, avoid for brand colors) */
+color: tomato;
+color: steelblue;
+
+/* Hex (most common) */
+color: #ff6b35;          /* 6-digit: #RRGGBB */
+color: #f63;             /* 3-digit shorthand for #ff6633 */
+color: #ff6b3599;        /* 8-digit: #RRGGBBAA (last 2 = alpha) */
+
+/* RGB and RGBA */
+color: rgb(255, 107, 53);
+color: rgba(255, 107, 53, 0.8);  /* 0.0 transparent → 1.0 opaque */
+
+/* HSL (most intuitive for designers: Hue, Saturation, Lightness) */
+color: hsl(16, 100%, 60%);       /* hue: 0-360°, sat: 0-100%, light: 0-100% */
+color: hsl(16 100% 60% / 0.8);  /* modern syntax with alpha */
+
+/* OKLCH (most modern, perceptually uniform — great for design tokens) */
+color: oklch(70% 0.2 30);        /* lightness, chroma, hue */
+
+/* CSS Color Level 4 — mixing colors */
+color: color-mix(in oklch, #ff6b35 60%, white);</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">✍️ Typography</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>/* Load Google Fonts — always in <head> BEFORE your stylesheet */
+/* &lt;link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet"&gt; */
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;        /* base: browser default is 16px */
+  font-weight: 400;       /* 100-900, or: normal=400, bold=700 */
+  line-height: 1.6;       /* unitless! 1.6 × font-size. Best for readability */
+  color: #e0e0e0;
+  letter-spacing: 0.01em;
+}
+
+h1, h2, h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  line-height: 1.2;       /* tighter for headings */
+  letter-spacing: -0.02em; /* slight negative tracking looks premium */
+}
+
+/* Fluid typography — scales with viewport */
+h1 {
+  font-size: clamp(2rem, 5vw, 4rem);
+  /* minimum 32px, scales with vw, maximum 64px */
+}
+
+/* Font size units */
+font-size: 16px;    /* absolute */
+font-size: 1rem;    /* relative to root (html) font size — prefer this */
+font-size: 1.2em;   /* relative to parent — compounds, use carefully */
+
+/* Text properties */
+text-align: center | left | right | justify;
+text-transform: uppercase | lowercase | capitalize;
+text-decoration: underline | none | line-through;
+text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+word-spacing: 0.1em;
+white-space: nowrap;      /* prevent text wrapping */
+overflow: hidden;
+text-overflow: ellipsis;  /* add "..." when text overflows */</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔧 CSS Custom Properties (Variables)</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>/* Define variables on :root for global access */
+:root {
+  /* Colors */
+  --color-primary: #00ff88;
+  --color-primary-dark: oklch(from var(--color-primary) calc(l - 0.2) c h);
+  --color-bg: #0a0a0a;
+  --color-surface: #141414;
+  --color-text: #e0e0e0;
+  --color-muted: #666;
+  --color-danger: #ff4d4f;
+  --color-success: #00ff88;
+
+  /* Typography */
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-glow: 0 0 24px rgba(0, 255, 136, 0.3);
+
+  /* Transitions */
+  --transition: 200ms ease;
+}
+
+/* Using variables */
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-bg);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-full);
+  font-family: var(--font-heading);
+  transition: all var(--transition);
+  box-shadow: var(--shadow-glow);
+}
+
+/* Dark/Light theme toggle */
+[data-theme="light"] {
+  --color-bg: #ffffff;
+  --color-text: #1a1a1a;
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Create a complete design system in CSS variables. Define: 10 color tokens (primary, secondary, backgrounds, text, borders, states), 6 typography tokens, 8 spacing tokens. Apply them to build a styled card component and a navigation bar. Add a toggle button that switches between dark and light themes by changing a data-theme attribute on the body.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'Which color format is most useful for creating design systems with easy lightness control?', options: ['Hex', 'RGB', 'HSL or OKLCH', 'Named colors'], correct: 2 },
+      { question: 'What unit should you prefer for font sizes in CSS and why?', options: ['px, for pixel-perfect control', 'rem, as it scales with the user\'s browser font preference', 'em, as it is always relative to body', 'vw, for responsive text'], correct: 1 },
+      { question: 'What line-height value is generally recommended for body text readability?', options: ['1.0', '1.6', '2.5', '12px'], correct: 1 },
+      { question: 'Where should CSS Custom Properties (variables) be defined for global scope?', options: ['Inside .body {}', 'Inside :root {}', 'Inside * {}', 'Inside html {}'], correct: 1 },
+      { question: 'What does clamp(2rem, 5vw, 4rem) do for font-size?', options: ['Sets font-size to 5vw always', 'Sets a minimum of 2rem, scales with viewport, maximum of 4rem', 'Clamps the element width', 'Applies to clamp() at 5% viewport'], correct: 1 },
+      { question: 'How do you use a CSS variable?', options: ['$(--variable-name)', 'var(--variable-name)', '@variable-name', '#variable-name'], correct: 1 },
+      { question: 'What does text-overflow: ellipsis do?', options: ['Removes overflow text', 'Adds ... when text overflows its container', 'Wraps text to next line', 'Centers overflow text'], correct: 1 },
+      { question: 'What is the advantage of using unitless line-height (e.g. 1.6 vs 1.6em)?', options: ['It is faster to compute', 'It scales proportionally with the element\'s font-size without inheritance issues', 'It works in more browsers', 'It is the only valid syntax'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/OXGznpKZ_sA'
+  ),
+
+  lesson(
+    '4. Flexbox: One-Dimensional Layouts',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-purple-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Flex container vs flex items</li>
+          <li>flex-direction, flex-wrap, flex-flow</li>
+          <li>justify-content — main axis alignment</li>
+          <li>align-items and align-content — cross axis alignment</li>
+          <li>flex-grow, flex-shrink, flex-basis on items</li>
+          <li>Real-world patterns: navbar, card row, centering anything</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🧩 Flexbox Complete Reference</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>/* ── CONTAINER PROPERTIES ── */
+.container {
+  display: flex;           /* activate flexbox */
+  display: inline-flex;    /* inline flex container */
+
+  /* Direction of the main axis */
+  flex-direction: row;            /* → default, left to right */
+  flex-direction: row-reverse;    /* ← right to left */
+  flex-direction: column;         /* ↓ top to bottom */
+  flex-direction: column-reverse; /* ↑ bottom to top */
+
+  /* Wrapping */
+  flex-wrap: nowrap;    /* default — all on one line, may overflow */
+  flex-wrap: wrap;      /* items wrap to new lines */
+  flex-wrap: wrap-reverse;
+
+  /* Shorthand */
+  flex-flow: row wrap;
+
+  /* MAIN AXIS alignment (justify) */
+  justify-content: flex-start;    /* pack to start */
+  justify-content: flex-end;      /* pack to end */
+  justify-content: center;        /* center all items */
+  justify-content: space-between; /* equal space BETWEEN items */
+  justify-content: space-around;  /* equal space AROUND items */
+  justify-content: space-evenly;  /* equal space between AND at edges */
+
+  /* CROSS AXIS alignment (align) */
+  align-items: stretch;     /* default — items fill container height */
+  align-items: flex-start;  /* align to top of cross axis */
+  align-items: flex-end;    /* align to bottom */
+  align-items: center;      /* vertically center */
+  align-items: baseline;    /* align by text baseline */
+
+  /* Multi-line cross-axis alignment */
+  align-content: flex-start | flex-end | center | space-between | space-around | stretch;
+
+  gap: 16px;              /* gap between flex items */
+  gap: 16px 24px;         /* row-gap column-gap */
+}
+
+/* ── ITEM PROPERTIES ── */
+.item {
+  /* flex-grow: how much does this item grow relative to siblings? */
+  flex-grow: 0;   /* default — don't grow */
+  flex-grow: 1;   /* grow to fill available space */
+  flex-grow: 2;   /* grow twice as much as flex-grow: 1 siblings */
+
+  /* flex-shrink: how much can this item shrink? */
+  flex-shrink: 1; /* default — can shrink */
+  flex-shrink: 0; /* never shrink (useful for fixed-size items) */
+
+  /* flex-basis: initial size before grow/shrink */
+  flex-basis: auto;    /* use content size */
+  flex-basis: 200px;
+  flex-basis: 33.333%;
+
+  /* Shorthand: grow shrink basis */
+  flex: 0 1 auto;      /* default */
+  flex: 1;             /* flex: 1 1 0 — grow, shrink, start at 0 */
+  flex: 1 0 200px;     /* grow, don't shrink, start at 200px */
+
+  /* Override alignment for this specific item */
+  align-self: center;
+  align-self: flex-start;
+
+  /* Control display order (visual only, not DOM) */
+  order: 2;  /* default is 0 */
+  order: -1; /* move to front */
+}</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🌟 Real Patterns</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>/* Perfect centering — any element in a container */
+.center-anything {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Full-height centering */
+.full-page-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Navigation bar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 32px;
+}
+
+/* Card row — equal-width cards that wrap */
+.card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+.card { flex: 1 1 280px; }  /* min 280px, grow equally */
+
+/* Holy Grail layout (header, sidebar, main, sidebar, footer) */
+.layout { display: flex; flex-direction: column; min-height: 100vh; }
+.layout-body { display: flex; flex: 1; }
+.sidebar { flex: 0 0 250px; }   /* fixed width, never shrink */
+.main { flex: 1; }              /* fill remaining space */
+footer { margin-top: auto; }   /* push to bottom */</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Build these 4 layouts using only Flexbox: (1) A sticky navbar with logo left and nav links right. (2) A hero section with centered text and two buttons side-by-side. (3) A row of 3 equal cards that wrap on small screens. (4) A sidebar + main content layout where sidebar is fixed at 250px and content fills the rest. No CSS Grid allowed — Flexbox only.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What CSS property enables Flexbox on a container?', options: ['flex: 1', 'display: flex', 'flex-layout: true', 'position: flex'], correct: 1 },
+      { question: 'What does justify-content control in a flex container?', options: ['Cross-axis alignment', 'Main-axis alignment of items', 'The direction of flex', 'Individual item alignment'], correct: 1 },
+      { question: 'How do you perfectly center an element both horizontally and vertically?', options: ['margin: auto', 'display:flex; justify-content:center; align-items:center', 'position:absolute; top:50%; left:50%', 'text-align:center; vertical-align:middle'], correct: 1 },
+      { question: 'What does flex: 1 mean?', options: ['The item is 1px wide', 'flex-grow:1, flex-shrink:1, flex-basis:0 — the item grows to fill space', 'The item is at position 1', 'flex-direction: 1'], correct: 1 },
+      { question: 'What does flex-wrap: wrap do?', options: ['Adds text wrapping to flex items', 'Allows flex items to wrap onto multiple lines when they overflow', 'Wraps the container in a border', 'Enables word wrapping inside items'], correct: 1 },
+      { question: 'What does align-self: center do on a flex item?', options: ['Centers the item on the main axis', 'Overrides align-items for that specific item, centering it on the cross axis', 'Centers the text inside the item', 'Same as justify-self'], correct: 1 },
+      { question: 'What does flex-shrink: 0 do?', options: ['Prevents the item from growing', 'Prevents the item from shrinking below its flex-basis', 'Sets item order to 0', 'Removes the item from flex flow'], correct: 1 },
+      { question: 'What property controls the gap between flex items?', options: ['margin', 'padding', 'gap', 'spacing'], correct: 2 }
+    ],
+    50,
+    'https://www.youtube.com/embed/u044iM9xsWU'
+  ),
+
+  lesson(
+    '5. CSS Grid: Two-Dimensional Layouts',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-purple-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>grid-template-columns and grid-template-rows</li>
+          <li>The fr unit and auto-fill/auto-fit</li>
+          <li>grid-column and grid-row for item placement</li>
+          <li>grid-template-areas for named layouts</li>
+          <li>Responsive grids without media queries</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔲 CSS Grid Complete Reference</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>/* ── CONTAINER ── */
+.grid {
+  display: grid;
+
+  /* Define columns */
+  grid-template-columns: 200px 1fr 2fr;      /* 3 columns: fixed, 1 fraction, 2 fractions */
+  grid-template-columns: repeat(3, 1fr);     /* 3 equal columns */
+  grid-template-columns: repeat(4, minmax(200px, 1fr)); /* min 200px, max equal */
+
+  /* Responsive — no media queries needed! */
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  /* auto-fill: creates as many tracks as fit; fills empty tracks */
+  /* auto-fit: same but collapses empty tracks */
+
+  /* Define rows */
+  grid-template-rows: 80px 1fr auto;
+
+  /* Gaps */
+  column-gap: 24px;
+  row-gap: 32px;
+  gap: 32px 24px;   /* row-gap column-gap */
+
+  /* Alignment of all items */
+  justify-items: start | end | center | stretch;   /* in their cell */
+  align-items: start | end | center | stretch;
+  place-items: center;   /* shorthand: align-items justify-items */
+
+  /* Alignment of the grid inside the container */
+  justify-content: start | end | center | space-between;
+  align-content: start | end | center | space-between;
+}
+
+/* ── ITEMS ── */
+.item {
+  /* Column span: grid-column: start / end (1-indexed, or span N) */
+  grid-column: 1 / 3;       /* from column line 1 to 3 (spans 2 columns) */
+  grid-column: 1 / -1;      /* from first to last line (full width) */
+  grid-column: span 2;      /* span 2 columns from current position */
+  grid-column: 2 / span 3;  /* start at 2, span 3 */
+
+  grid-row: 1 / 3;          /* span 2 rows */
+
+  /* Shorthand */
+  grid-area: 1 / 1 / 3 / 4; /* row-start / col-start / row-end / col-end */
+
+  /* Override alignment for this item */
+  justify-self: center;
+  align-self: end;
+  place-self: center end;
+}
+
+/* ── NAMED AREAS — the most readable approach ── */
+.page {
+  display: grid;
+  grid-template-areas:
+    "header header header"
+    "sidebar main    main"
+    "sidebar aside   aside"
+    "footer  footer  footer";
+  grid-template-columns: 250px 1fr 1fr;
+  grid-template-rows: 80px 1fr 200px 60px;
+  min-height: 100vh;
+  gap: 16px;
+}
+
+.page-header  { grid-area: header; }
+.page-sidebar { grid-area: sidebar; }
+.page-main    { grid-area: main; }
+.page-aside   { grid-area: aside; }
+.page-footer  { grid-area: footer; }</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Build these layouts: (1) A fully responsive image gallery: repeat(auto-fill, minmax(250px, 1fr)) — no media queries. (2) A magazine layout with a featured article that spans 2 columns and 2 rows, with 3 smaller articles beside and below it. (3) The WasteGo admin dashboard layout using grid-template-areas: header, sidebar, stats section, and main content table.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What does the fr unit in CSS Grid represent?', options: ['Frames per second', 'A fractional unit of the remaining available space', 'Font ratio', 'Fixed ratio'], correct: 1 },
+      { question: 'What does repeat(auto-fill, minmax(250px, 1fr)) do?', options: ['Creates exactly 4 columns', 'Creates as many columns as fit, each at least 250px, growing equally to fill space', 'Fills the grid with auto height rows', 'Repeats a pattern 250 times'], correct: 1 },
+      { question: 'What does grid-column: 1 / -1 do?', options: ['Spans from line 1 to the second-to-last line', 'Spans from the first to the last column line (full width)', 'Sets negative margin', 'Removes the item from the grid'], correct: 1 },
+      { question: 'What is the advantage of using grid-template-areas?', options: ['Better performance', 'Visual, readable ASCII-art style layout definition that names each area', 'It is required for grid to work', 'Automatically makes layouts responsive'], correct: 1 },
+      { question: 'What is the difference between auto-fill and auto-fit in repeat()?', options: ['They are identical', 'auto-fill preserves empty tracks; auto-fit collapses them so items stretch', 'auto-fit is for columns; auto-fill is for rows', 'auto-fill is deprecated'], correct: 1 },
+      { question: 'What does place-items: center do?', options: ['Centers the grid on the page', 'Sets both align-items and justify-items to center', 'Centers text in all grid cells', 'Places items at center of grid tracks only'], correct: 1 },
+      { question: 'When should you use CSS Grid over Flexbox?', options: ['Always use Grid, never Flexbox', 'Grid for two-dimensional layouts; Flexbox for one-dimensional (row or column)', 'Flexbox is always better', 'They cannot be used together'], correct: 1 },
+      { question: 'What does grid-row: span 2 do on a grid item?', options: ['Sets the item\'s height to 2rem', 'Makes the item span across 2 row tracks', 'Moves item to row 2', 'Creates 2 new rows'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/EiNiSFIPIQE'
+  ),
+
+  lesson(
+    '6. Responsive Design & Media Queries',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-purple-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Mobile-first design philosophy</li>
+          <li>Media queries: min-width, max-width, prefers-color-scheme</li>
+          <li>Responsive images and typography</li>
+          <li>Container queries — the future of responsive</li>
+          <li>Building fully responsive layouts from scratch</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📱 Mobile-First Approach</h2>
+        <p class="text-gray-300 mb-3">Write your base CSS for mobile. Then <em>add</em> complexity for larger screens. This produces smaller, cleaner stylesheets and better performance on mobile networks (which your Ghanaian users rely on heavily).</p>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>/* ── MOBILE FIRST ── */
+
+/* Base styles: mobile (no media query needed) */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;     /* single column */
+  gap: 16px;
+}
+
+.navbar {
+  flex-direction: column;
+  gap: 16px;
+}
+
+h1 { font-size: clamp(1.8rem, 5vw, 3.5rem); }
+
+/* ── MEDIA QUERIES ── */
+
+/* Tablet: 600px+ */
+@media (min-width: 600px) {
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .navbar { flex-direction: row; }
+}
+
+/* Desktop: 900px+ */
+@media (min-width: 900px) {
+  .card-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+}
+
+/* Large desktop: 1200px+ */
+@media (min-width: 1200px) {
+  .container { max-width: 1200px; margin: 0 auto; }
+}
+
+/* ── OTHER MEDIA FEATURES ── */
+
+/* Dark mode preference */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0a0a0a;
+    --color-text: #e0e0e0;
+  }
+}
+
+/* Reduced motion (respect user's system setting) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  .navbar, .sidebar, .ads { display: none; }
+  body { font-size: 12pt; color: black; }
+}
+
+/* High-resolution screens (retina) */
+@media (min-resolution: 2dppx) {
+  .logo { background-image: url('logo@2x.png'); }
+}
+
+/* ── CONTAINER QUERIES (modern) ── */
+.card-container {
+  container-type: inline-size;
+  container-name: card;
+}
+
+@container card (min-width: 400px) {
+  .card { flex-direction: row; }  /* Respond to CONTAINER size, not viewport */
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Take your portfolio site and make it fully responsive mobile-first. Start with single-column mobile layout. Add breakpoints at 600px (2 columns), 900px (3 columns). Make the navbar hamburger-menu on mobile (toggle with JavaScript). Add a prefers-color-scheme dark mode that inverts your color tokens. Test on Chrome DevTools mobile emulator for iPhone SE, Pixel 7, and iPad.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What does "mobile-first" CSS mean?', options: ['Building a separate mobile website', 'Writing base styles for mobile and using min-width queries to enhance for larger screens', 'Making the desktop version first then stripping features for mobile', 'Using only flexbox and no grid'], correct: 1 },
+      { question: 'What does @media (prefers-color-scheme: dark) detect?', options: ['If the website has a dark theme class', 'The user\'s OS-level dark mode preference', 'If the user is in a dark room', 'If the background is darker than 50% lightness'], correct: 1 },
+      { question: 'What is the viewport meta tag\'s role in responsive design?', options: ['It loads mobile CSS', 'It prevents the browser from zooming out to fit desktop content on mobile', 'It sets the maximum width', 'It enables touch events'], correct: 1 },
+      { question: 'What is the difference between max-width and min-width in media queries?', options: ['They are opposite: max-width targets screens UP TO that size; min-width targets FROM that size up', 'max-width is for images; min-width is for containers', 'They are identical', 'max-width is CSS, min-width is HTML'], correct: 0 },
+      { question: 'What does @media (prefers-reduced-motion: reduce) help with?', options: ['Reducing page file size', 'Disabling animations for users who have motion sensitivity settings enabled', 'Reducing CSS complexity', 'Preventing layout shifts'], correct: 1 },
+      { question: 'What is a Container Query and how does it differ from a media query?', options: ['They are identical', 'Container queries respond to the size of a parent container; media queries respond to the viewport', 'Container queries only work in Grid', 'Media queries are deprecated'], correct: 1 },
+      { question: 'What does max-width: 1200px; margin: 0 auto; on a .container achieve?', options: ['Hides content wider than 1200px', 'Limits content width and centers it horizontally on wide screens', 'Sets a minimum width', 'Applies only on mobile'], correct: 1 },
+      { question: 'What breakpoints are commonly used in mobile-first design?', options: ['100px, 500px, 1000px', '576px (mobile), 768px (tablet), 992px/1200px (desktop)', '320px, 640px, 960px only', 'Breakpoints are not needed in modern CSS'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/srvUrASNj0s'
+  ),
+
+  lesson(
+    '7. CSS Animations & Transitions',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-purple-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>CSS transitions for smooth state changes</li>
+          <li>@keyframes and animation properties</li>
+          <li>Timing functions and cubic-bezier curves</li>
+          <li>Transform: translate, rotate, scale, skew</li>
+          <li>Performance-safe animations (transform and opacity only)</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">⚡ Transitions</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>/* Transition: property duration timing-function delay */
+.btn {
+  background: #00ff88;
+  color: black;
+  transform: scale(1);
+  transition: background 200ms ease,
+              transform 200ms ease,
+              box-shadow 200ms ease;
+}
+
+.btn:hover {
+  background: #00cc6a;
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 255, 136, 0.4);
+}
+
+/* Transition all properties (less optimal but convenient) */
+.card { transition: all 300ms ease; }
+
+/* Timing functions */
+transition-timing-function: ease;         /* slow-fast-slow (default) */
+transition-timing-function: linear;       /* constant speed */
+transition-timing-function: ease-in;      /* starts slow */
+transition-timing-function: ease-out;     /* ends slow (feels natural) */
+transition-timing-function: ease-in-out;  /* slow both ends */
+transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1); /* spring bounce */</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🎬 @keyframes Animations</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>/* Define the animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%   { transform: scale(1);    box-shadow: 0 0 0   0 rgba(0,255,136,0.4); }
+  50%  { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(0,255,136,0); }
+  100% { transform: scale(1);    box-shadow: 0 0 0   0 rgba(0,255,136,0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  from { background-position: -200% center; }
+  to   { background-position:  200% center; }
+}
+
+/* Apply the animation */
+.hero-title {
+  animation-name: fadeIn;
+  animation-duration: 600ms;
+  animation-timing-function: ease-out;
+  animation-delay: 200ms;
+  animation-fill-mode: both;  /* apply from/to styles outside animation */
+}
+/* Shorthand */
+.hero-title { animation: fadeIn 600ms ease-out 200ms both; }
+
+.badge { animation: pulse 2s ease-in-out infinite; }
+.spinner { animation: spin 1s linear infinite; }
+
+/* Stagger animations with delay */
+.card:nth-child(1) { animation: fadeIn 500ms ease-out 0ms    both; }
+.card:nth-child(2) { animation: fadeIn 500ms ease-out 100ms  both; }
+.card:nth-child(3) { animation: fadeIn 500ms ease-out 200ms  both; }
+
+/* ── TRANSFORMS ── */
+.el {
+  transform: translateX(100px);           /* move right */
+  transform: translateY(-50%);            /* move up by 50% own height */
+  transform: translate(-50%, -50%);       /* center trick */
+  transform: rotate(45deg);
+  transform: scale(1.2);
+  transform: scale(1.2, 0.8);            /* x scale, y scale */
+  transform: skew(10deg, 5deg);
+  /* Chain multiple */
+  transform: rotate(45deg) scale(1.5) translateX(20px);
+}
+
+/* GPU-accelerated (smooth, no repaints) — only animate these! */
+/* ✅ transform, opacity */
+/* ❌ Avoid animating: width, height, margin, padding, top, left */</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Build an animated landing hero: (1) Fade in the title from below on page load. (2) Stagger-animate 3 feature cards with 100ms delays each. (3) Add a pulsing glow to the CTA button. (4) Create a loading spinner component using spin animation. (5) Add hover effects on cards (lift up with translateY and shadow). All animations must use only transform and opacity for performance.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'Which CSS properties should you animate for best performance?', options: ['width and height', 'margin and padding', 'transform and opacity (GPU-accelerated, no repaints)', 'color and background-color'], correct: 2 },
+      { question: 'What does animation-fill-mode: both do?', options: ['Fills the animation in both directions', 'Applies the from styles before the animation starts and to styles after it ends', 'Runs the animation both forwards and backwards', 'Both forwards and backwards fill modes'], correct: 1 },
+      { question: 'What is the difference between CSS transitions and animations?', options: ['They are the same', 'Transitions react to state changes; animations run automatically on their own timeline', 'Animations require JavaScript', 'Transitions use @keyframes'], correct: 1 },
+      { question: 'What does transform: translate(-50%, -50%) do when combined with position absolute?', options: ['Removes the element', 'Perfectly centers an absolute element at its anchor point', 'Moves element to top-left', 'Scales by 50%'], correct: 1 },
+      { question: 'What timing function gives a natural "spring" or "bounce" feel?', options: ['linear', 'ease', 'cubic-bezier with overshoot values (e.g. cubic-bezier(0.34, 1.56, 0.64, 1))', 'ease-in'], correct: 2 },
+      { question: 'What does animation-delay: 200ms do?', options: ['Slows the animation by 200ms', 'Waits 200ms before the animation starts', 'Repeats after 200ms', 'Extends animation by 200ms'], correct: 1 },
+      { question: 'How do you create a continuous looping animation?', options: ['animation-repeat: forever', 'animation-iteration-count: infinite', 'animation-loop: true', 'animation-fill-mode: loop'], correct: 1 },
+      { question: 'What does @keyframes define?', options: ['A JavaScript function', 'The intermediate steps (frames) of a CSS animation', 'A responsive breakpoint', 'A CSS variable animation'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/YszONjKpgg4'
+  ),
+
+  lesson(
+    '8. Advanced CSS: Pseudo-Classes, Custom Properties & Modern Features',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-purple-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Advanced selectors: :is(), :where(), :has()</li>
+          <li>CSS logical properties for international layouts</li>
+          <li>Scroll snap, scroll-driven animations</li>
+          <li>CSS nesting (native)</li>
+          <li>Subgrid for precise alignment</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔥 Modern CSS Selectors</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>/* :is() — group selectors with one specificity */
+:is(h1, h2, h3, h4) { line-height: 1.2; color: white; }
+:is(section, article, aside) > :is(h2, h3) { margin-top: 0; }
+
+/* :where() — same as :is() but ZERO specificity (easy to override) */
+:where(h1, h2, h3) { margin: 0 0 1rem; }
+
+/* :has() — "parent selector" — select based on children! */
+.card:has(img) { padding-top: 0; }  /* card with an image */
+form:has(input:invalid) { border-color: red; }  /* invalid form */
+li:has(+ li) { border-bottom: 1px solid #333; }  /* li with a sibling after it */
+h2:has(+ p) { margin-bottom: 0.5rem; }
+
+/* :not() with complex arguments */
+a:not([href^="http"]):not([href^="#"]) { color: purple; }  /* internal links */
+
+/* CSS Nesting (native — no preprocessor needed!) */
+.card {
+  background: #141414;
+  padding: 24px;
+  border-radius: 12px;
+
+  & h3 { font-size: 1.25rem; margin-bottom: 8px; }  /* .card h3 */
+  & p  { color: #888; line-height: 1.6; }
+
+  &:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-4px);
+  }
+
+  & .card__badge {
+    background: var(--color-primary);
+    color: black;
+    padding: 4px 12px;
+    border-radius: 999px;
+  }
+}
+
+/* Scroll Snap */
+.slider {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+}
+
+/* Scroll-driven animations */
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-on-scroll {
+  animation: reveal linear both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 30%;
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Refactor your portfolio CSS using modern features: Replace grouped selectors with :is(). Use :has() to style a form differently when it has invalid inputs. Refactor card styles using CSS nesting. Build an image slider with scroll-snap. Add scroll-driven reveal animations for each section. Ensure everything still works on latest Chrome, Firefox, and Safari.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is the key difference between :is() and :where() selectors?', options: ['They are identical', ':is() takes the highest specificity of its arguments; :where() always has zero specificity', ':where() is for elements; :is() is for classes', ':is() only works in Chrome'], correct: 1 },
+      { question: 'What revolutionary feature does :has() bring to CSS?', options: ['It adds JavaScript to CSS', 'It allows selecting an element based on its descendants (parent selector)', 'It improves performance', 'It replaces all other pseudo-classes'], correct: 1 },
+      { question: 'What does CSS nesting with & allow you to do?', options: ['Nest media queries', 'Write related styles together, like Sass/LESS, but natively in CSS', 'Improve animation performance', 'Apply global styles'], correct: 1 },
+      { question: 'What does scroll-snap-type: x mandatory do?', options: ['Locks the page from scrolling', 'Makes the scroll container snap to defined points on the X axis', 'Forces horizontal layout', 'Adds a scrollbar'], correct: 1 },
+      { question: 'What does scroll-snap-align: start do on a slide?', options: ['Aligns text to start', 'Snaps the start edge of the slide to the container\'s snap port', 'Starts animation on scroll', 'Aligns the grid to start'], correct: 1 },
+      { question: 'What does animation-timeline: view() enable?', options: ['Time-based animations', 'Animations driven by the element\'s visibility in the viewport as you scroll', 'Animation synced to a video', 'Multiple timeline tracks'], correct: 1 },
+      { question: 'What does :not(a:not(.active)) select?', options: ['This is invalid CSS', 'All elements that are not anchor tags, or are active anchor tags', 'Only active anchors', 'Nothing'], correct: 1 },
+      { question: 'What CSS feature replaced SASS/LESS variables for most use cases?', options: ['LESS variables', 'CSS Preprocessors', 'CSS Custom Properties (--variable-name)', 'JavaScript inline styles'], correct: 2 }
+    ],
+    50,
+    'https://www.youtube.com/embed/qm0IfG1GyZU'
+  ),
+
+  lesson(
+    '9. CSS Architecture: BEM, Utility Classes & Real Codebases',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-purple-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>BEM naming convention: Block, Element, Modifier</li>
+          <li>OOCSS and SMACSS principles</li>
+          <li>Utility-first CSS (like Tailwind) vs component CSS</li>
+          <li>Structuring a real CSS codebase that doesn't fall apart</li>
+          <li>Critical CSS and performance optimisation</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🏗️ BEM — Block Element Modifier</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>&lt;!-- BEM HTML --&gt;
+&lt;div class="card card--featured"&gt;
+  &lt;img class="card__image" src="..."&gt;
+  &lt;div class="card__body"&gt;
+    &lt;h3 class="card__title"&gt;WasteGo Rider&lt;/h3&gt;
+    &lt;p class="card__description"&gt;...&lt;/p&gt;
+    &lt;button class="card__btn card__btn--primary"&gt;View Profile&lt;/button&gt;
+    &lt;button class="card__btn card__btn--ghost"&gt;Message&lt;/button&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+/* BEM CSS */
+/* Block */
+.card { background: #141414; border-radius: 12px; overflow: hidden; }
+/* Modifier: --featured */
+.card--featured { border: 2px solid var(--color-primary); }
+
+/* Elements: __ */
+.card__image   { width: 100%; height: 200px; object-fit: cover; }
+.card__body    { padding: 24px; }
+.card__title   { font-size: 1.25rem; margin-bottom: 8px; }
+.card__btn     { padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+.card__btn--primary { background: var(--color-primary); color: black; }
+.card__btn--ghost   { background: transparent; border: 1px solid #333; }</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📁 Scalable CSS File Structure</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>styles/
+├── base/
+│   ├── reset.css          /* box-sizing, margins, defaults */
+│   ├── typography.css     /* body, headings, text styles */
+│   └── variables.css      /* all CSS custom properties */
+├── components/
+│   ├── button.css
+│   ├── card.css
+│   ├── navbar.css
+│   ├── modal.css
+│   └── form.css
+├── layouts/
+│   ├── grid.css
+│   └── container.css
+├── pages/
+│   ├── home.css
+│   └── dashboard.css
+├── utilities/
+│   └── helpers.css        /* .hidden, .sr-only, .text-center */
+└── main.css               /* @import all others in order */
+
+/* main.css */
+@import './base/variables.css';
+@import './base/reset.css';
+@import './base/typography.css';
+@import './components/button.css';
+/* ... etc */</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Refactor all your CSS into the file structure above. Rename classes using BEM. Create a utility classes file with: .sr-only (screen reader only), .container, .text-center, .hidden, .flex-center, .mb-4, .mt-8. Write a README.md explaining your CSS architecture choices. Then time how long it takes to find and change a specific style — good architecture should make this instant.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'In BEM, what does the double underscore (__) signify?', options: ['A CSS comment', 'A modifier', 'An element — a child part of a block', 'A global style'], correct: 2 },
+      { question: 'In BEM, what does the double dash (--) signify?', options: ['A comment', 'A modifier — a variation of a block or element', 'An element', 'A CSS variable'], correct: 1 },
+      { question: 'What is the main advantage of BEM naming?', options: ['Shorter class names', 'Self-documenting, avoids specificity conflicts, scales on teams', 'Better browser performance', 'Required by CSS3'], correct: 1 },
+      { question: 'What does the .sr-only utility class typically do?', options: ['Styles screen recording overlays', 'Hides an element visually but keeps it accessible to screen readers', 'Shows element only on small screens', 'Applies to a specific screen resolution'], correct: 1 },
+      { question: 'What is the "utility-first" CSS approach?', options: ['Writing CSS with utility functions', 'Using small, single-purpose classes (like Tailwind) to build UI directly in HTML', 'Removing all CSS and using inline styles', 'Using only !important rules'], correct: 1 },
+      { question: 'Why should you avoid deeply nested CSS selectors (e.g. .nav ul li a span)?', options: ['They are slower to type', 'They create very high specificity, making styles hard to override and fragile', 'Browsers don\'t support deep nesting', 'They only work in Chrome'], correct: 1 },
+      { question: 'What does "critical CSS" mean?', options: ['CSS with !important flags', 'The minimum CSS needed to render above-the-fold content, inlined in <head> for fast first paint', 'CSS that causes bugs', 'A Sass feature'], correct: 1 },
+      { question: 'What is the correct order to import CSS files for architecture?', options: ['Components first, then base', 'Base/variables → reset → typography → components → layouts → pages → utilities', 'Alphabetical order', 'Any order — CSS import order doesn\'t matter'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/SLjAcQLikfI'
+  ),
+
+  lesson(
+    '10. Final CSS Project: Design a Complete App UI',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-purple-400 mb-2">🏆 Final CSS Project Brief</h2>
+        <p class="text-gray-300">You've mastered CSS. Now you will design a pixel-perfect, fully responsive, animated UI for a real app — applying every concept from this course.</p>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📋 Build the WasteGo Landing Page</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-black/60 p-4 rounded-lg">
+            <p class="text-orange-400 font-semibold mb-2">Design System</p>
+            <ul class="text-gray-300 text-sm space-y-1 list-disc list-inside">
+              <li>Complete CSS custom properties (colors, type, spacing, shadows)</li>
+              <li>Dark and light theme with system preference detection</li>
+              <li>Google Font pairing (display + body)</li>
+              <li>BEM-structured components</li>
+            </ul>
+          </div>
+          <div class="bg-black/60 p-4 rounded-lg">
+            <p class="text-purple-400 font-semibold mb-2">Sections</p>
+            <ul class="text-gray-300 text-sm space-y-1 list-disc list-inside">
+              <li>Animated hero with gradient background</li>
+              <li>3-column features grid (Flexbox)</li>
+              <li>Stats bar (CSS counters or large typography)</li>
+              <li>Pricing cards (Grid, with "popular" modifier)</li>
+              <li>Testimonials slider (scroll-snap)</li>
+              <li>Contact form (styled, with focus states)</li>
+            </ul>
+          </div>
+          <div class="bg-black/60 p-4 rounded-lg">
+            <p class="text-cyan-400 font-semibold mb-2">Responsive</p>
+            <ul class="text-gray-300 text-sm space-y-1 list-disc list-inside">
+              <li>Mobile-first with 3 breakpoints</li>
+              <li>Mobile hamburger nav (CSS-only toggle or JS)</li>
+              <li>Responsive images with srcset</li>
+              <li>Fluid typography with clamp()</li>
+            </ul>
+          </div>
+          <div class="bg-black/60 p-4 rounded-lg">
+            <p class="text-green-400 font-semibold mb-2">Animations</p>
+            <ul class="text-gray-300 text-sm space-y-1 list-disc list-inside">
+              <li>Hero fade-in on load</li>
+              <li>Staggered card reveals</li>
+              <li>Button hover lift + glow</li>
+              <li>Scroll-driven section reveals</li>
+              <li>Pulsing status badge</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-yellow-500/10 p-4 rounded-lg">
+        <p class="text-yellow-300">🎓 <strong>You have mastered CSS.</strong> Flexbox, Grid, responsive design, animations, architecture, and modern selectors. Your HTML now has a stunning visual layer. Next: JavaScript — bringing everything to life.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is the best approach for a responsive CSS layout in 2024?', options: ['Use table-based layouts', 'CSS Grid and Flexbox together, mobile-first with min-width media queries', 'Float-based layouts', 'Absolute positioning everything'], correct: 1 },
+      { question: 'What does object-fit: cover do on an image inside a fixed-size container?', options: ['Distorts image to fit', 'Scales image to cover the container, cropping if needed, maintaining aspect ratio', 'Adds a border around the image', 'Makes image transparent'], correct: 1 },
+      { question: 'How do you make a sticky navigation bar that stays at the top when scrolling?', options: ['position: absolute; top: 0', 'position: fixed; top: 0; left: 0; width: 100%', 'display: sticky', 'position: sticky; top: 0'], correct: 3 },
+      { question: 'What CSS property creates a blurred background behind a glass/frosted card?', options: ['background-blur: 10px', 'filter: blur(10px)', 'backdrop-filter: blur(10px)', 'box-shadow: blur(10px)'], correct: 2 },
+      { question: 'How do you create a gradient background that flows diagonally?', options: ['background: gradient(diagonal, ...)', 'background: linear-gradient(135deg, #color1, #color2)', 'background: diagonal-gradient(#color1, #color2)', 'background: angle-gradient(45deg)'], correct: 1 },
+      { question: 'What is the CSS property that controls how the background image is sized?', options: ['background-position', 'background-size', 'background-scale', 'background-resize'], correct: 1 },
+      { question: 'What does overflow: hidden on a parent with border-radius achieve?', options: ['Hides all overflow content globally', 'Clips child elements to the parent\'s rounded corners', 'Adds hidden scrollbars', 'Removes the border'], correct: 1 },
+      { question: 'What should be your first step when starting a new CSS project?', options: ['Start styling headings', 'Set up CSS custom properties and a global reset (box-sizing, margins)', 'Add animations', 'Import Google Fonts'], correct: 1 }
+    ],
+    100,
+    'https://www.youtube.com/embed/p0bGHP-PXD4'
+  )
+];
+
+// ─────────────────────────────────────────────
+//  JAVASCRIPT LESSONS
+// ─────────────────────────────────────────────
+const jsLessons = [
+  lesson(
+    '1. JavaScript Foundations: Variables, Types & Operators',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-yellow-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>var, let, const — the right one for every situation</li>
+          <li>All JavaScript data types explained deeply</li>
+          <li>Type coercion and how to avoid bugs</li>
+          <li>All operators: arithmetic, comparison, logical, nullish</li>
+          <li>Strict mode and modern JavaScript best practices</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔢 Variables: var, let, const</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>'use strict'; // Always add this — prevents many silent bugs
+
+// const: use by default (can't be reassigned)
+const APP_NAME = 'WasteGo';
+const MAX_WEIGHT = 1000; // in kg
+const config = { api: 'https://api.wastego.gh', version: '2.0' };
+config.api = 'https://new.api.wastego.gh'; // ✅ object properties CAN change
+// config = {}; ❌ Cannot reassign the binding
+
+// let: use when you need to reassign
+let currentPage = 1;
+let isLoggedIn = false;
+currentPage = 2; // ✅
+
+// var: AVOID. Function-scoped, hoisted, causes confusing bugs
+// var wastes the last 10 years of learning — don't use it
+
+// ── Scope ──
+function example() {
+  const blockScoped = 'only here';
+  if (true) {
+    const ifScoped = 'only in this if block';
+    let alsoBlockScoped = 'same';
+  }
+  // ifScoped and alsoBlockScoped are not accessible here
+}</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📦 Data Types</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// ── PRIMITIVE types (immutable, compared by VALUE) ──
+const name = 'Kwame';        // String
+const age = 24;              // Number (no int/float distinction)
+const price = 15.50;         // Also Number
+const isRider = true;        // Boolean
+const nothing = null;        // Null (intentional empty value)
+let notSet;                  // undefined (declared but not assigned)
+const id = Symbol('userId'); // Symbol (always unique)
+const bigNum = 9999999999999999n; // BigInt
+
+// ── REFERENCE types (compared by REFERENCE) ──
+const user = { name: 'Kwame', role: 'rider' };  // Object
+const regions = ['accra', 'kumasi', 'tema'];      // Array
+const greet = function(name) { return \`Hello \${name}\`; }; // Function
+
+// Checking types
+typeof 'hello'      // 'string'
+typeof 42           // 'number'
+typeof true         // 'boolean'
+typeof undefined    // 'undefined'
+typeof null         // 'object' ← FAMOUS BUG in JS (not actually an object)
+typeof {}           // 'object'
+typeof []           // 'object' ← use Array.isArray() instead
+typeof function(){} // 'function'
+Array.isArray([])   // true
+
+// ── Type Coercion (automatic type conversion — source of many bugs!) ──
+'5' + 3     // '53'  (number coerced to string — concatenation)
+'5' - 3     // 2     (string coerced to number — subtraction)
+'5' == 5    // true  ← loose equality coerces types (AVOID)
+'5' === 5   // false ← strict equality (ALWAYS USE THIS)
+null == undefined   // true (loose)
+null === undefined  // false (strict)
+!!0         // false (falsy values: 0, '', null, undefined, NaN, false)
+!!''        // false
+!!'hello'   // true (truthy)</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">➕ Operators</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// Arithmetic
+10 + 3   // 13
+10 - 3   // 7
+10 * 3   // 30
+10 / 3   // 3.333...
+10 % 3   // 1  (remainder/modulo)
+10 ** 3  // 1000 (exponentiation)
+++count  // increment before return
+count++  // increment after return
+
+// Comparison (always use ===)
+5 === 5   // true
+5 !== 3   // true
+5 > 3     // true
+5 >= 5    // true
+
+// Logical
+true && false   // false (both must be true)
+true || false   // true  (at least one must be true)
+!true           // false (NOT)
+
+// Short-circuit evaluation
+const user = null;
+const name = user && user.name;  // null (stops at falsy user)
+const display = name || 'Guest'; // 'Guest' (name is null/falsy)
+
+// Nullish coalescing (??) — only null/undefined, NOT 0 or ''
+const count = 0;
+const display1 = count || 10;   // 10 (WRONG: treats 0 as falsy)
+const display2 = count ?? 10;   // 0  (CORRECT: 0 is a valid value)
+
+// Optional chaining (?.)
+const city = user?.address?.city;  // undefined instead of TypeError
+const firstTag = data?.tags?.[0];
+
+// Assignment
+let x = 5;
+x += 3;   // x = 8
+x -= 2;   // x = 6
+x *= 4;   // x = 24
+x **= 2;  // x = 576
+x ??= 'default'; // assign only if x is null/undefined</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Open browser DevTools console. Predict the output of 20 expressions (coercion, operators, typeof). Create a user object with 8 properties. Use optional chaining to safely access 3 nested properties. Use nullish coalescing for 3 default values. Use Array.isArray() to test 5 different values. Write a comment next to each line explaining why the output is what it is.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is the key difference between == and === in JavaScript?', options: ['They are identical', '=== checks value AND type (strict); == coerces types before comparing (loose)', '== is faster', '=== only works with strings'], correct: 1 },
+      { question: 'When should you use const vs let?', options: ['Always use let', 'Use const by default; only use let when you need to reassign the variable', 'Always use var', 'const is for strings; let is for numbers'], correct: 1 },
+      { question: 'What does the ?? (nullish coalescing) operator do differently from ||?', options: ['They are identical', '?? only returns the right side if the left is null or undefined; || returns right side for any falsy value (0, empty string too)', '?? is for booleans; || is for strings', '?? is faster than ||'], correct: 1 },
+      { question: 'What does typeof null return, and why is it a bug?', options: ['"null" — correct behavior', '"object" — a historical JavaScript bug that was never fixed for backwards compatibility', '"undefined" — null is not set', '"boolean" — null is falsy'], correct: 1 },
+      { question: 'What does the ?. (optional chaining) operator do?', options: ['Creates optional CSS classes', 'Accesses nested properties safely, returning undefined instead of throwing TypeError if a link in the chain is null/undefined', 'Checks if a method is optional', 'Creates optional function parameters'], correct: 1 },
+      { question: 'What are falsy values in JavaScript?', options: ['Only false and 0', 'false, 0, "" (empty string), null, undefined, NaN', 'null and undefined only', 'Everything that is not a string'], correct: 1 },
+      { question: 'Why should you avoid var in modern JavaScript?', options: ['var is slower', 'var is function-scoped and hoisted, causing confusing bugs; let and const are block-scoped and predictable', 'var is deprecated', 'var causes security issues'], correct: 1 },
+      { question: 'What does the % operator do?', options: ['Calculates percentage', 'Returns the remainder of division (modulo)', 'Divides two numbers', 'Converts to percentage string'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/PkZNo7MFNFg'
+  ),
+
+  lesson(
+    '2. Control Flow: Conditionals, Loops & Error Handling',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-yellow-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>if/else, switch, and ternary expressions</li>
+          <li>for, while, do-while, for...of, for...in loops</li>
+          <li>break, continue, and labeled statements</li>
+          <li>try/catch/finally for error handling</li>
+          <li>Custom errors and error types</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔀 Conditionals</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// if / else if / else
+const wasteWeight = 25; // kg
+let price;
+
+if (wasteWeight <= 10) {
+  price = 5;
+} else if (wasteWeight <= 50) {
+  price = 15;
+} else if (wasteWeight <= 200) {
+  price = 40;
+} else {
+  price = 80;
+}
+
+// Ternary (use for simple two-option logic)
+const status = isOnline ? 'Available' : 'Offline';
+const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+// Avoid nested ternaries for readability
+
+// Switch (great for exact value matching)
+const paymentMethod = 'momo';
+switch (paymentMethod) {
+  case 'momo':
+    console.log('MTN Mobile Money selected');
+    break; // ALWAYS add break or execution falls through!
+  case 'vodafone':
+  case 'airtel':
+    console.log('Other mobile money');
+    break;
+  case 'cash':
+    console.log('Cash on delivery');
+    break;
+  default:
+    console.log('Unknown payment method');
+}
+
+// Logical guard clauses (prefer early returns over nested ifs)
+function processPickup(request) {
+  if (!request) return null;            // guard: null check
+  if (!request.userId) return null;     // guard: required field
+  if (request.weight > 1000) return null; // guard: invalid data
+  // main logic here — less nesting!
+  return doPickup(request);
+}</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔄 Loops</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>const regions = ['accra', 'kumasi', 'tema', 'takoradi'];
+
+// for — classic, full control
+for (let i = 0; i < regions.length; i++) {
+  console.log(i, regions[i]);
+}
+
+// for...of — iterate VALUES (arrays, strings, sets, maps) ← prefer this
+for (const region of regions) {
+  console.log(region);
+}
+
+// for...in — iterate KEYS (use for objects, careful with arrays)
+const user = { name: 'Kwame', role: 'rider', region: 'accra' };
+for (const key in user) {
+  console.log(key, user[key]); // name Kwame, role rider, region accra
+}
+
+// while — run while condition is true
+let attempts = 0;
+while (attempts < 3) {
+  const success = tryConnect();
+  if (success) break;
+  attempts++;
+}
+
+// do...while — always runs at least once
+let input;
+do {
+  input = prompt('Enter your phone number:');
+} while (!isValidGhanaPhone(input));
+
+// break — exit the loop
+for (const item of list) {
+  if (item.id === targetId) {
+    foundItem = item;
+    break; // stop searching once found
+  }
+}
+
+// continue — skip current iteration
+for (const pickup of pickups) {
+  if (pickup.status === 'cancelled') continue; // skip cancelled
+  processPickup(pickup);
+}</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🚨 Error Handling</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// try / catch / finally
+async function fetchRiders() {
+  try {
+    const response = await fetch('/api/riders');
+    if (!response.ok) {
+      throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    if (error instanceof TypeError) {
+      console.error('Network error — user may be offline:', error.message);
+    } else {
+      console.error('API error:', error.message);
+    }
+    return null; // don't crash the app
+  } finally {
+    hideLoadingSpinner(); // ALWAYS runs, error or not
+  }
+}
+
+// Custom error classes
+class ValidationError extends Error {
+  constructor(field, message) {
+    super(message);
+    this.name = 'ValidationError';
+    this.field = field;
+  }
+}
+
+function validatePhone(phone) {
+  if (!/^0[235][0-9]{8}$/.test(phone)) {
+    throw new ValidationError('phone', 'Invalid Ghana phone number format');
+  }
+  return true;
+}
+
+try {
+  validatePhone('12345');
+} catch (error) {
+  if (error instanceof ValidationError) {
+    showFieldError(error.field, error.message);
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Write a ride-pricing function: takes waste type (organic/plastic/electronic) and weight in kg. Uses nested conditionals for pricing tiers per type. Throws a ValidationError if weight is negative or over 2000. Catches errors and returns a price object with {subtotal, tax, total, currency: 'GHS'}. Write a loop that tests this function with 10 different inputs, logs results, and skips any that throw errors.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What happens if you forget a break statement in a switch case?', options: ['A syntax error is thrown', 'Execution falls through to the next case', 'The switch exits automatically', 'Nothing — break is optional'], correct: 1 },
+      { question: 'What is the advantage of using for...of over a traditional for loop?', options: ['It is faster', 'It directly gives you the value, not the index, making code more readable', 'It works on objects', 'It has better browser support'], correct: 1 },
+      { question: 'What does the finally block in try/catch do?', options: ['Runs only if there is an error', 'Runs only if there is no error', 'Always runs, whether there was an error or not', 'Runs the catch block again'], correct: 2 },
+      { question: 'What is a "guard clause" pattern?', options: ['A security feature', 'Early return statements at the start of a function to handle edge cases, reducing nesting', 'A try/catch block', 'A type check'], correct: 1 },
+      { question: 'What does continue do inside a loop?', options: ['Exits the loop', 'Skips the rest of the current iteration and goes to the next one', 'Pauses the loop', 'Restarts the loop from the beginning'], correct: 1 },
+      { question: 'What is the difference between for...of and for...in?', options: ['They are identical', 'for...of iterates values of iterables; for...in iterates keys/property names of objects', 'for...in is faster', 'for...of only works on strings'], correct: 1 },
+      { question: 'When should you use a ternary operator vs an if/else statement?', options: ['Always use ternary', 'Ternary for simple, single-line two-option logic; if/else for complex multi-step logic', 'Always use if/else', 'They are completely interchangeable'], correct: 1 },
+      { question: 'What does throw new Error("message") do?', options: ['Logs a message to console', 'Creates and throws an Error object that stops execution and can be caught by try/catch', 'Shows an alert to the user', 'Stops the browser'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/IsG4Xd6LlsM'
+  ),
+
+  lesson(
+    '3. Functions: Declarations, Arrows, Closures & Higher-Order',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-yellow-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Function declarations vs expressions vs arrow functions</li>
+          <li>Default parameters, rest params, destructured params</li>
+          <li>Closures — JavaScript's most powerful concept</li>
+          <li>Higher-order functions: map, filter, reduce, find</li>
+          <li>Pure functions and avoiding side effects</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔧 Function Syntax</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// ── Declaration (hoisted — can call before definition) ──
+function greet(name) {
+  return \`Hello, \${name}!\`;
+}
+
+// ── Expression (not hoisted) ──
+const greet = function(name) {
+  return \`Hello, \${name}!\`;
+};
+
+// ── Arrow function (modern, concise) ──
+const greet = (name) => \`Hello, \${name}!\`;  // implicit return
+const double = x => x * 2;                    // single param: no parens needed
+const getTotal = (price, tax) => {
+  const amount = price * (1 + tax);
+  return amount;                               // explicit return with block body
+};
+
+// ── Key difference: arrow functions have NO own 'this' ──
+// Use regular functions for methods; arrows for callbacks
+
+// ── Parameters ──
+// Default parameters
+function createRequest(userId, type = 'organic', priority = 'normal') {
+  return { userId, type, priority };
+}
+
+// Rest parameters (collects remaining args into array)
+function sum(first, ...rest) {
+  return rest.reduce((total, n) => total + n, first);
+}
+sum(1, 2, 3, 4, 5); // 15
+
+// Destructured parameters
+function displayUser({ name, role = 'customer', region }) {
+  return \`\${name} is a \${role} in \${region}\`;
+}
+displayUser({ name: 'Kwame', region: 'accra' });
+
+// Spread operator in calls
+const nums = [1, 2, 3, 4, 5];
+Math.max(...nums); // same as Math.max(1, 2, 3, 4, 5)</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔒 Closures</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// A closure is a function that remembers its outer scope even after the outer function returns
+
+// Example 1: Counter factory
+function createCounter(start = 0) {
+  let count = start; // private variable — not accessible outside
+
+  return {
+    increment: () => ++count,
+    decrement: () => --count,
+    reset: () => { count = start; },
+    get: () => count
+  };
+}
+
+const pickupCounter = createCounter(0);
+pickupCounter.increment(); // 1
+pickupCounter.increment(); // 2
+pickupCounter.get();       // 2
+// count is private — cannot be accessed directly
+
+// Example 2: Event handler factory
+function createHandler(eventType) {
+  return function(event) { // captures eventType in closure
+    console.log(\`\${eventType} event triggered:\`, event.target);
+  };
+}
+document.addEventListener('click', createHandler('click'));
+
+// Example 3: Memoization (cache expensive calculations)
+function memoize(fn) {
+  const cache = new Map(); // persists in closure
+  return function(...args) {
+    const key = JSON.stringify(args);
+    if (cache.has(key)) return cache.get(key);
+    const result = fn(...args);
+    cache.set(key, result);
+    return result;
+  };
+}
+const fastCalc = memoize(expensiveCalculation);</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🗺️ Higher-Order Functions</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>const pickups = [
+  { id: 1, customer: 'Kwame', weight: 25, status: 'completed', amount: 15 },
+  { id: 2, customer: 'Ama',   weight: 5,  status: 'cancelled',  amount: 5 },
+  { id: 3, customer: 'Kofi',  weight: 80, status: 'completed', amount: 40 },
+  { id: 4, customer: 'Efua',  weight: 10, status: 'pending',   amount: 8 },
+];
+
+// map — transform each element, returns new array of same length
+const amounts = pickups.map(p => p.amount);
+// [15, 5, 40, 8]
+
+const summaries = pickups.map(p => \`\${p.customer}: GHS \${p.amount}\`);
+
+// filter — keep elements matching condition, returns new (possibly shorter) array
+const completed = pickups.filter(p => p.status === 'completed');
+// [pickup 1, pickup 3]
+
+const heavyCompleted = pickups.filter(p => p.status === 'completed' && p.weight > 20);
+
+// find — returns FIRST match (not an array)
+const pendingPickup = pickups.find(p => p.status === 'pending');
+// { id: 4, customer: 'Efua', ... }
+
+// findIndex — returns index of first match
+const idx = pickups.findIndex(p => p.id === 3); // 2
+
+// reduce — accumulate all elements into a single value
+const totalRevenue = pickups.reduce((total, p) => {
+  return p.status === 'completed' ? total + p.amount : total;
+}, 0);
+// 55
+
+const byStatus = pickups.reduce((groups, p) => {
+  groups[p.status] = groups[p.status] || [];
+  groups[p.status].push(p);
+  return groups;
+}, {});
+// { completed: [...], cancelled: [...], pending: [...] }
+
+// some / every
+const hasHeavy = pickups.some(p => p.weight > 50);        // true
+const allCompleted = pickups.every(p => p.status === 'completed'); // false
+
+// sort (mutates original — sort a copy!)
+const sorted = [...pickups].sort((a, b) => b.weight - a.weight); // descending by weight
+
+// Chaining — the real power
+const topEarners = pickups
+  .filter(p => p.status === 'completed')
+  .sort((a, b) => b.amount - a.amount)
+  .slice(0, 3)
+  .map(p => ({ name: p.customer, earned: p.amount }));</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Write a WasteGo analytics module using closures and HOFs: Create a createAnalytics(pickups) factory function that returns methods: getTotalRevenue(), getCompletionRate(), getAverageWeight(), getTopCustomers(n), getRevenueByRegion(). All using map/filter/reduce. The pickups array is private in the closure. Create a memoized version of getRevenueByRegion so it caches results.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is the key difference between arrow functions and regular functions?', options: ['Arrow functions are faster', 'Arrow functions do not have their own "this" binding; they inherit it from the enclosing scope', 'Arrow functions cannot have parameters', 'Arrow functions must have a return statement'], correct: 1 },
+      { question: 'What is a closure?', options: ['A function with no return value', 'A function that has access to its outer scope\'s variables even after the outer function has returned', 'A way to close the browser', 'A function that cannot be called twice'], correct: 1 },
+      { question: 'What does Array.map() return?', options: ['The first matching element', 'A new array of the same length with each element transformed', 'A single accumulated value', 'Nothing — it mutates the original array'], correct: 1 },
+      { question: 'What does Array.reduce() do?', options: ['Reduces the array length by removing elements', 'Accumulates all array elements into a single value using a callback and initial value', 'Finds the smallest element', 'Removes duplicates'], correct: 1 },
+      { question: 'What is the difference between Array.find() and Array.filter()?', options: ['They are identical', 'find() returns the first matching element; filter() returns ALL matching elements in a new array', 'filter() is faster', 'find() works on objects; filter() works on arrays'], correct: 1 },
+      { question: 'What are rest parameters (...args) used for?', options: ['Spreading an array into function arguments', 'Collecting any number of remaining function arguments into an array', 'Defining optional parameters', 'Destructuring parameters'], correct: 1 },
+      { question: 'What makes a function "pure"?', options: ['It uses arrow syntax', 'It always produces the same output for the same input and has no side effects', 'It has no parameters', 'It returns a primitive value'], correct: 1 },
+      { question: 'Why should you sort a COPY of an array instead of the original?', options: ['It is faster', 'Array.sort() mutates the original array; sorting a copy (via spread [...arr]) preserves the original', 'JavaScript requires it', 'Original arrays cannot be sorted'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/N8ap4k_1QEQ'
+  ),
+
+  lesson(
+    '4. Arrays & Objects: Deep Mastery',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-yellow-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Destructuring arrays and objects deeply</li>
+          <li>Spread and rest operators in practice</li>
+          <li>Object methods: keys, values, entries, assign, freeze</li>
+          <li>Array methods: flat, flatMap, at, findLast, groupBy</li>
+          <li>Immutable data patterns for bug-free code</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📦 Destructuring</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// ── OBJECT DESTRUCTURING ──
+const user = {
+  id: 'usr_1',
+  name: 'Kwame Mensah',
+  role: 'rider',
+  address: { city: 'Accra', region: 'Greater Accra' },
+  skills: ['navigation', 'customer-service']
+};
+
+// Basic destructuring
+const { name, role } = user;
+console.log(name); // 'Kwame Mensah'
+
+// Rename while destructuring
+const { name: userName, role: userRole } = user;
+
+// Default values
+const { badge = 'bronze', name: n } = user; // badge doesn't exist, defaults to 'bronze'
+
+// Nested destructuring
+const { address: { city, region } } = user;
+console.log(city); // 'Accra'
+
+// Skip some properties using rest
+const { id, ...profile } = user; // profile = { name, role, address, skills }
+
+// In function parameters (very common in React!)
+function renderCard({ name, role, address: { city } = {} }) {
+  return \`\${name} (\${role}) — \${city}\`;
+}
+
+// ── ARRAY DESTRUCTURING ──
+const [lat, lng, altitude = 0] = [5.6037, -0.1870]; // default for missing
+
+// Swap variables
+let a = 1, b = 2;
+[a, b] = [b, a]; // a=2, b=1
+
+// Skip elements
+const [first, , third] = [10, 20, 30]; // skip 20
+
+// Mixed
+const { name: riderName, skills: [primarySkill, ...otherSkills] } = user;</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔀 Spread & Immutability Patterns</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// ALWAYS create new objects/arrays — never mutate state
+const user = { name: 'Kwame', role: 'rider', region: 'accra' };
+
+// Update a field immutably
+const updatedUser = { ...user, role: 'admin', updatedAt: Date.now() };
+// Original user is unchanged
+
+// Add to array immutably
+const pickups = ['p1', 'p2'];
+const newPickups = [...pickups, 'p3'];          // add to end
+const prepended = ['p0', ...pickups];            // add to start
+const inserted = [...pickups.slice(0,1), 'p1.5', ...pickups.slice(1)]; // insert at index 1
+
+// Remove from array immutably
+const without = pickups.filter(p => p !== 'p1'); // remove by value
+
+// Merge objects (later keys win)
+const defaults = { timeout: 5000, retries: 3, debug: false };
+const custom = { retries: 5, debug: true };
+const config = { ...defaults, ...custom }; // { timeout: 5000, retries: 5, debug: true }
+
+// Deep clone (simple objects — no functions/dates)
+const deepCopy = JSON.parse(JSON.stringify(originalObject));
+// For complex objects use structuredClone() (modern)
+const deepCopy2 = structuredClone(originalObject);
+
+// Object methods
+const keys = Object.keys(user);    // ['name', 'role', 'region']
+const vals = Object.values(user);  // ['Kwame', 'rider', 'accra']
+const entries = Object.entries(user); // [['name','Kwame'], ['role','rider'], ...]
+
+// Build object from entries
+const fromEntries = Object.fromEntries([['a', 1], ['b', 2]]); // { a: 1, b: 2 }
+// Useful: transform object values
+const doubled = Object.fromEntries(
+  Object.entries(prices).map(([key, val]) => [key, val * 2])
+);
+
+// Freeze (prevent mutations)
+const RATES = Object.freeze({ organic: 5, plastic: 8, electronic: 20 });
+RATES.organic = 100; // silently fails in non-strict, throws in strict mode
+
+// Modern array methods
+const matrix = [[1,2],[3,4],[5,6]];
+matrix.flat();   // [1, 2, 3, 4, 5, 6]
+matrix.flatMap(row => row.map(x => x * 2)); // [2, 4, 6, 8, 10, 12]
+
+const last = pickups.at(-1);  // last element (negative indexing!)
+const lastCompleted = pickups.findLast(p => p.status === 'completed');</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Build a WasteGo data manager with immutable patterns: Start with an array of 10 pickup objects. Write pure functions: addPickup(pickups, newPickup) → returns new array. updatePickup(pickups, id, changes) → returns new array with updated item. deletePickup(pickups, id) → returns filtered array. getStats(pickups) → returns object using Object.fromEntries. Every function must return new arrays/objects — never mutate the input.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is object destructuring?', options: ['Deleting an object\'s properties', 'Extracting properties from an object into individual variables in one expression', 'Converting an object to a string', 'Merging two objects'], correct: 1 },
+      { question: 'What does the spread operator (...) do when applied to an object?', options: ['Spreads the object to the console', 'Creates a shallow copy of the object\'s properties', 'Deletes the original object', 'Makes the object iterable'], correct: 1 },
+      { question: 'How do you create an immutable copy of an object with one field updated?', options: ['Object.update(obj, {field: value})', 'const newObj = {...originalObj, field: newValue}', 'originalObj.field = newValue', 'Object.assign(originalObj, {field: newValue})'], correct: 1 },
+      { question: 'What does Object.freeze() do?', options: ['Saves the object to localStorage', 'Prevents any properties from being added, removed, or modified', 'Creates a deep copy', 'Optimizes the object for performance'], correct: 1 },
+      { question: 'What does array.at(-1) return?', options: ['An error', 'The last element of the array', 'The element at index -1 (which is undefined)', 'A new array without the last element'], correct: 1 },
+      { question: 'What does Array.flat() do?', options: ['Sorts an array', 'Removes duplicates', 'Flattens nested arrays one level deep by default', 'Converts array to string'], correct: 2 },
+      { question: 'What does Object.entries() return?', options: ['An array of the object\'s keys', 'An array of [key, value] pairs for each property', 'An array of the object\'s values', 'A string representation of the object'], correct: 1 },
+      { question: 'Why should you use structuredClone() over JSON.parse(JSON.stringify()) for deep cloning?', options: ['It is slower but prettier', 'structuredClone handles dates, Maps, Sets, and circular references that JSON cannot', 'JSON method is deprecated', 'They are identical'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/NIq3qLaHCIs'
+  ),
+
+  lesson(
+    '5. The DOM: Selecting, Manipulating & Events',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-yellow-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Selecting elements: querySelector vs getElementById</li>
+          <li>Creating, inserting, and removing elements</li>
+          <li>Modifying text, HTML, attributes, classes, and styles</li>
+          <li>Event listeners: click, input, submit, keydown, custom events</li>
+          <li>Event delegation and event bubbling</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🎯 Selecting Elements</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// Single element (returns first match or null)
+const btn = document.querySelector('#submit-btn');
+const title = document.querySelector('h1');
+const activeCard = document.querySelector('.card.active');
+const emailInput = document.querySelector('input[type="email"]');
+
+// Multiple elements (returns NodeList)
+const allCards = document.querySelectorAll('.card');
+const allLinks = document.querySelectorAll('nav a');
+
+// Convert NodeList to array for .map/.filter etc.
+const cardsArray = [...allCards];
+Array.from(allCards).forEach(card => card.classList.add('loaded'));
+
+// Faster lookups (when you have an ID)
+const form = document.getElementById('booking-form'); // no # needed
+
+// Traversal
+const parent = element.parentElement;
+const children = element.children;         // HTMLCollection
+const childNodes = element.childNodes;     // NodeList (includes text nodes)
+const next = element.nextElementSibling;
+const prev = element.previousElementSibling;
+const firstChild = element.firstElementChild;
+const lastChild = element.lastElementChild;</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🛠️ Manipulating the DOM</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// ── Text & HTML ──
+element.textContent = 'Safe text — no HTML parsed'; // SAFE
+element.innerHTML = '&lt;strong&gt;Rich content&lt;/strong&gt;';  // ⚠️ DANGEROUS with user input (XSS)
+
+// ── Attributes ──
+element.getAttribute('href');
+element.setAttribute('data-id', 'pickup_123');
+element.removeAttribute('disabled');
+element.hasAttribute('required');
+// dataset (data-* attributes)
+element.dataset.id;          // reads data-id attribute
+element.dataset.status = 'active'; // sets data-status
+
+// ── Classes ──
+element.classList.add('active', 'highlighted');
+element.classList.remove('loading');
+element.classList.toggle('dark-mode');     // add if not present, remove if present
+element.classList.toggle('visible', true); // force add
+element.classList.contains('active');      // true/false
+element.classList.replace('old', 'new');
+
+// ── Inline styles (use classes when possible) ──
+element.style.backgroundColor = '#00ff88';
+element.style.transform = 'translateY(-8px)';
+Object.assign(element.style, { opacity: '1', display: 'block' });
+
+// ── Creating elements ──
+const card = document.createElement('div');
+card.className = 'card';
+card.dataset.id = pickup.id;
+card.innerHTML = \`
+  &lt;h3 class="card__title"&gt;\${pickup.customer}&lt;/h3&gt;
+  &lt;p class="card__weight"&gt;\${pickup.weight}kg&lt;/p&gt;
+\`;
+
+// ── Inserting elements ──
+parent.appendChild(card);                    // add to end
+parent.prepend(card);                        // add to start
+parent.insertBefore(card, referenceElement); // before reference
+referenceElement.after(card);               // after reference
+referenceElement.before(card);              // before reference
+parent.insertAdjacentHTML('beforeend', htmlString); // no reparsing needed
+
+// ── Removing elements ──
+element.remove();
+parent.removeChild(element);</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🎪 Events & Event Delegation</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// ── Event Listeners ──
+const btn = document.querySelector('#book-btn');
+
+function handleBooking(event) {
+  event.preventDefault();       // stop form submission / link navigation
+  event.stopPropagation();      // stop event bubbling up to parent
+  console.log('Button clicked!', event.target);
+}
+
+btn.addEventListener('click', handleBooking);
+btn.removeEventListener('click', handleBooking); // must pass same function reference
+
+// Common events
+element.addEventListener('click', handler);
+input.addEventListener('input', e => console.log(e.target.value));   // every keystroke
+input.addEventListener('change', handler);  // on blur/commit
+form.addEventListener('submit', e => { e.preventDefault(); validate(); });
+element.addEventListener('keydown', e => { if(e.key === 'Enter') submit(); });
+element.addEventListener('mouseover', handler);
+element.addEventListener('mouseout', handler);
+window.addEventListener('resize', debounce(handleResize, 200));
+window.addEventListener('scroll', throttle(handleScroll, 100));
+
+// ── Event Delegation ── (VERY IMPORTANT — handle dynamic elements)
+// Instead of attaching listeners to each card (which might not exist yet):
+document.querySelector('.pickup-list').addEventListener('click', (event) => {
+  const deleteBtn = event.target.closest('.delete-btn');
+  const card = event.target.closest('.pickup-card');
+
+  if (deleteBtn) {
+    const id = deleteBtn.dataset.id;
+    deletePickup(id);
+  } else if (card) {
+    openPickupDetails(card.dataset.id);
+  }
+});
+
+// ── Custom Events ──
+const pickupBooked = new CustomEvent('pickupBooked', {
+  detail: { pickupId: 'p123', rider: 'Kwame' },
+  bubbles: true
+});
+document.dispatchEvent(pickupBooked);
+document.addEventListener('pickupBooked', (e) => {
+  showNotification(\`Pickup \${e.detail.pickupId} booked!\`);
+});</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Build a dynamic pickup management UI: Render a list of 5 pickups from an array using DOM creation (no innerHTML for the list). Add a form to add new pickups. Delete pickups with a button — use event delegation on the list. Toggle a pickup's status (pending → completed) on click. Filter pickups by status using querySelector on live DOM. Dispatch a custom "pickupCompleted" event when status changes, and catch it to show a toast notification.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is the difference between textContent and innerHTML?', options: ['They are identical', 'textContent is safe (treats content as text); innerHTML parses HTML and is vulnerable to XSS attacks', 'innerHTML is faster', 'textContent is deprecated'], correct: 1 },
+      { question: 'What does event.preventDefault() do?', options: ['Stops the event from firing', 'Prevents the default browser behavior (like form submission or link navigation)', 'Removes the event listener', 'Stops event propagation'], correct: 1 },
+      { question: 'What is Event Delegation?', options: ['Delegating events to a web worker', 'Attaching a single event listener to a parent element to handle events from its current and future children', 'Using custom events', 'Removing event listeners'], correct: 1 },
+      { question: 'What does element.closest(selector) do?', options: ['Returns the nearest child matching the selector', 'Traverses UP the DOM tree and returns the nearest ancestor (or self) matching the selector', 'Selects similar elements', 'Returns the offsetParent'], correct: 1 },
+      { question: 'What is the difference between the input and change events on an input element?', options: ['They are the same', 'input fires on every keystroke; change fires when the element loses focus after the value changed', 'change is deprecated', 'input only works on checkboxes'], correct: 1 },
+      { question: 'What does classList.toggle("active") do?', options: ['Always adds the class', 'Always removes the class', 'Adds the class if it\'s absent, removes it if it\'s present', 'Checks if the class is present'], correct: 2 },
+      { question: 'What is the advantage of insertAdjacentHTML over innerHTML?', options: ['insertAdjacentHTML is safer', 'insertAdjacentHTML does not re-parse the existing DOM, only adds new content', 'innerHTML is deprecated', 'insertAdjacentHTML only works on tables'], correct: 1 },
+      { question: 'What does element.dataset provide access to?', options: ['All CSS variables', 'Data attributes (data-*) on the element as a convenient object', 'The element\'s dataset metadata', 'Local storage data'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/5fb2aPlgoys'
+  ),
+
+  lesson(
+    '6. Async JavaScript: Promises, Async/Await & Fetch API',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-yellow-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Why JavaScript is asynchronous and how the event loop works</li>
+          <li>Callbacks and callback hell — the problem</li>
+          <li>Promises: then/catch/finally chains</li>
+          <li>Async/Await — the modern solution</li>
+          <li>Fetch API: GET, POST, headers, JSON</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">⏳ The Event Loop (The Foundation)</h2>
+        <p class="text-gray-300 mb-3">JavaScript is single-threaded. Only one thing runs at a time. But browsers have Web APIs (fetch, setTimeout, DOM events) that run in the background. When they finish, their callbacks go into the task queue. The event loop moves them to the call stack when it's empty.</p>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>console.log('1'); // Synchronous — runs immediately
+
+setTimeout(() => console.log('2'), 0); // Task queue — runs AFTER all sync code
+Promise.resolve().then(() => console.log('3')); // Microtask — runs before task queue
+
+console.log('4'); // Synchronous
+
+// Output: 1, 4, 3, 2
+// Microtasks (Promises) ALWAYS run before macrotasks (setTimeout/setInterval)</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🤝 Promises</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// Creating a Promise
+function delay(ms) {
+  return new Promise((resolve, reject) => {
+    if (ms < 0) reject(new Error('Duration must be positive'));
+    setTimeout(() => resolve(\`Done after \${ms}ms\`), ms);
+  });
+}
+
+// Consuming with .then() chain
+delay(1000)
+  .then(message => { console.log(message); return delay(500); })
+  .then(message => console.log('Second:', message))
+  .catch(error => console.error('Error:', error.message))
+  .finally(() => console.log('Cleanup done'));
+
+// Promise combinators
+Promise.all([fetch('/api/riders'), fetch('/api/zones')])
+  // Waits for ALL — rejects if ANY fails
+  .then(([ridersRes, zonesRes]) => Promise.all([ridersRes.json(), zonesRes.json()]))
+  .then(([riders, zones]) => initialize(riders, zones));
+
+Promise.allSettled([...promises])
+  // Waits for ALL — never rejects, gives status for each
+  .then(results => results.filter(r => r.status === 'fulfilled').map(r => r.value));
+
+Promise.race([...promises]);  // Returns first to settle (fulfilled OR rejected)
+Promise.any([...promises]);   // Returns first FULFILLED, ignores rejections</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">✨ Async/Await + Fetch</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// ── Fetch API ── GET
+async function getRiders(region) {
+  try {
+    const response = await fetch(\`https://api.wastego.gh/riders?region=\${region}\`, {
+      method: 'GET',
+      headers: {
+        'Authorization': \`Bearer \${localStorage.getItem('token')}\`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || \`HTTP \${response.status}\`);
+    }
+
+    const data = await response.json();
+    return data.riders;
+  } catch (error) {
+    if (error.name === 'AbortError') return null; // cancelled request
+    console.error('getRiders failed:', error);
+    throw error; // re-throw for caller to handle
+  }
+}
+
+// ── POST with JSON body ──
+async function bookPickup(pickupData) {
+  const response = await fetch('https://api.wastego.gh/pickups', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': \`Bearer \${getToken()}\`
+    },
+    body: JSON.stringify(pickupData)
+  });
+  return response.json();
+}
+
+// ── Abort Controller (cancel requests) ──
+const controller = new AbortController();
+const { signal } = controller;
+
+fetch('/api/riders', { signal })
+  .then(r => r.json())
+  .catch(e => { if (e.name !== 'AbortError') throw e; });
+
+// Cancel after 10 seconds
+setTimeout(() => controller.abort(), 10000);
+
+// ── Parallel fetching (most efficient) ──
+async function loadDashboard() {
+  const [riders, pickups, zones] = await Promise.all([
+    fetch('/api/riders').then(r => r.json()),
+    fetch('/api/pickups').then(r => r.json()),
+    fetch('/api/zones').then(r => r.json())
+  ]);
+  return { riders, pickups, zones };
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Build a weather widget that uses async/await: Fetch the user's location (Geolocation API). Use that lat/lng to call open-meteo.com (free, no key needed) to get current weather. Display temperature, weather code, wind speed. Show a loading skeleton while fetching, error state if it fails, and use AbortController to cancel if user navigates away. Handle offline state with a try/catch checking navigator.onLine.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is the JavaScript Event Loop responsible for?', options: ['Running JavaScript on multiple threads', 'Moving callbacks from the task queue to the call stack when the stack is empty, enabling async behavior', 'Managing DOM events only', 'Garbage collection'], correct: 1 },
+      { question: 'What does async/await do under the hood?', options: ['Creates actual threads', 'Is syntactic sugar over Promises, making async code read like synchronous code', 'Blocks JavaScript execution', 'Runs code in a web worker'], correct: 1 },
+      { question: 'What does Promise.all() do?', options: ['Runs promises one after another', 'Runs all promises in parallel and resolves when all complete, or rejects if any one fails', 'Returns the first promise to resolve', 'Resolves all promises regardless of rejections'], correct: 1 },
+      { question: 'What does response.ok check in the Fetch API?', options: ['If the server is online', 'If the HTTP status code is in the 200-299 range', 'If the JSON is valid', 'If the response has data'], correct: 1 },
+      { question: 'What does Promise.allSettled() do differently from Promise.all()?', options: ['It is faster', 'It waits for all promises regardless of outcome, never rejecting — each result has a status', 'It only works with fetch', 'It cancels failed promises'], correct: 1 },
+      { question: 'How do you cancel an in-flight fetch request?', options: ['fetch.cancel()', 'response.abort()', 'Using AbortController and passing its signal to fetch, then calling controller.abort()', 'Setting the request timeout to 0'], correct: 2 },
+      { question: 'Why should you NOT use await inside a forEach loop?', options: ['It causes a syntax error', 'forEach doesn\'t await the promise, so iterations run in parallel without waiting — use for...of instead', 'It is slower', 'forEach is deprecated with async functions'], correct: 1 },
+      { question: 'What does JSON.stringify() do to the fetch body?', options: ['Validates the JSON', 'Converts a JavaScript object to a JSON string for sending in the request body', 'Compresses the data', 'Encrypts the data'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/PoRJizFvM7s'
+  ),
+
+  lesson(
+    '7. ES6+ Modern JavaScript: Classes, Modules & New Syntax',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-yellow-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Classes: constructor, methods, inheritance, private fields</li>
+          <li>ES Modules: import/export (named and default)</li>
+          <li>Template literals, tagged templates</li>
+          <li>Symbols, Iterators, Generators</li>
+          <li>Map, Set, WeakMap, WeakSet</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🏛️ Classes</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>class User {
+  // Private fields (# prefix — truly private, not accessible outside)
+  #password;
+  #sessionToken = null;
+
+  // Static property (on the class, not instances)
+  static activeCount = 0;
+
+  constructor(name, email, role = 'customer') {
+    this.id = crypto.randomUUID();
+    this.name = name;
+    this.email = email;
+    this.role = role;
+    this.createdAt = new Date();
+    User.activeCount++;
+  }
+
+  // Instance method
+  greet() {
+    return \`Hello, I'm \${this.name} (\${this.role})\`;
+  }
+
+  // Getter (access like a property)
+  get displayName() {
+    return \`\${this.name} [\${this.role.toUpperCase()}]\`;
+  }
+
+  // Setter (set like a property, with validation)
+  set password(value) {
+    if (value.length < 8) throw new Error('Password too short');
+    this.#password = hashPassword(value); // private
+  }
+
+  // Static method (on the class itself)
+  static fromJSON(json) {
+    const { name, email, role } = JSON.parse(json);
+    return new User(name, email, role);
+  }
+
+  toJSON() {
+    return { id: this.id, name: this.name, email: this.email, role: this.role };
+  }
+}
+
+// Inheritance
+class Rider extends User {
+  #rating = 5.0;
+
+  constructor(name, email, vehicle) {
+    super(name, email, 'rider'); // call parent constructor
+    this.vehicle = vehicle;
+    this.pickupsCompleted = 0;
+  }
+
+  get rating() { return this.#rating.toFixed(1); }
+
+  completePickup(amount) {
+    this.pickupsCompleted++;
+    this.#rating = (this.#rating * 0.9) + (amount > 0 ? 0.5 : 0.1);
+    return this;  // allow chaining
+  }
+
+  // Override parent method
+  greet() {
+    return \`\${super.greet()} — Rider with \${this.pickupsCompleted} pickups\`;
+  }
+}
+
+const rider = new Rider('Kwame', 'kwame@wastego.gh', 'tricycle');
+rider.completePickup(25).completePickup(15); // chaining
+console.log(rider.rating); // '5.1'
+console.log(rider instanceof User);  // true
+console.log(rider instanceof Rider); // true</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📦 ES Modules</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// ── utils.js ── (named exports)
+export const formatCurrency = (amount, currency = 'GHS') =>
+  \`\${currency} \${amount.toFixed(2)}\`;
+
+export function validateGhanaPhone(phone) {
+  return /^0[235][0-9]{8}$/.test(phone);
+}
+
+export class EventEmitter { ... }
+
+// ── api.js ── (default export)
+const api = {
+  baseUrl: 'https://api.wastego.gh',
+  async get(path) { ... },
+  async post(path, body) { ... }
+};
+export default api;
+
+// ── main.js ── (importing)
+import api from './api.js';                        // default import
+import { formatCurrency, validateGhanaPhone } from './utils.js'; // named imports
+import { formatCurrency as fmt } from './utils.js'; // rename
+import * as Utils from './utils.js';               // namespace import
+
+// Dynamic import (lazy loading)
+const button = document.querySelector('#load-map');
+button.addEventListener('click', async () => {
+  const { initMap } = await import('./map.js'); // loads only when needed
+  initMap();
+});</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🗺️ Map & Set</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// Map — key-value pairs with ANY key type
+const riderCache = new Map();
+riderCache.set('rider_1', { name: 'Kwame', online: true });
+riderCache.set('rider_2', { name: 'Ama', online: false });
+riderCache.get('rider_1');         // { name: 'Kwame', online: true }
+riderCache.has('rider_3');         // false
+riderCache.size;                   // 2
+riderCache.delete('rider_2');
+for (const [id, rider] of riderCache) { console.log(id, rider.name); }
+
+// Set — unique values only
+const onlineRiders = new Set(['rider_1', 'rider_3', 'rider_1']); // rider_1 only once
+onlineRiders.size;                 // 2
+onlineRiders.add('rider_4');
+onlineRiders.has('rider_1');       // true
+
+// Remove duplicates from array
+const unique = [...new Set(['a', 'b', 'a', 'c', 'b'])]; // ['a', 'b', 'c']</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Build a modular WasteGo auth system: Create User and Rider classes with private fields for password (hashed). Build auth.js module: login(), logout(), getCurrentUser(), isAuthenticated(). Build api.js module as a class with private #token field and methods for GET/POST. Use dynamic import() to load the admin panel module only when the admin logs in. Use a Map to cache API responses.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What do private class fields (# prefix) do in JavaScript?', options: ['Mark a field as deprecated', 'Make the field truly inaccessible from outside the class — enforced at the language level', 'Create a readonly field', 'Make the field static'], correct: 1 },
+      { question: 'What is the difference between a named export and a default export?', options: ['Named exports are faster', 'A file can have many named exports but only one default export; import syntax differs', 'Default exports cannot be renamed', 'Named exports require curly braces in the file but not on import'], correct: 1 },
+      { question: 'What does super() do in a class constructor?', options: ['Calls a superpower method', 'Calls the parent class constructor, required before using "this" in a derived class', 'Makes the class a superclass', 'Subscribes to an observable'], correct: 1 },
+      { question: 'What is the advantage of Map over a plain object for key-value storage?', options: ['Maps are always faster', 'Maps allow any data type as keys, maintain insertion order, have built-in size, and don\'t have prototype issues', 'Maps are older and more compatible', 'Maps can be frozen'], correct: 1 },
+      { question: 'What does new Set([1, 2, 2, 3, 3]) produce?', options: ['[1, 2, 2, 3, 3]', 'Set {1, 2, 3} — duplicates removed', '[1, 2, 3]', 'An error'], correct: 1 },
+      { question: 'What is dynamic import() used for?', options: ['Importing at the top of the file dynamically', 'Lazy loading modules at runtime when needed, reducing initial bundle size', 'Importing from URLs only', 'Importing JSON files'], correct: 1 },
+      { question: 'What does a getter method (get propertyName()) allow?', options: ['It gets a property from another object', 'Access the method result like a property without parentheses', 'It is required for all class properties', 'It prevents property modification'], correct: 1 },
+      { question: 'What does Object.assign() do and what is its main limitation?', options: ['Deep clones all objects', 'Copies own enumerable properties from sources to target; limitation: shallow copy only', 'Merges class prototypes', 'It has no limitations'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/NCwa_xi0Uuc'
+  ),
+
+  lesson(
+    '8. Browser APIs: Storage, Notifications, Service Workers & PWA',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-yellow-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>IndexedDB for complex client-side storage</li>
+          <li>Web Notifications API</li>
+          <li>Service Workers: caching, offline, background sync</li>
+          <li>Web Push notifications</li>
+          <li>PWA manifest.json and installability</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔔 Notifications API</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// Request permission
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) return false;
+  const permission = await Notification.requestPermission();
+  return permission === 'granted';
+}
+
+// Show notification
+function showNotification(title, body, icon = '/icons/icon-192.png') {
+  if (Notification.permission !== 'granted') return;
+  const notification = new Notification(title, {
+    body,
+    icon,
+    badge: '/icons/badge-72.png',
+    tag: 'pickup-update',        // replaces previous notification with same tag
+    requireInteraction: true,    // stays until user interacts
+    data: { url: '/pickups' }    // pass data for click handler
+  });
+  notification.onclick = () => {
+    window.focus();
+    window.location.href = notification.data.url;
+    notification.close();
+  };
+}
+
+showNotification('Rider Assigned!', 'Kwame will arrive in ~15 minutes');</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">⚙️ Service Worker Basics</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code">// ── Register in main JS ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(reg => console.log('SW registered:', reg.scope))
+    .catch(err => console.error('SW failed:', err));
+}
+
+// ── sw.js — the service worker ──
+const CACHE_NAME = 'wastego-v1';
+const STATIC_ASSETS = [
+  '/', '/index.html', '/styles.css', '/app.js',
+  '/icons/icon-192.png', '/offline.html'
+];
+
+// Install: cache static assets
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting()) // activate immediately
+  );
+});
+
+// Activate: clean old caches
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+// Fetch: serve from cache, fallback to network
+self.addEventListener('fetch', (event) => {
+  if (!event.request.url.startsWith('http')) return;
+  event.respondWith(
+    caches.match(event.request)
+      .then(cached => {
+        if (cached) return cached;
+        return fetch(event.request)
+          .then(response => {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
+            return response;
+          })
+          .catch(() => caches.match('/offline.html'));
+      })
+  );
+});</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📱 PWA Manifest</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>// manifest.json
+{
+  "name": "WasteGo — Waste Collection",
+  "short_name": "WasteGo",
+  "description": "On-demand waste collection in Ghana",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#00ff88",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "screenshots": [
+    { "src": "/screenshots/home.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow" }
+  ]
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Turn your weather widget or booking form into a PWA: Write a manifest.json with all required fields. Register a service worker that caches the app shell (HTML, CSS, JS). Implement a "Cache First" strategy for static assets and "Network First" for API calls. Add an offline.html page that shows when the network fails. Test installability with Chrome's Lighthouse audit — aim for 100% PWA score.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is a Service Worker?', options: ['A backend web server', 'A JavaScript script that runs in the background, separate from the page, enabling offline, caching, and push notifications', 'A type of web worker for data processing', 'A browser plugin'], correct: 1 },
+      { question: 'What does the install event in a service worker do?', options: ['Installs the app on the user\'s device', 'Fires when the SW is first registered, used to cache static assets', 'Updates the service worker', 'Sends an installation notification'], correct: 1 },
+      { question: 'What is the Cache First strategy?', options: ['Cache everything aggressively', 'Serve from cache if available; fall back to network — best for static assets', 'Network always comes first', 'Only cache on first visit'], correct: 1 },
+      { question: 'What does PWA display: "standalone" in the manifest do?', options: ['Makes the app display in full screen', 'Makes the app look like a native app — no browser chrome (URL bar, etc.)', 'Hides the status bar', 'Makes the app run in a separate window'], correct: 1 },
+      { question: 'Why do Service Workers require HTTPS?', options: ['For faster connections', 'Because they can intercept and modify all network requests, making security essential', 'HTTPS is optional', 'For better caching'], correct: 1 },
+      { question: 'What does Notification.requestPermission() return?', options: ['true or false', '"granted", "denied", or "default"', 'A notification object', 'A Promise that resolves to a boolean'], correct: 1 },
+      { question: 'What does self.skipWaiting() do in a service worker?', options: ['Skips the install phase', 'Forces the new service worker to activate immediately without waiting for existing pages to close', 'Skips caching errors', 'Pauses the service worker'], correct: 1 },
+      { question: 'What is the minimum required content in a PWA manifest for it to be installable?', options: ['Only an icon', 'name, icons (192px and 512px), start_url, and display', 'theme_color and background_color', 'Any valid JSON file'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/sFsRylCQblw'
+  ),
