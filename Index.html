@@ -1,3 +1,21 @@
+const expressCourse = savedCourses.find(c => c.title === 'Express.js');
+for (let i = 0; i < expressLessons.length; i++) {
+  const lessonData = expressLessons[i];
+  const lesson = new Lesson({
+    courseId: expressCourse._id,
+    title: lessonData.title,
+    content: lessonData.content,
+    videoUrl: lessonData.videoUrl,
+    quiz: lessonData.quiz,
+    xpValue: lessonData.xpValue,
+    order: i + 1
+  });
+  await lesson.save();
+  expressCourse.lessons.push(lesson._id);
+}
+await expressCourse.save();
+console.log(`✅ Express.js: added ${expressLessons.length} lessons`);
+
 //  EXPRESS.JS LESSONS (10 lessons)
 // ═══════════════════════════════════════════
 const expressLessons = [
