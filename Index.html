@@ -1,3 +1,890 @@
+// ─────────────────────────────────────────────
+//  PYTHON LESSONS (10 lessons, 8 quizzes each)
+// ─────────────────────────────────────────────
+const pythonLessons = [
+  lesson(
+    '1. Python Basics: Setup, Variables & Data Types',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-blue-500/10 to-green-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Installing Python and setting up VS Code</li>
+          <li>Running your first Python script</li>
+          <li>Variables, dynamic typing, and naming conventions</li>
+          <li>Basic data types: int, float, str, bool, None</li>
+          <li>Type conversion and input() function</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🐍 Your First Python Program</h2>
+        <p class="text-gray-300 mb-3">Python is an interpreted, high-level language known for its readability. It's used for web development, data science, AI, and automation.</p>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code># This is a comment
+print("Hello, DevForge!")   # Output: Hello, DevForge!
+
+# Variables (no type declaration needed)
+name = "Kwame"
+age = 24
+price = 19.99
+is_active = True
+nothing = None
+
+print(f"My name is {name}, I am {age} years old.")</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📊 Data Types & Type Conversion</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code># Integer
+count = 10
+
+# Float
+pi = 3.14159
+
+# String
+greeting = "Hello"
+
+# Boolean
+is_ready = False
+
+# None (null)
+result = None
+
+# Type conversion
+num_str = "123"
+num_int = int(num_str)   # 123
+float_num = float(num_int)  # 123.0
+str_num = str(456)       # "456"
+
+# Get user input
+user_name = input("Enter your name: ")
+print(f"Welcome, {user_name}!")</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Write a program that asks the user for their name, age, and favorite number. Convert the age to an integer and the favorite number to a float. Print a summary sentence using f-strings. Calculate and print the user's birth year (assuming current year is 2026).</p>
+      </div>
+    </div>`,
+    [
+      { question: 'Which of the following is a valid variable name in Python?', options: ['2myVar', 'my-var', '_myVar', 'my var'], correct: 2 },
+      { question: 'What is the output of `print(type(10))`?', options: ['<class \'int\'>', '<class \'float\'>', '<class \'str\'>', '<class \'bool\'>'], correct: 0 },
+      { question: 'How do you convert the string "3.14" to a float?', options: ['float("3.14")', 'int("3.14")', 'str("3.14")', 'to_float("3.14")'], correct: 0 },
+      { question: 'What is the correct way to print a variable `age` inside a string?', options: ['print("Age: age")', 'print(f"Age: {age}")', 'print("Age: " + age)', 'Both B and C are correct'], correct: 3 },
+      { question: 'What does the `input()` function return?', options: ['An integer', 'A float', 'A string', 'A boolean'], correct: 2 },
+      { question: 'Which of these is NOT a Python data type?', options: ['int', 'float', 'char', 'bool'], correct: 2 },
+      { question: 'What is the result of `int(3.99)`?', options: ['3.99', '4', '3', 'Error'], correct: 2 },
+      { question: 'What does `None` represent in Python?', options: ['Zero', 'Empty string', 'Null value (absence of a value)', 'False'], correct: 2 }
+    ],
+    50,
+    'https://www.youtube.com/embed/rfscVS0vtbw'  // freeCodeCamp: Python for Beginners
+  ),
+
+  lesson(
+    '2. Control Flow: Conditionals & Loops',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-blue-500/10 to-green-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>if, elif, else conditional statements</li>
+          <li>Comparison and logical operators</li>
+          <li>for loops and while loops</li>
+          <li>Loop control: break, continue, else clause</li>
+          <li>Nested loops and loop else</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔀 Conditionals</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>age = 18
+
+if age < 18:
+    print("Minor")
+elif age == 18:
+    print("Just became adult")
+else:
+    print("Adult")
+
+# Logical operators: and, or, not
+temperature = 30
+is_raining = True
+
+if temperature > 25 and not is_raining:
+    print("Perfect weather for coding outside!")
+
+# Ternary operator (one-liner)
+status = "Adult" if age >= 18 else "Minor"</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔄 Loops</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code># for loop over a range
+for i in range(5):        # 0,1,2,3,4
+    print(f"Count: {i}")
+
+# for loop over a list
+fruits = ["apple", "banana", "mango"]
+for fruit in fruits:
+    print(f"I like {fruit}")
+
+# while loop
+count = 0
+while count < 3:
+    print("Looping...")
+    count += 1
+
+# break and continue
+for num in range(10):
+    if num == 3:
+        continue    # skip 3
+    if num == 7:
+        break       # stop at 7
+    print(num)
+
+# else with loop (executes if loop finishes normally, not break)
+for i in range(3):
+    print(i)
+else:
+    print("Loop completed without break")</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Write a program that asks the user for a number. Use a loop to print all numbers from 1 to that number. If the number is a multiple of 3, print "Fizz" instead; if multiple of 5, print "Buzz"; if multiple of both, print "FizzBuzz". Handle invalid input (non‑numeric).</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is the output of `if 5 > 3: print("A") else: print("B")`?', options: ['A', 'B', 'Error', 'Nothing'], correct: 0 },
+      { question: 'What does the `elif` stand for?', options: ['Else if', 'Else in if', 'Else loop', 'Else if loop'], correct: 0 },
+      { question: 'Which loop is best for iterating a known number of times?', options: ['while', 'for', 'do-while', 'foreach'], correct: 1 },
+      { question: 'What does `range(2, 10, 2)` produce?', options: ['2,4,6,8', '2,3,4,5,6,7,8,9', '2,4,6,8,10', 'Error'], correct: 0 },
+      { question: 'What does `break` do inside a loop?', options: ['Skips the current iteration', 'Exits the loop entirely', 'Pauses the loop', 'Restarts the loop'], correct: 1 },
+      { question: 'Which logical operator returns True only if both conditions are true?', options: ['or', 'not', 'and', 'xor'], correct: 2 },
+      { question: 'What is the output of `for i in range(1,4): print(i, end=" ")`', options: ['1 2 3', '1 2 3 4', '0 1 2 3', '1 2 3 4 5'], correct: 0 },
+      { question: 'What is the `else` clause in a loop used for?', options: ['Runs if the loop condition is false initially', 'Runs after a `break`', 'Runs after the loop finishes normally (without break)', 'Runs only if an error occurs'], correct: 2 }
+    ],
+    50,
+    'https://www.youtube.com/embed/D0Z7wJ9Hl2o'  // Corey Schafer: If Statements & Loops
+  ),
+
+  lesson(
+    '3. Functions & Scope',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-blue-500/10 to-green-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Defining and calling functions</li>
+          <li>Parameters, arguments, return values</li>
+          <li>Default, keyword, and variable-length arguments (*args, **kwargs)</li>
+          <li>Scope: global vs local variables</li>
+          <li>Lambda functions (anonymous functions)</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📦 Functions</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code># Basic function
+def greet(name):
+    return f"Hello, {name}!"
+
+print(greet("Kwame"))  # Hello, Kwame!
+
+# Default parameter
+def power(base, exponent=2):
+    return base ** exponent
+
+print(power(5))      # 25
+print(power(2, 3))   # 8
+
+# Keyword arguments
+def describe_person(name, age, city):
+    print(f"{name} is {age} years old from {city}")
+
+describe_person(age=25, city="Accra", name="Ama")
+
+# Variable-length arguments (*args = tuple, **kwargs = dict)
+def sum_all(*args):
+    return sum(args)
+
+print(sum_all(1,2,3,4))  # 10
+
+def print_info(**kwargs):
+    for key, value in kwargs.items():
+        print(f"{key}: {value}")
+
+print_info(name="John", role="rider", zone="East")
+
+# Lambda (anonymous function)
+square = lambda x: x ** 2
+print(square(5))  # 25</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔒 Scope</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>global_var = "global"
+
+def my_function():
+    local_var = "local"
+    print(global_var)  # accessible
+    # print(local_var)  # works inside
+
+my_function()
+# print(local_var)  # NameError (outside scope)
+
+# Using global keyword to modify global variable
+counter = 0
+def increment():
+    global counter
+    counter += 1
+
+increment()
+print(counter)  # 1</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Create a function `calculate_tip(bill, percentage=15)` that returns the tip amount. Then write a lambda function to calculate the total bill (bill + tip). Test with different arguments (positional, keyword, default).</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What keyword is used to define a function in Python?', options: ['func', 'define', 'def', 'function'], correct: 2 },
+      { question: 'What is the output of `lambda x: x*2` when called with 3?', options: ['6', '9', '3', 'Error'], correct: 0 },
+      { question: 'How do you make a parameter optional in a function?', options: ['By setting a default value', 'By using *args', 'By using optional keyword', 'You cannot'], correct: 0 },
+      { question: 'What does `*args` do in a function definition?', options: ['Accepts any number of keyword arguments', 'Accepts any number of positional arguments as a tuple', 'Accepts a single argument', 'Creates a list argument'], correct: 1 },
+      { question: 'What is the scope of a variable defined inside a function?', options: ['Global', 'Local to the function', 'Module scope', 'Class scope'], correct: 1 },
+      { question: 'How do you modify a global variable inside a function?', options: ['Use the `global` keyword', 'Use the `nonlocal` keyword', 'Directly reassign it', 'You cannot'], correct: 0 },
+      { question: 'What does `return` do?', options: ['Exits the function and optionally returns a value', 'Prints a value', 'Stops the entire program', 'Throws an error'], correct: 0 },
+      { question: 'What is the result of `def add(a,b): return a+b` then `add(b=5, a=3)`?', options: ['8', 'Error', '5', '3'], correct: 0 }
+    ],
+    50,
+    'https://www.youtube.com/embed/9Os0o3wzS_I'  // Corey Schafer: Functions
+  ),
+
+  lesson(
+    '4. Data Structures: Lists, Tuples, Dictionaries & Sets',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-blue-500/10 to-green-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Lists: mutable, ordered, indexing, slicing, methods</li>
+          <li>Tuples: immutable, ordered, unpacking</li>
+          <li>Dictionaries: key-value pairs, methods, iteration</li>
+          <li>Sets: unique, unordered, set operations</li>
+          <li>List comprehensions and dictionary comprehensions</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📋 Lists</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>fruits = ["apple", "banana", "cherry"]
+fruits.append("orange")        # add to end
+fruits.insert(1, "blueberry")  # insert at index
+fruits.remove("banana")        # remove by value
+popped = fruits.pop()          # remove and return last
+
+# Slicing
+print(fruits[1:3])   # from index 1 to 2
+print(fruits[:2])    # first two
+print(fruits[::-1])  # reverse
+
+# List comprehension
+squares = [x**2 for x in range(10)]  # [0,1,4,9,...]
+even_squares = [x**2 for x in range(10) if x % 2 == 0]</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📚 Tuples & Dictionaries</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code># Tuple (immutable)
+coordinates = (10.5, 20.3)
+x, y = coordinates  # unpacking
+print(f"X: {x}, Y: {y}")
+
+# Dictionary
+user = {
+    "name": "Kwame",
+    "age": 24,
+    "skills": ["Python", "JavaScript"]
+}
+user["email"] = "kwame@example.com"  # add
+user["age"] = 25                     # update
+print(user.get("country", "GH"))     # default if missing
+
+# Dictionary comprehension
+squares_dict = {x: x**2 for x in range(5)}  # {0:0, 1:1, 2:4, 3:9, 4:16}</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🔢 Sets</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>unique_nums = {1, 2, 3, 3, 4}  # {1,2,3,4}
+unique_nums.add(5)
+unique_nums.remove(2)
+# Set operations
+a = {1,2,3}
+b = {3,4,5}
+print(a | b)  # union: {1,2,3,4,5}
+print(a & b)  # intersection: {3}
+print(a - b)  # difference: {1,2}</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Given a list of numbers, write a function that returns a dictionary with keys "even" and "odd", each mapping to a list of those numbers. Use list comprehensions. Also, given two lists, return their common elements as a set.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'Which data structure is mutable and ordered?', options: ['Tuple', 'List', 'Set', 'Dictionary'], correct: 1 },
+      { question: 'What is the output of `[1,2,3][:2]`?', options: ['[1,2]', '[1,2,3]', '[2,3]', 'Error'], correct: 0 },
+      { question: 'How do you add an element to a set?', options: ['append()', 'add()', 'insert()', 'push()'], correct: 1 },
+      { question: 'Which of the following creates a dictionary?', options: ['{}', '[]', '()', '<>'], correct: 0 },
+      { question: 'What is the result of `{1,2,3} | {3,4,5}`?', options: ['{3}', '{1,2,3,4,5}', '{1,2,4,5}', 'Error'], correct: 1 },
+      { question: 'What does `list(range(5))` produce?', options: ['[0,1,2,3,4]', '[1,2,3,4,5]', '[0,1,2,3,4,5]', 'Error'], correct: 0 },
+      { question: 'Which method removes the last element from a list and returns it?', options: ['pop()', 'remove()', 'delete()', 'discard()'], correct: 0 },
+      { question: 'What is the main difference between a list and a tuple?', options: ['Lists are faster', 'Tuples are mutable', 'Tuples are immutable', 'No difference'], correct: 2 }
+    ],
+    50,
+    'https://www.youtube.com/embed/W8KRzmHIU4s'  // freeCodeCamp: Lists, Tuples, Dictionaries
+  ),
+
+  lesson(
+    '5. File I/O & Exception Handling',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-blue-500/10 to-green-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Reading and writing text files</li>
+          <li>Using `with` statement (context managers)</li>
+          <li>Handling exceptions with try/except/else/finally</li>
+          <li>Raising custom exceptions</li>
+          <li>Working with JSON files</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📄 File I/O</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code># Write to a file
+with open("output.txt", "w") as f:
+    f.write("Hello, Python!\n")
+    f.write("Second line")
+
+# Read from a file
+with open("output.txt", "r") as f:
+    content = f.read()
+    print(content)
+
+# Read line by line
+with open("data.txt") as f:
+    for line in f:
+        print(line.strip())
+
+# Append to file
+with open("log.txt", "a") as f:
+    f.write("New entry\n")
+
+# JSON handling
+import json
+data = {"name": "Kwame", "age": 24}
+with open("user.json", "w") as f:
+    json.dump(data, f)
+
+with open("user.json") as f:
+    loaded = json.load(f)
+    print(loaded["name"])</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">⚠️ Exception Handling</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>try:
+    num = int(input("Enter a number: "))
+    result = 10 / num
+except ValueError:
+    print("That's not a valid number!")
+except ZeroDivisionError:
+    print("Cannot divide by zero!")
+else:
+    print(f"Result: {result}")  # runs if no exception
+finally:
+    print("Cleanup actions here")
+
+# Raising exceptions
+def withdraw(balance, amount):
+    if amount > balance:
+        raise ValueError("Insufficient funds")
+    return balance - amount</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Write a program that reads a list of numbers from a file (one per line), calculates their sum and average. Handle cases where the file doesn't exist or contains invalid data (non‑numeric). Write the results to a new file "summary.txt". Use try/except/finally.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'Which mode opens a file for writing (overwrites)?', options: ['r', 'w', 'a', 'x'], correct: 1 },
+      { question: 'What does the `with` statement do?', options: ['Defines a block', 'Automatically closes the file after the block', 'Creates a new file', 'Reads the file'], correct: 1 },
+      { question: 'What exception is raised when a file is not found?', options: ['FileNotFoundError', 'IOError', 'OSError', 'ValueError'], correct: 0 },
+      { question: 'How do you convert a string to JSON?', options: ['json.dumps()', 'json.loads()', 'json.stringify()', 'json.parse()'], correct: 0 },
+      { question: 'What does the `else` clause in a try/except block do?', options: ['Runs if an exception occurs', 'Runs if no exception occurs', 'Always runs', 'Runs only if there is a finally'], correct: 1 },
+      { question: 'Which method reads the entire file content as a string?', options: ['read()', 'readline()', 'readlines()', 'readall()'], correct: 0 },
+      { question: 'What is the correct way to raise an error?', options: ['raise Error("message")', 'throw Error("message")', 'raise Exception("message")', 'Both A and C'], correct: 3 },
+      { question: 'What does `json.load(f)` do?', options: ['Writes Python object to file as JSON', 'Reads JSON from file and returns Python object', 'Converts string to JSON', 'Converts JSON to string'], correct: 1 }
+    ],
+    50,
+    'https://www.youtube.com/embed/Uh2ebFW8OYM'  // Corey Schafer: Exceptions & File I/O
+  ),
+
+  lesson(
+    '6. Modules & Packages',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-blue-500/10 to-green-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Creating and importing modules</li>
+          <li>The `import` statement variations</li>
+          <li>Using `__name__ == "__main__"`</li>
+          <li>Installing third-party packages with pip</li>
+          <li>Creating your own packages</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📦 Modules</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code># mymodule.py
+def greet(name):
+    return f"Hello {name}!"
+
+PI = 3.14159
+
+if __name__ == "__main__":
+    # This runs only when this file is executed directly
+    print(greet("World"))
+
+# main.py
+import mymodule
+print(mymodule.greet("Alice"))  # Hello Alice!
+print(mymodule.PI)
+
+# Alternative imports
+from mymodule import greet, PI
+from mymodule import *  # not recommended
+import mymodule as mm  # alias
+
+# Install third-party packages
+# pip install requests pandas
+
+import requests
+response = requests.get("https://api.github.com")
+print(response.status_code)</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📁 Packages</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code># Directory structure:
+# mypackage/
+#   __init__.py
+#   module1.py
+#   module2.py
+
+# __init__.py can be empty or contain package initialization
+# Importing:
+from mypackage import module1
+from mypackage.module2 import function_name</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Create a module `math_utils.py` with functions `add`, `subtract`, `multiply`, `divide`. Write a `main.py` that imports these functions and demonstrates them. Use `if __name__ == "__main__"` in the module to test it when run directly. Install the `requests` library and fetch data from a public API (e.g., JSONPlaceholder).</p>
+      </div>
+    </div>`,
+    [
+      { question: 'How do you import a module named `mymodule`?', options: ['import mymodule', 'from mymodule', 'include mymodule', 'require mymodule'], correct: 0 },
+      { question: 'What is the purpose of `if __name__ == "__main__"`?', options: ['To check if the script is run directly, not imported', 'To define the main function', 'To set the module name', 'To import main'], correct: 0 },
+      { question: 'What command installs a package using pip?', options: ['pip install package', 'python install package', 'install package', 'pip get package'], correct: 0 },
+      { question: 'What does `import math as m` do?', options: ['Imports math with alias m', 'Imports only the math function', 'Imports math into a variable', 'Error'], correct: 0 },
+      { question: 'Which of the following imports only the `sqrt` function from `math`?', options: ['import math.sqrt', 'from math import sqrt', 'import sqrt from math', 'math.sqrt import'], correct: 1 },
+      { question: 'What is a Python package?', options: ['A single Python file', 'A directory containing an __init__.py file and modules', 'A ZIP archive', 'A built-in library'], correct: 1 },
+      { question: 'What does `pip freeze` do?', options: ['Lists installed packages', 'Installs frozen packages', 'Freezes the environment', 'Uninstalls packages'], correct: 0 },
+      { question: 'What is the output of `print(__name__)` in a script run directly?', options: ['__main__', 'script name', '__module__', 'main'], correct: 0 }
+    ],
+    50,
+    'https://www.youtube.com/embed/CqvZ3vGoGs0'  // Corey Schafer: Modules and Packages
+  ),
+
+  lesson(
+    '7. Object-Oriented Programming (OOP)',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-blue-500/10 to-green-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Classes and objects</li>
+          <li>Constructor (`__init__`), instance methods, attributes</li>
+          <li>Encapsulation, inheritance, polymorphism</li>
+          <li>Class vs static methods</li>
+          <li>Magic methods (`__str__`, `__repr__`, etc.)</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🏛️ Classes</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>class Rider:
+    # Class attribute (shared across all instances)
+    company = "WasteGo"
+    
+    def __init__(self, name, vehicle):
+        # Instance attributes
+        self.name = name
+        self.vehicle = vehicle
+        self._rating = 5.0  # protected by convention
+        self.__id = None    # name mangling (private)
+    
+    def pickups(self):
+        return f"{self.name} is doing a pickup with {self.vehicle}"
+    
+    def _internal_method(self):  # protected
+        pass
+    
+    @property
+    def rating(self):
+        return self._rating
+    
+    @rating.setter
+    def rating(self, value):
+        if 0 <= value <= 5:
+            self._rating = value
+    
+    @classmethod
+    def from_string(cls, data_str):
+        name, vehicle = data_str.split(",")
+        return cls(name, vehicle)
+    
+    @staticmethod
+    def validate_vehicle(vehicle):
+        return vehicle in ["tricycle", "bike", "truck"]
+
+# Inheritance
+class Manager(Rider):
+    def __init__(self, name, vehicle, team_size):
+        super().__init__(name, vehicle)
+        self.team_size = team_size
+    
+    def pickups(self):  # override
+        return f"{self.name} manages {self.team_size} riders"
+
+# Usage
+rider1 = Rider("Kwame", "tricycle")
+print(rider1.pickups())  # Kwame is doing a pickup with tricycle
+
+manager = Manager("Ama", "car", 5)
+print(manager.pickups())  # Ama manages 5 riders
+
+# Magic method
+class Book:
+    def __init__(self, title, author):
+        self.title = title
+        self.author = author
+    def __str__(self):
+        return f"{self.title} by {self.author}"
+    def __repr__(self):
+        return f"Book('{self.title}', '{self.author}')"
+    def __eq__(self, other):
+        return self.title == other.title and self.author == other.author</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Create a `BankAccount` class with attributes `owner`, `balance`, and methods `deposit`, `withdraw` (with insufficient funds check), and `__str__`. Use properties to make balance read‑only. Then create a `SavingsAccount` subclass that adds an interest rate and an `apply_interest` method.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is the constructor method in a Python class?', options: ['__init__', '__construct__', '__new__', 'init'], correct: 0 },
+      { question: 'What does `self` represent?', options: ['The class itself', 'The current instance of the class', 'A global variable', 'A static reference'], correct: 1 },
+      { question: 'How do you create a subclass?', options: ['class Child(Parent):', 'class Child extends Parent:', 'class Child inherits Parent:', 'Parent.Child = class'], correct: 0 },
+      { question: 'What is method overriding?', options: ['Calling a method from parent', 'Defining a method in child with same name as parent', 'Using super()', 'Both A and C'], correct: 1 },
+      { question: 'What does `@staticmethod` do?', options: ['Makes a method belong to the class, no self/cls', 'Makes a method a class method', 'Makes a method private', 'Makes a method abstract'], correct: 0 },
+      { question: 'What is the purpose of `__str__`?', options: ['String representation for debugging', 'String representation for end users (print)', 'Constructor string', 'Property string'], correct: 1 },
+      { question: 'How do you enforce encapsulation?', options: ['Use double underscore prefix (__var)', 'Use single underscore prefix (_var)', 'Use private keyword', 'Use class private'], correct: 0 },
+      { question: 'What does `super().__init__()` do?', options: ['Calls the parent class constructor', 'Calls the child class constructor', 'Calls the superclass method', 'Initializes the super() object'], correct: 0 }
+    ],
+    50,
+    'https://www.youtube.com/embed/ZDa-Z5Jz7Mk'  // Corey Schafer: OOP Part 1
+  ),
+
+  lesson(
+    '8. Working with APIs & Web Scraping',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-blue-500/10 to-green-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>Making HTTP requests with `requests`</li>
+          <li>Parsing JSON responses</li>
+          <li>Authentication and headers</li>
+          <li>Web scraping with `BeautifulSoup`</li>
+          <li>Ethical scraping and rate limiting</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📡 API Calls</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>import requests
+
+# GET request
+response = requests.get("https://jsonplaceholder.typicode.com/posts/1")
+if response.status_code == 200:
+    post = response.json()
+    print(post["title"])
+
+# Query parameters
+params = {"userId": 1}
+response = requests.get("https://jsonplaceholder.typicode.com/posts", params=params)
+
+# POST with JSON
+new_post = {"title": "foo", "body": "bar", "userId": 1}
+response = requests.post("https://jsonplaceholder.typicode.com/posts", json=new_post)
+
+# Headers (e.g., API keys)
+headers = {"Authorization": "Bearer YOUR_TOKEN"}
+response = requests.get("https://api.example.com/data", headers=headers)
+
+# Error handling
+try:
+    response = requests.get("https://api.github.com", timeout=5)
+    response.raise_for_status()  # raises HTTPError for 4xx/5xx
+except requests.exceptions.RequestException as e:
+    print(f"Request failed: {e}")</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🕸️ Web Scraping (BeautifulSoup)</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>from bs4 import BeautifulSoup
+import requests
+
+url = "https://example.com"
+response = requests.get(url)
+soup = BeautifulSoup(response.text, "html.parser")
+
+# Find all headings
+headings = soup.find_all("h2")
+for h in headings:
+    print(h.text)
+
+# Find element by class
+items = soup.find_all("div", class_="item-class")
+
+# Find by id
+main_content = soup.find(id="main")
+
+# Extract links
+links = soup.find_all("a")
+for link in links:
+    print(link.get("href"))</code></pre>
+        </div>
+        <div class="bg-red-500/10 p-4 rounded-lg mt-3">
+          <p class="text-red-300">⚠️ Always check `robots.txt` and respect rate limits. Scraping can be illegal for some sites.</p>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Write a program that fetches the top posts from a public API (e.g., Reddit or JSONPlaceholder). Parse the JSON and print the titles and IDs. Then attempt to scrape a news website (e.g., BBC or local news) to extract all article headlines. Respect robots.txt and add a delay between requests.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'Which library is commonly used for HTTP requests in Python?', options: ['urllib', 'requests', 'http.client', 'socket'], correct: 1 },
+      { question: 'How do you parse JSON from an API response?', options: ['response.json()', 'json.parse(response)', 'response.to_json()', 'json.loads(response)'], correct: 0 },
+      { question: 'What status code indicates a successful GET request?', options: ['200', '404', '500', '301'], correct: 0 },
+      { question: 'What does `response.raise_for_status()` do?', options: ['Raises an exception for 4xx/5xx errors', 'Raises an exception for all responses', 'Returns the status code', 'Raises an exception if response is None'], correct: 0 },
+      { question: 'Which library is commonly used for HTML parsing and web scraping?', options: ['Scrapy', 'BeautifulSoup', 'lxml', 'All of the above'], correct: 3 },
+      { question: 'What should you check before scraping a website?', options: ['Sitemap', 'robots.txt', 'Terms of Service', 'Both B and C'], correct: 3 },
+      { question: 'What does `headers` parameter in `requests.get()` do?', options: ['Sets request headers', 'Sets response headers', 'Sets cookies', 'Sets authentication'], correct: 0 },
+      { question: 'How do you add a query parameter to a GET request?', options: ['Append to URL', 'Use `params` argument', 'Use `data` argument', 'Both A and B'], correct: 3 }
+    ],
+    50,
+    'https://www.youtube.com/embed/tb8gHvYlCFs'  // freeCodeCamp: API & Web Scraping
+  ),
+
+  lesson(
+    '9. Data Analysis with Pandas & NumPy',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-blue-500/10 to-green-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+        <ul class="list-disc list-inside text-gray-300 space-y-1">
+          <li>NumPy arrays and vectorized operations</li>
+          <li>Pandas Series and DataFrames</li>
+          <li>Reading/writing CSV files</li>
+          <li>Data cleaning and filtering</li>
+          <li>Basic plotting with Matplotlib</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📊 NumPy & Pandas Basics</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>import numpy as np
+import pandas as pd
+
+# NumPy array
+arr = np.array([1,2,3,4,5])
+print(arr.mean())  # 3.0
+print(arr * 2)      # [2,4,6,8,10]
+
+# Pandas Series
+s = pd.Series([10,20,30], index=['a','b','c'])
+print(s['b'])  # 20
+
+# DataFrame
+data = {
+    'Name': ['Kwame', 'Ama', 'Kofi'],
+    'Age': [24, 22, 28],
+    'City': ['Accra', 'Kumasi', 'Tema']
+}
+df = pd.DataFrame(data)
+print(df.head())
+
+# Read CSV
+df = pd.read_csv('data.csv')
+# Write CSV
+df.to_csv('output.csv', index=False)
+
+# Filtering
+adults = df[df['Age'] >= 18]
+# Group by
+grouped = df.groupby('City').mean()</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📈 Basic Plotting</h2>
+        <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+          <pre class="text-green-400 text-sm leading-relaxed"><code>import matplotlib.pyplot as plt
+
+# Simple line plot
+x = [1,2,3,4]
+y = [10,20,25,30]
+plt.plot(x, y)
+plt.title("Sample Plot")
+plt.xlabel("X")
+plt.ylabel("Y")
+plt.show()
+
+# Bar chart
+df['Age'].plot(kind='bar')
+plt.show()</code></pre>
+        </div>
+      </div>
+
+      <div class="bg-green-500/10 p-6 rounded-xl">
+        <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+        <p class="text-gray-300">Download a CSV dataset (e.g., from Kaggle or use mock data). Load it into a DataFrame. Clean it: remove rows with missing values, convert columns to correct types, filter rows based on a condition, and create a new column. Then generate a summary statistics table and a bar chart for a categorical column.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is the primary data structure in Pandas?', options: ['Series and DataFrame', 'Array', 'List', 'Dictionary'], correct: 0 },
+      { question: 'How do you read a CSV file into a DataFrame?', options: ['pd.read_csv()', 'pd.load_csv()', 'pd.import_csv()', 'pd.csv_read()'], correct: 0 },
+      { question: 'Which NumPy function creates an array of zeros?', options: ['np.zeros()', 'np.empty()', 'np.ones()', 'np.arange()'], correct: 0 },
+      { question: 'What does `df.head()` display?', options: ['First 5 rows', 'Last 5 rows', 'Random 5 rows', 'First 10 rows'], correct: 0 },
+      { question: 'How do you filter rows where Age > 30?', options: ['df[df.Age > 30]', 'df.filter(Age > 30)', 'df.query("Age>30")', 'Both A and C'], correct: 3 },
+      { question: 'What is the purpose of `df.groupby()`?', options: ['Groups rows by a column and allows aggregation', 'Sorts the DataFrame', 'Removes duplicates', 'Merges two DataFrames'], correct: 0 },
+      { question: 'Which library is commonly used for plotting with Pandas?', options: ['Matplotlib', 'Seaborn', 'Plotly', 'All of the above'], correct: 3 },
+      { question: 'What does `df.isnull().sum()` return?', options: ['Total missing values per column', 'Total non-null values', 'Boolean mask', 'Number of rows'], correct: 0 }
+    ],
+    50,
+    'https://www.youtube.com/embed/vmEHCJofslg'  // freeCodeCamp: Pandas & NumPy
+  ),
+
+  lesson(
+    '10. Final Python Project: Build a CLI Expense Tracker',
+    `<div class="space-y-6">
+      <div class="bg-gradient-to-r from-blue-500/10 to-green-500/10 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold text-blue-400 mb-2">🏆 Final Project</h2>
+        <p class="text-gray-300">You will build a complete command-line expense tracker that uses files, OOP, and error handling – applying everything you've learned.</p>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">📋 Requirements</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-black/60 p-4 rounded-lg">
+            <p class="text-orange-400 font-semibold mb-2">Features</p>
+            <ul class="text-gray-300 text-sm space-y-1 list-disc list-inside">
+              <li>Add expenses (description, amount, category, date)</li>
+              <li>List all expenses (formatted table)</li>
+              <li>Filter by category or date range</li>
+              <li>View summary: total spent per category</li>
+              <li>Delete an expense by ID</li>
+              <li>Save data to a JSON file (persistent storage)</li>
+              <li>Handle invalid input (try/except)</li>
+            </ul>
+          </div>
+          <div class="bg-black/60 p-4 rounded-lg">
+            <p class="text-purple-400 font-semibold mb-2">Technical requirements</p>
+            <ul class="text-gray-300 text-sm space-y-1 list-disc list-inside">
+              <li>Use classes: `Expense`, `ExpenseTracker`</li>
+              <li>Use functions for menu and file I/O</li>
+              <li>Use `argparse` or interactive menu</li>
+              <li>Use `datetime` for date handling</li>
+              <li>Use `tabulate` or formatted strings for display</li>
+              <li>Write unit tests (using `unittest` or `pytest`)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold text-cyan-400 mb-2">🚀 Bonus Features</h2>
+        <ul class="list-disc list-inside text-gray-300">
+          <li>Export to CSV/Excel</li>
+          <li>Generate a simple chart (using matplotlib) showing spending by category</li>
+          <li>Set a monthly budget and warn when exceeded</li>
+        </ul>
+      </div>
+
+      <div class="bg-yellow-500/10 p-4 rounded-lg">
+        <p class="text-yellow-300">🎓 <strong>You have mastered Python!</strong> From basics to OOP, file handling, APIs, and data analysis. You are now ready to build real-world applications and continue learning frameworks like Django or Flask.</p>
+      </div>
+    </div>`,
+    [
+      { question: 'What is the best way to handle user input in a CLI app?', options: ['input() with validation', 'sys.argv', 'argparse', 'All of the above depending on complexity'], correct: 3 },
+      { question: 'How do you store expenses persistently?', options: ['CSV', 'JSON', 'SQLite', 'Any of the above'], correct: 3 },
+      { question: 'What module can you use to parse command-line arguments?', options: ['sys', 'argparse', 'getopt', 'All of the above'], correct: 3 },
+      { question: 'How do you format a date in Python?', options: ['datetime.strftime()', 'datetime.format()', 'date.format()', 'str(date)'], correct: 0 },
+      { question: 'What is the purpose of unit testing?', options: ['To run the app faster', 'To automatically verify that individual parts work correctly', 'To generate documentation', 'To measure code speed'], correct: 1 },
+      { question: 'Which library is used for making nice console tables?', options: ['tabulate', 'prettytable', 'Both', 'pandas'], correct: 2 },
+      { question: 'What does `__str__` method do in an Expense class?', options: ['Returns a string representation for printing', 'Returns the expense ID', 'Initializes the expense', 'Converts to dictionary'], correct: 0 },
+      { question: 'What is the recommended way to manage categories?', options: ['Hardcoded list', 'Enum', 'User-defined set', 'Any of the above'], correct: 2 }
+    ],
+    100,
+    'https://www.youtube.com/embed/8jAykqxIY6k'  // freeCodeCamp: Build a CLI App in Python
+  )
+];
+
+
 //  VIBE CODING LESSONS (10 lessons)
 // ═══════════════════════════════════════════
 const vibeLessons = [
