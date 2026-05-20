@@ -1,3 +1,21 @@
+const pythonCourse = savedCourses.find(c => c.title === 'Python');
+for (let i = 0; i < pythonLessons.length; i++) {
+  const lessonData = pythonLessons[i];
+  const lesson = new Lesson({
+    courseId: pythonCourse._id,
+    title: lessonData.title,
+    content: lessonData.content,
+    videoUrl: lessonData.videoUrl,
+    quiz: lessonData.quiz,
+    xpValue: lessonData.xpValue,
+    order: i + 1
+  });
+  await lesson.save();
+  pythonCourse.lessons.push(lesson._id);
+}
+await pythonCourse.save();
+console.log(`✅ Python: added ${pythonLessons.length} lessons`);
+
 // ─────────────────────────────────────────────
 //  PYTHON LESSONS (10 lessons, 8 quizzes each)
 // ─────────────────────────────────────────────
