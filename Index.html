@@ -1,3 +1,1216 @@
+//  EXPRESS.JS LESSONS (10 lessons)
+// ═══════════════════════════════════════════
+const expressLessons = [
+
+lesson(
+  '1. Express.js Basics: Setup, Routes & Middleware',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>What Express is and why it exists</li>
+        <li>Creating your first Express server</li>
+        <li>Defining routes: GET, POST, PUT, PATCH, DELETE</li>
+        <li>What middleware is and how the request pipeline works</li>
+        <li>Built-in middleware: express.json(), express.static()</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🚀 Your First Express Server</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>import express from 'express';
+import dotenv from 'dotenv';
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// ── Built-in Middleware ──
+app.use(express.json());                        // parse JSON request bodies
+app.use(express.urlencoded({ extended: true })); // parse form data
+app.use(express.static('public'));              // serve static files from /public
+
+// ── Routes ──
+// Route: METHOD + PATH + HANDLER
+app.get('/', (req, res) => {
+  res.json({ message: 'WasteGo API is running 🚛', version: '1.0' });
+});
+
+app.get('/pickups', (req, res) => {
+  // req.query  → query string params: /pickups?status=pending&region=accra
+  const { status, region, page = 1, limit = 20 } = req.query;
+  res.json({ status, region, page, limit });
+});
+
+app.get('/pickups/:id', (req, res) => {
+  // req.params → URL parameters: /pickups/abc123
+  const { id } = req.params;
+  res.json({ pickupId: id });
+});
+
+app.post('/pickups', (req, res) => {
+  // req.body → parsed JSON body (needs express.json() middleware)
+  const data = req.body;
+  res.status(201).json({ success: true, data });
+});
+
+app.patch('/pickups/:id', (req, res) => {
+  res.json({ updated: req.params.id, changes: req.body });
+});
+
+app.delete('/pickups/:id', (req, res) => {
+  res.status(204).send(); // 204 No Content
+});
+
+// ── Start Server ──
+app.listen(PORT, () => {
+  console.log(\`✅ Server running on http://localhost:\${PORT}\`);
+});</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🔗 How Middleware Works</h2>
+      <p class="text-gray-300 mb-3">Every request flows through a pipeline of middleware functions. Each function gets <code class="text-yellow-400">req</code>, <code class="text-yellow-400">res</code>, and <code class="text-yellow-400">next</code>. Calling <code class="text-yellow-400">next()</code> passes control to the next middleware.</p>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>// Middleware signature: (req, res, next) => void
+
+// 1. Application-level middleware (runs on ALL routes)
+app.use((req, res, next) => {
+  console.log(\`[\${new Date().toISOString()}] \${req.method} \${req.url}\`);
+  next(); // MUST call next() or request hangs forever
+});
+
+// 2. Route-specific middleware
+function checkApiKey(req, res, next) {
+  const key = req.headers['x-api-key'];
+  if (!key || key !== process.env.API_KEY) {
+    return res.status(401).json({ error: 'Invalid API key' });
+    // NOT calling next() here — stops the pipeline
+  }
+  next();
+}
+
+app.get('/admin/stats', checkApiKey, (req, res) => {
+  res.json({ total: 1000 });
+});
+
+// 3. Error-handling middleware (4 params — Express detects this)
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({ error: err.message });
+});
+
+// Pipeline for POST /pickups:
+// express.json() → logger → checkApiKey → route handler → error handler</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+      <p class="text-gray-300">Build a WasteGo Express server with: a logger middleware that logs method, URL, and response time. Routes for all pickup CRUD operations using an in-memory array. A middleware that checks for an x-api-key header on all /admin routes. A 404 handler for unknown routes. A global error handler. Test all routes with Thunder Client or Postman.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What does app.use() do in Express?', options: ['Creates a new route', 'Mounts middleware that runs for every request matching the optional path', 'Starts the server', 'Parses the URL'], correct: 1 },
+    { question: 'What happens if you forget to call next() in a middleware?', options: ['Express calls it automatically', 'The request hangs indefinitely — no response is ever sent', 'The next route runs anyway', 'An error is thrown'], correct: 1 },
+    { question: 'What does express.json() do?', options: ['Converts responses to JSON', 'Parses incoming request bodies with Content-Type: application/json into req.body', 'Validates JSON schemas', 'Serializes JavaScript objects'], correct: 1 },
+    { question: 'How do you access URL parameters like /pickups/:id in Express?', options: ['req.query.id', 'req.params.id', 'req.body.id', 'req.url.id'], correct: 1 },
+    { question: 'How do you access query string params like /pickups?status=pending?', options: ['req.params.status', 'req.body.status', 'req.query.status', 'req.search.status'], correct: 2 },
+    { question: 'What makes Express recognize a function as an error-handling middleware?', options: ['It must be named "errorHandler"', 'It must have exactly 4 parameters: (err, req, res, next)', 'It must use app.error() instead of app.use()', 'It must return a Promise'], correct: 1 },
+    { question: 'What does express.static("public") do?', options: ['Makes all routes public', 'Serves files from the /public directory as static assets', 'Makes the app stateless', 'Creates a public API key'], correct: 1 },
+    { question: 'What status code should a DELETE route return when successful with no body?', options: ['200', '201', '204', '200 with null body'], correct: 2 }
+  ],
+  50,
+  'https://www.youtube.com/embed/L72fhGm1tfE'
+),
+
+lesson(
+  '2. Express Router: Organizing Routes Like a Pro',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>express.Router() for modular route files</li>
+        <li>Mounting routers at base paths</li>
+        <li>Route-level vs app-level middleware</li>
+        <li>Chaining route handlers with router.route()</li>
+        <li>Full MVC folder structure for a production API</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">📁 MVC File Structure</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>src/
+├── index.js            ← entry point (start server)
+├── app.js              ← Express app setup (middleware, routes)
+├── routes/
+│   ├── auth.routes.js
+│   ├── pickup.routes.js
+│   ├── rider.routes.js
+│   └── admin.routes.js
+├── controllers/
+│   ├── auth.controller.js
+│   ├── pickup.controller.js
+│   └── rider.controller.js
+├── middleware/
+│   ├── auth.middleware.js   ← protect, restrictTo
+│   ├── validate.middleware.js
+│   └── upload.middleware.js
+├── models/
+│   ├── User.model.js
+│   └── Pickup.model.js
+├── services/
+│   ├── email.service.js
+│   └── payment.service.js
+└── utils/
+    ├── AppError.js
+    └── catchAsync.js</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🗂️ Router Files</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>// ── routes/pickup.routes.js ──
+import { Router } from 'express';
+import { protect, restrictTo } from '../middleware/auth.middleware.js';
+import { validate } from '../middleware/validate.middleware.js';
+import { createPickupSchema, updateStatusSchema } from '../schemas/pickup.schema.js';
+import * as PickupController from '../controllers/pickup.controller.js';
+
+const router = Router();
+
+// Apply protect to ALL routes in this router
+router.use(protect);
+
+// Chain handlers for same path
+router.route('/')
+  .get(PickupController.getAllPickups)
+  .post(validate(createPickupSchema), PickupController.createPickup);
+
+router.route('/:id')
+  .get(PickupController.getPickup)
+  .patch(validate(updateStatusSchema), PickupController.updatePickup)
+  .delete(restrictTo('admin'), PickupController.deletePickup);
+
+router.patch('/:id/accept', restrictTo('rider'), PickupController.acceptPickup);
+router.patch('/:id/complete', restrictTo('rider'), PickupController.completePickup);
+
+export default router;
+
+// ── app.js ──
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import authRoutes from './routes/auth.routes.js';
+import pickupRoutes from './routes/pickup.routes.js';
+import riderRoutes from './routes/rider.routes.js';
+import adminRoutes from './routes/admin.routes.js';
+
+const app = express();
+
+// Global middleware
+app.use(helmet());
+app.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(',') }));
+app.use(express.json({ limit: '10kb' }));
+
+// Mount routers
+app.use('/api/v1/auth',    authRoutes);
+app.use('/api/v1/pickups', pickupRoutes);
+app.use('/api/v1/riders',  riderRoutes);
+app.use('/api/v1/admin',   adminRoutes);
+
+// 404 handler
+app.all('*', (req, res) => res.status(404).json({ error: \`Route \${req.url} not found\` }));
+
+// Global error handler (must be last)
+app.use(globalErrorHandler);
+
+export default app;</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🎮 Controllers</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>// ── utils/catchAsync.js ──
+// Wraps async route handlers — no more try/catch in every controller
+export const catchAsync = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+// ── controllers/pickup.controller.js ──
+import { catchAsync } from '../utils/catchAsync.js';
+import { AppError } from '../utils/AppError.js';
+import { Pickup } from '../models/Pickup.model.js';
+
+export const getAllPickups = catchAsync(async (req, res) => {
+  const { status, region, page = 1, limit = 20 } = req.query;
+  const filter = {};
+  if (status) filter.status = status;
+  if (region) filter['address.city'] = region;
+
+  const pickups = await Pickup.find(filter)
+    .populate('customer', 'name phone')
+    .populate('rider', 'name phone')
+    .sort({ createdAt: -1 })
+    .limit(limit * 1)
+    .skip((page - 1) * limit)
+    .lean();
+
+  const total = await Pickup.countDocuments(filter);
+
+  res.json({
+    success: true,
+    data: pickups,
+    meta: { total, page: +page, limit: +limit, pages: Math.ceil(total / limit) }
+  });
+});
+
+export const createPickup = catchAsync(async (req, res) => {
+  const pickup = await Pickup.create({ ...req.body, customer: req.user._id });
+  res.status(201).json({ success: true, data: pickup });
+});
+
+export const getPickup = catchAsync(async (req, res, next) => {
+  const pickup = await Pickup.findById(req.params.id)
+    .populate('customer', 'name email phone')
+    .populate('rider', 'name phone');
+  if (!pickup) return next(new AppError('Pickup not found', 404));
+  res.json({ success: true, data: pickup });
+});</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+      <p class="text-gray-300">Refactor your WasteGo API into full MVC structure: Separate router files for auth, pickups, riders, admin. Controllers folder with catchAsync wrappers on all handlers. AppError class for consistent errors. Validate middleware using Zod schemas. Test that the structure works: npm run dev should start cleanly and all routes should respond correctly.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What does express.Router() create?', options: ['A new Express app', 'A mini-application with its own middleware and routes that can be mounted on the main app', 'A database connection', 'A middleware function'], correct: 1 },
+    { question: 'What does router.route("/") allow you to do?', options: ['Define the base URL', 'Chain multiple HTTP method handlers for the same path in one readable block', 'Create a default route', 'Group routers together'], correct: 1 },
+    { question: 'What does app.use("/api/v1/pickups", pickupRouter) do?', options: ['Creates a pickup controller', 'Mounts the pickupRouter so all its routes are prefixed with /api/v1/pickups', 'Imports the pickup model', 'Validates pickup routes'], correct: 1 },
+    { question: 'What problem does the catchAsync utility solve?', options: ['It catches CSS errors', 'Eliminates repetitive try/catch blocks in every async controller by forwarding errors to next()', 'It catches network timeouts', 'It validates async functions'], correct: 1 },
+    { question: 'What is the MVC pattern?', options: ['Model-View-Controller — separates data logic, presentation, and request handling', 'Module-Version-Config', 'MongoDB-Validate-Create', 'Middleware-Validation-Cache'], correct: 0 },
+    { question: 'Why should app.js and index.js be separate files?', options: ['It is required by Express', 'Separating app setup from server startup makes the app importable in tests without starting a real server', 'It improves performance', 'node_modules requires it'], correct: 1 },
+    { question: 'What does app.all("*") match?', options: ['All GET requests only', 'All HTTP methods on all paths — used for 404 handlers', 'All middleware', 'All error handlers'], correct: 1 },
+    { question: 'Where should the global error handler be placed in Express?', options: ['Before all routes', 'As the first middleware', 'After all routes and other middleware — it must be last', 'In a separate file only'], correct: 2 }
+  ],
+  50,
+  'https://www.youtube.com/embed/Oe421EPjeBE'
+),
+
+lesson(
+  '3. Express Middleware Deep Dive: Auth, Validation & Rate Limiting',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>Writing reusable middleware factories</li>
+        <li>JWT auth middleware with role-based access</li>
+        <li>Request validation middleware with Zod</li>
+        <li>Rate limiting per route with express-rate-limit</li>
+        <li>Request logging with Morgan</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🔐 Complete Auth Middleware</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>// middleware/auth.middleware.js
+import jwt from 'jsonwebtoken';
+import { User } from '../models/User.model.js';
+import { AppError } from '../utils/AppError.js';
+import { catchAsync } from '../utils/catchAsync.js';
+
+// Protect: verify JWT, load user
+export const protect = catchAsync(async (req, res, next) => {
+  const auth = req.headers.authorization;
+  if (!auth?.startsWith('Bearer ')) {
+    return next(new AppError('Please log in to access this resource', 401));
+  }
+
+  const token = auth.split(' ')[1];
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+  const user = await User.findById(decoded.sub);
+  if (!user) return next(new AppError('User no longer exists', 401));
+  if (!user.isActive) return next(new AppError('Account suspended', 403));
+
+  req.user = user; // attach user to request
+  next();
+});
+
+// Role-based access control
+export const restrictTo = (...roles) => (req, res, next) => {
+  if (!roles.includes(req.user.role)) {
+    return next(new AppError(\`Access denied. Required role: \${roles.join(' or ')}\`, 403));
+  }
+  next();
+};
+
+// Optional auth: attach user if token exists, but don't block if missing
+export const optionalAuth = catchAsync(async (req, res, next) => {
+  const auth = req.headers.authorization;
+  if (auth?.startsWith('Bearer ')) {
+    try {
+      const decoded = jwt.verify(auth.split(' ')[1], process.env.JWT_SECRET);
+      req.user = await User.findById(decoded.sub);
+    } catch {} // silently ignore invalid tokens
+  }
+  next();
+});</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">⚡ Rate Limiting</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>import rateLimit from 'express-rate-limit';
+
+// General API rate limit
+export const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please try again in 15 minutes.' }
+});
+
+// Strict limit for auth routes (prevent brute force)
+export const authLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  message: { error: 'Too many login attempts. Please try again in 1 hour.' }
+});
+
+// Usage in app.js
+app.use('/api/v1', apiLimiter);
+app.use('/api/v1/auth/login', authLimiter);
+app.use('/api/v1/auth/register', authLimiter);</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">📊 Morgan Request Logger</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>import morgan from 'morgan';
+import fs from 'fs';
+import path from 'path';
+
+// Development: colorful console logs
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+  // Output: GET /api/v1/pickups 200 45ms - 1.2kb
+}
+
+// Production: JSON logs to file
+if (process.env.NODE_ENV === 'production') {
+  const logStream = fs.createWriteStream(
+    path.join('logs', 'access.log'),
+    { flags: 'a' }
+  );
+  app.use(morgan('combined', { stream: logStream }));
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+      <p class="text-gray-300">Build a complete middleware stack for WasteGo: protect and restrictTo on all appropriate routes. Separate rate limits for auth (10/hr) and general API (100/15min). Zod validation on all POST/PATCH bodies. Morgan logging (dev console + production file). A custom middleware that adds a unique requestId header to every response. Test that a wrong token returns 401, a customer trying to access /admin returns 403, and 11 rapid login attempts get rate limited.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What is a middleware factory?', options: ['A tool that generates middleware files', 'A function that returns a middleware function, allowing it to be configured with parameters', 'A type of Express plugin', 'A factory design pattern for routes'], correct: 1 },
+    { question: 'What does req.user contain after the protect middleware runs?', options: ['The raw JWT token', 'The authenticated user document fetched from the database', 'The user ID only', 'The JWT payload'], correct: 1 },
+    { question: 'What does the authLimiter rate limiter protect against?', options: ['XSS attacks', 'Brute force attacks by limiting how many login attempts can be made per IP', 'SQL injection', 'Token theft'], correct: 1 },
+    { question: 'What does optionalAuth middleware do differently from protect?', options: ['It is slower', 'It attaches the user if a valid token exists but does not block requests without a token', 'It only works for GET routes', 'It skips JWT verification'], correct: 1 },
+    { question: 'What does Morgan log in "dev" mode?', options: ['Only errors', 'Method, URL, status code, response time, and size in a colorful format', 'Full request/response headers', 'Database queries'], correct: 1 },
+    { question: 'Why should auth routes have a stricter rate limit than general API routes?', options: ['Auth routes are slower', 'Auth endpoints are prime targets for brute force attacks — stricter limits reduce risk', 'General routes have unlimited requests', 'JWT verification requires fewer requests'], correct: 1 },
+    { question: 'What does jwt.verify() throw if the token is expired?', options: ['A 401 response', 'A TokenExpiredError that must be caught', 'undefined', 'A database error'], correct: 1 },
+    { question: 'What does the standardHeaders option in express-rate-limit do?', options: ['Adds standard HTTP headers', 'Sends RateLimit-* headers in responses so clients know their limit status', 'Validates headers format', 'Sets Content-Type header'], correct: 1 }
+  ],
+  50,
+  'https://www.youtube.com/embed/9NikSb8aGiM'
+),
+
+lesson(
+  '4. Express Error Handling: AppError, Global Handler & Async Errors',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>Custom AppError class for operational errors</li>
+        <li>Distinguishing operational vs programming errors</li>
+        <li>Global error handler for all error types</li>
+        <li>Handling Mongoose, JWT, and validation errors</li>
+        <li>Different error responses for dev vs production</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🚨 AppError Class</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>// utils/AppError.js
+export class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+    this.status = String(statusCode).startsWith('4') ? 'fail' : 'error';
+    this.isOperational = true; // safe to send to client
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+// Usage in controllers:
+if (!pickup) return next(new AppError('Pickup not found', 404));
+if (!user.isActive) return next(new AppError('Account suspended', 403));</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🛡️ Global Error Handler</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>// middleware/errorHandler.js
+import { AppError } from '../utils/AppError.js';
+
+// Transform known errors into AppErrors
+function handleCastError(err) {
+  return new AppError(\`Invalid \${err.path}: \${err.value}\`, 400);
+}
+function handleDuplicateKey(err) {
+  const field = Object.keys(err.keyValue)[0];
+  return new AppError(\`\${field} already exists. Please use a different value.\`, 409);
+}
+function handleValidationError(err) {
+  const messages = Object.values(err.errors).map(e => e.message);
+  return new AppError(\`Validation failed: \${messages.join('. ')}\`, 422);
+}
+function handleJWTError() {
+  return new AppError('Invalid token. Please log in again.', 401);
+}
+function handleTokenExpiredError() {
+  return new AppError('Your token has expired. Please log in again.', 401);
+}
+
+export function globalErrorHandler(err, req, res, next) {
+  err.statusCode = err.statusCode || 500;
+  err.status = err.status || 'error';
+
+  // Transform library errors into AppErrors
+  if (err.name === 'CastError') err = handleCastError(err);
+  if (err.code === 11000)       err = handleDuplicateKey(err);
+  if (err.name === 'ValidationError') err = handleValidationError(err);
+  if (err.name === 'JsonWebTokenError') err = handleJWTError();
+  if (err.name === 'TokenExpiredError') err = handleTokenExpiredError();
+
+  // Development: send full error details
+  if (process.env.NODE_ENV === 'development') {
+    return res.status(err.statusCode).json({
+      success: false,
+      error: err.message,
+      stack: err.stack,
+      err
+    });
+  }
+
+  // Production: only send safe, operational errors to client
+  if (err.isOperational) {
+    return res.status(err.statusCode).json({
+      success: false,
+      error: err.message
+    });
+  }
+
+  // Programming error (bug): don't leak details
+  console.error('PROGRAMMING ERROR:', err);
+  res.status(500).json({
+    success: false,
+    error: 'Something went wrong. Please try again later.'
+  });
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+      <p class="text-gray-300">Wire up full error handling in WasteGo: AppError class used in all controllers. globalErrorHandler handles Mongoose CastError, duplicate key (11000), ValidationError, JWT errors. In development mode, stack traces included in response. In production, only operational errors shown. Test by: sending invalid MongoDB IDs, duplicate emails, expired JWTs, and routes that don't exist.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What is an "operational error" in Node.js?', options: ['A bug in the code', 'An expected error like 404, invalid input, or auth failure — safe to show to the client', 'A database crash', 'A network timeout always'], correct: 1 },
+    { question: 'What does isOperational: true on an error signify?', options: ['The error is critical', 'The error is expected and safe to send to the client — not a programming bug', 'The error should be logged', 'The error auto-recovers'], correct: 1 },
+    { question: 'What does Mongoose error code 11000 mean?', options: ['Connection failed', 'Duplicate key — a unique field value already exists', 'Validation failed', 'Cast error'], correct: 1 },
+    { question: 'Why should you never send stack traces to clients in production?', options: ['Stack traces are too large', 'They expose internal code structure and file paths, helping attackers', 'Stack traces are inaccurate in production', 'Clients cannot render them'], correct: 1 },
+    { question: 'What is a CastError in Mongoose?', options: ['A schema casting failure', 'When an invalid value is passed for a typed field — e.g. a non-ObjectId string as an _id', 'A connection error', 'A populate error'], correct: 1 },
+    { question: 'What happens when you call next(err) in Express?', options: ['The next route runs', 'Express skips all regular middleware and routes, jumping to the error handler', 'The request is retried', 'A 500 response is sent automatically'], correct: 1 },
+    { question: 'What does Error.captureStackTrace(this, this.constructor) do in AppError?', options: ['Creates a custom error type', 'Removes the AppError constructor from the stack trace for cleaner debugging', 'Captures runtime errors', 'Records the error in a log file'], correct: 1 },
+    { question: 'Why differentiate between development and production error responses?', options: ['Performance reasons', 'Dev needs full details for debugging; production must protect sensitive implementation details', 'Production has no errors', 'Development errors are different objects'], correct: 1 }
+  ],
+  50,
+  'https://www.youtube.com/embed/w1V2SdzdQBs'
+),
+
+lesson(
+  '5. Advanced Querying: Filtering, Sorting, Pagination & Search',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>Building a reusable API query class</li>
+        <li>Filtering with operators: gte, lte, in, regex</li>
+        <li>Sorting by multiple fields</li>
+        <li>Cursor-based and offset pagination</li>
+        <li>Full-text search with MongoDB</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🔍 Reusable APIQuery Class</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>// utils/APIQuery.js
+export class APIQuery {
+  constructor(query, queryString) {
+    this.query = query;           // Mongoose query object
+    this.queryString = queryString; // req.query
+  }
+
+  filter() {
+    // Copy and exclude special fields
+    const params = { ...this.queryString };
+    ['page', 'limit', 'sort', 'fields', 'search'].forEach(f => delete params[f]);
+
+    // Convert operators: gte → $gte etc.
+    let str = JSON.stringify(params);
+    str = str.replace(/\b(gte|gt|lte|lt|in|nin|ne)\b/g, match => \`$\${match}\`);
+    this.query = this.query.find(JSON.parse(str));
+    return this;
+  }
+
+  search(fields = ['wasteType', 'notes']) {
+    if (this.queryString.search) {
+      const regex = new RegExp(this.queryString.search, 'i');
+      this.query = this.query.find({
+        $or: fields.map(f => ({ [f]: regex }))
+      });
+    }
+    return this;
+  }
+
+  sort() {
+    if (this.queryString.sort) {
+      // "sort=-createdAt,weight" → "-createdAt weight" for Mongoose
+      const sortBy = this.queryString.sort.split(',').join(' ');
+      this.query = this.query.sort(sortBy);
+    } else {
+      this.query = this.query.sort('-createdAt'); // default: newest first
+    }
+    return this;
+  }
+
+  selectFields() {
+    if (this.queryString.fields) {
+      const fields = this.queryString.fields.split(',').join(' ');
+      this.query = this.query.select(fields);
+    }
+    return this;
+  }
+
+  paginate() {
+    const page  = Math.max(1, parseInt(this.queryString.page)  || 1);
+    const limit = Math.min(100, parseInt(this.queryString.limit) || 20);
+    this.query = this.query.skip((page - 1) * limit).limit(limit);
+    this.page  = page;
+    this.limit = limit;
+    return this;
+  }
+}
+
+// Usage in controller:
+export const getAllPickups = catchAsync(async (req, res) => {
+  const apiQuery = new APIQuery(Pickup.find(), req.query)
+    .filter()
+    .search()
+    .sort()
+    .selectFields()
+    .paginate();
+
+  const [pickups, total] = await Promise.all([
+    apiQuery.query.populate('customer', 'name phone').lean(),
+    Pickup.countDocuments()
+  ]);
+
+  res.json({
+    success: true,
+    data: pickups,
+    meta: {
+      total,
+      page: apiQuery.page,
+      limit: apiQuery.limit,
+      pages: Math.ceil(total / apiQuery.limit)
+    }
+  });
+});
+
+// Example API calls:
+// GET /pickups?status=completed&region=accra
+// GET /pickups?estimatedWeight[gte]=10&estimatedWeight[lte]=100
+// GET /pickups?sort=-createdAt,estimatedWeight
+// GET /pickups?fields=customer,status,price
+// GET /pickups?search=organic&page=2&limit=10</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+      <p class="text-gray-300">Add the APIQuery class to your WasteGo API. Wire it up to the GET /pickups route. Test these queries: filter by status and region, filter weight between 10-100kg using operators, sort by newest first then by price, search for "organic" in notes, paginate with page=2&limit=5, select only customer and status fields. Add a MongoDB text index on wasteType and notes fields for proper text search.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What does the APIQuery class pattern achieve?', options: ['Replaces Mongoose', 'Provides a reusable, chainable interface for building complex database queries from URL query strings', 'Creates REST endpoints automatically', 'Validates query parameters'], correct: 1 },
+    { question: 'How do you query documents where weight is greater than 10 using the APIQuery pattern?', options: ['/pickups?weight>10', '/pickups?estimatedWeight[gte]=10', '/pickups?weight=gte:10', '/pickups?filter=weight>10'], correct: 1 },
+    { question: 'What does .lean() do on a Mongoose query?', options: ['Makes the query run faster by skipping schema methods', 'Returns plain JavaScript objects instead of full Mongoose Documents with methods', 'Reduces the number of fields returned', 'Enables lazy population'], correct: 1 },
+    { question: 'What is offset-based pagination?', options: ['Paginating by document ID cursor', 'Skipping a fixed number of records (page-1 * limit) to get each page', 'Random sampling of records', 'Paginating by timestamp'], correct: 1 },
+    { question: 'Why use Promise.all() when fetching pickups and their total count?', options: ['It is required by Mongoose', 'To run both queries in parallel, reducing total wait time to the slower of the two', 'Promise.all() improves database performance', 'countDocuments() requires it'], correct: 1 },
+    { question: 'What does a MongoDB text index enable?', options: ['Faster range queries', 'Full-text search across indexed string fields using $text and $search operators', 'Unique field enforcement', 'Case-sensitive exact matching'], correct: 1 },
+    { question: 'What does sort=-createdAt mean in a Mongoose query?', options: ['Sort by creation date ascending', 'Sort by creation date descending (- prefix means descending)', 'Remove the sort order', 'Sort by the reverse of creation date'], correct: 1 },
+    { question: 'Why set a maximum limit (e.g. 100) on pagination?', options: ['MongoDB has a built-in limit', 'Prevent clients from requesting millions of records at once, crashing the server', 'Pagination breaks above 100', 'JWT tokens only handle 100 records'], correct: 1 }
+  ],
+  50,
+  'https://www.youtube.com/embed/zhq7DA1-QDQ'
+),
+
+lesson(
+  '6. Real-Time with Socket.io: Live Rider Tracking',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>WebSockets vs HTTP — why real-time needs a different protocol</li>
+        <li>Setting up Socket.io with Express</li>
+        <li>Rooms and namespaces for targeted messaging</li>
+        <li>Authenticating socket connections with JWT</li>
+        <li>Building live rider location tracking</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🔌 Socket.io Setup</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>// index.js
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import jwt from 'jsonwebtoken';
+import { User } from './models/User.model.js';
+
+const app = express();
+const httpServer = createServer(app); // wrap Express with http.Server
+const io = new Server(httpServer, {
+  cors: { origin: process.env.FRONTEND_URL, methods: ['GET', 'POST'] }
+});
+
+// ── Authenticate socket connections ──
+io.use(async (socket, next) => {
+  try {
+    const token = socket.handshake.auth.token;
+    if (!token) return next(new Error('Authentication required'));
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.user = await User.findById(decoded.sub);
+    next();
+  } catch (err) {
+    next(new Error('Invalid token'));
+  }
+});
+
+// ── Connection handler ──
+io.on('connection', (socket) => {
+  const user = socket.user;
+  console.log(\`\${user.name} (\${user.role}) connected: \${socket.id}\`);
+
+  // Join personal room (for direct messages)
+  socket.join(\`user:\${user._id}\`);
+
+  // Rider-specific events
+  if (user.role === 'rider') {
+    socket.join('riders'); // join riders group
+
+    // Rider broadcasts location
+    socket.on('rider:location', async ({ lat, lng, pickupId }) => {
+      // Emit to the specific customer assigned to this pickup
+      io.to(\`pickup:\${pickupId}\`).emit('rider:location', {
+        riderId: user._id,
+        riderName: user.name,
+        lat, lng,
+        timestamp: Date.now()
+      });
+    });
+
+    socket.on('rider:online', () => {
+      io.emit('rider:status', { riderId: user._id, status: 'online' });
+    });
+  }
+
+  // Customer-specific events
+  if (user.role === 'customer') {
+    // Customer joins their pickup room to get rider updates
+    socket.on('customer:watchPickup', (pickupId) => {
+      socket.join(\`pickup:\${pickupId}\`);
+    });
+  }
+
+  // Disconnect
+  socket.on('disconnect', () => {
+    if (user.role === 'rider') {
+      io.emit('rider:status', { riderId: user._id, status: 'offline' });
+    }
+    console.log(\`\${user.name} disconnected\`);
+  });
+});
+
+// Emit from REST routes (e.g. when pickup is assigned)
+export function notifyPickupAssigned(pickup, rider) {
+  io.to(\`user:\${pickup.customer}\`).emit('pickup:assigned', {
+    pickupId: pickup._id,
+    riderName: rider.name,
+    riderPhone: rider.phone
+  });
+}
+
+httpServer.listen(5000);</code></pre>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">📱 Client-Side Socket.io</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>// Frontend (browser)
+import { io } from 'socket.io-client';
+
+const socket = io('https://api.wastego.gh', {
+  auth: { token: localStorage.getItem('token') }
+});
+
+socket.on('connect', () => console.log('Connected to WasteGo live server'));
+socket.on('connect_error', (err) => console.error('Connection failed:', err.message));
+
+// Watch a pickup for rider updates
+function watchPickup(pickupId) {
+  socket.emit('customer:watchPickup', pickupId);
+}
+
+// Listen for rider location
+socket.on('rider:location', ({ riderName, lat, lng }) => {
+  updateRiderMarker(lat, lng); // update Leaflet map marker
+  document.querySelector('#rider-eta').textContent = \`\${riderName} is on the way\`;
+});
+
+// Listen for pickup assignment
+socket.on('pickup:assigned', ({ riderName, riderPhone }) => {
+  showToast(\`\${riderName} has been assigned to your pickup!\`);
+});</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+      <p class="text-gray-300">Add real-time features to WasteGo: Socket.io server with JWT auth middleware. Rider app emits location every 5 seconds when on an active pickup. Customer app watches their pickup room and updates a Leaflet map marker in real-time. When admin assigns a pickup via REST API, notifyPickupAssigned() emits to the customer's socket room. Show online/offline rider badges in the admin dashboard.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What is the main difference between WebSockets and HTTP?', options: ['WebSockets are faster', 'WebSockets maintain a persistent two-way connection; HTTP is request-response only', 'HTTP supports more data types', 'WebSockets only work on mobile'], correct: 1 },
+    { question: 'What is a Socket.io room?', options: ['A physical server room', 'A named channel that sockets can join to receive targeted messages', 'A namespace for namespaces', 'A WebSocket connection type'], correct: 1 },
+    { question: 'What does io.to("roomName").emit() do?', options: ['Sends to all connected sockets', 'Sends an event only to sockets that have joined the specified room', 'Broadcasts to all except sender', 'Emits to a specific socket ID'], correct: 1 },
+    { question: 'How do you authenticate a Socket.io connection?', options: ['Using HTTP cookies only', 'Via the handshake auth object and an io.use() middleware that verifies the token', 'Socket.io auto-authenticates', 'Via query string only'], correct: 1 },
+    { question: 'What does socket.join("room") do?', options: ['Joins a database collection', 'Adds the socket to a named room so it receives events emitted to that room', 'Creates a new namespace', 'Connects to another server'], correct: 1 },
+    { question: 'Why must you wrap the Express app in http.createServer() when using Socket.io?', options: ['Express requires it', 'Socket.io attaches to the raw HTTP server, not the Express app directly', 'For performance', 'CORS requires it'], correct: 1 },
+    { question: 'What does socket.on("disconnect") allow you to do?', options: ['Stop the server', 'Run cleanup code when a client disconnects — update status, notify others', 'Reconnect automatically', 'Remove all listeners'], correct: 1 },
+    { question: 'What is a Socket.io namespace?', options: ['A URL path prefix for socket connections, allowing multiple independent apps on one server', 'A room with authentication', 'A WebSocket protocol type', 'A way to version socket events'], correct: 0 }
+  ],
+  50,
+  'https://www.youtube.com/embed/ZKEqqIO7n-k'
+),
+
+lesson(
+  '7. API Security: CORS, Helmet, XSS & SQL Injection Prevention',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>CORS configuration for production APIs</li>
+        <li>Security headers with Helmet</li>
+        <li>XSS and NoSQL injection prevention</li>
+        <li>HTTPS enforcement and secure cookies</li>
+        <li>Security audit checklist for production</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">🔒 Complete Security Setup</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>import helmet from 'helmet';
+import cors from 'cors';
+import mongoSanitize from 'express-mongo-sanitize';
+import xss from 'xss-clean';
+import hpp from 'hpp';
+
+// ── CORS ──
+const corsOptions = {
+  origin: (origin, callback) => {
+    const allowed = process.env.ALLOWED_ORIGINS.split(',');
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(\`CORS: origin \${origin} not allowed\`));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+  credentials: true,  // allow cookies in cross-origin requests
+  maxAge: 86400       // preflight cache: 24 hours
+};
+app.use(cors(corsOptions));
+
+// ── Security headers ──
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
+      imgSrc: ["'self'", 'data:', 'res.cloudinary.com'],
+      connectSrc: ["'self'", 'api.wastego.gh']
+    }
+  },
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }
+}));
+
+// ── NoSQL injection prevention ──
+// Strips out $ and . from req.body, req.query, req.params
+// Prevents: { "email": { "$gt": "" } } attacks
+app.use(mongoSanitize());
+
+// ── XSS prevention ──
+// Sanitizes user input to prevent script injection
+app.use(xss());
+
+// ── HTTP Parameter Pollution prevention ──
+// Prevents: /pickups?sort=price&sort=status (confusion attack)
+app.use(hpp({ whitelist: ['status', 'wasteType'] }));
+
+// ── Request size limit ──
+app.use(express.json({ limit: '10kb' }));
+
+// ── Force HTTPS in production ──
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    if (req.headers['x-forwarded-proto'] !== 'https') {
+      return res.redirect(301, \`https://\${req.headers.host}\${req.url}\`);
+    }
+    next();
+  });
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+      <p class="text-gray-300">Security-harden your WasteGo API: Add all middleware above. Run npm audit and fix vulnerabilities. Test NoSQL injection: POST /auth/login with body {"email":{"$gt":""}} — it should be sanitized and fail. Test XSS: submit a pickup note with script tags — should be escaped. Use https://observatory.mozilla.org to scan your deployed API and aim for a B+ security grade.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What is a CORS preflight request?', options: ['A test to check server speed', 'An OPTIONS request sent by browsers before cross-origin requests to verify the server allows them', 'A security scan', 'A cached request'], correct: 1 },
+    { question: 'What does mongoSanitize() protect against?', options: ['SQL injection', 'NoSQL injection by removing MongoDB operators ($, .) from user input', 'XSS attacks', 'Brute force attacks'], correct: 1 },
+    { question: 'What is XSS (Cross-Site Scripting)?', options: ['Cross-server scripting', 'Injecting malicious scripts into web pages viewed by other users', 'CSS styling attacks', 'Cross-site request forgery'], correct: 1 },
+    { question: 'What does the Helmet package do?', options: ['Encrypts the request body', 'Sets various security-related HTTP response headers to protect against common attacks', 'Validates input', 'Manages authentication'], correct: 1 },
+    { question: 'What does credentials: true in CORS options enable?', options: ['Basic authentication', 'Allows browsers to include cookies and auth headers in cross-origin requests', 'API key validation', 'HTTPS requirement'], correct: 1 },
+    { question: 'What is HTTP Parameter Pollution (HPP)?', options: ['Polluting environment variables', 'Sending duplicate query parameters to confuse parsing logic — e.g. ?sort=price&sort=hack', 'Overloading request headers', 'Sending malformed HTTP requests'], correct: 1 },
+    { question: 'Why limit request body size (e.g. 10kb)?', options: ['JSON cannot exceed 10kb', 'Prevent denial-of-service attacks by sending enormous request bodies', 'MongoDB has a 10kb document limit', 'JWT tokens require it'], correct: 1 },
+    { question: 'What does HSTS (HTTP Strict Transport Security) do?', options: ['Forces all future connections from browsers to use HTTPS, even if user types http://', 'Encrypts cookies', 'Prevents XSS', 'Validates SSL certificates'], correct: 0 }
+  ],
+  50,
+  'https://www.youtube.com/embed/enopDX9uAwo'
+),
+
+lesson(
+  '8. Caching with Redis: Speed Up Your API',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>What Redis is and when to use caching</li>
+        <li>Connecting to Redis from Node.js</li>
+        <li>Cache-aside pattern for API responses</li>
+        <li>Cache invalidation strategies</li>
+        <li>Session storage with Redis</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">⚡ Redis Caching Pattern</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>import { createClient } from 'redis';
+
+const redis = createClient({ url: process.env.REDIS_URL });
+await redis.connect();
+
+// ── Cache middleware ──
+export function cache(ttlSeconds = 60) {
+  return async (req, res, next) => {
+    // Only cache GET requests
+    if (req.method !== 'GET') return next();
+
+    const key = \`cache:\${req.originalUrl}\`;
+    const cached = await redis.get(key);
+
+    if (cached) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.json(JSON.parse(cached));
+    }
+
+    // Patch res.json to intercept and cache the response
+    const originalJson = res.json.bind(res);
+    res.json = (data) => {
+      redis.setEx(key, ttlSeconds, JSON.stringify(data));
+      res.setHeader('X-Cache', 'MISS');
+      return originalJson(data);
+    };
+
+    next();
+  };
+}
+
+// Usage
+router.get('/stats', cache(300), getStats);          // cache 5 minutes
+router.get('/regions', cache(3600), getRegions);     // cache 1 hour
+router.get('/pickups', cache(10), getAllPickups);     // cache 10 seconds
+
+// ── Cache invalidation ──
+async function invalidatePickupCache() {
+  const keys = await redis.keys('cache:/api/v1/pickups*');
+  if (keys.length > 0) await redis.del(keys);
+}
+
+// Invalidate when data changes
+export const createPickup = catchAsync(async (req, res) => {
+  const pickup = await Pickup.create({ ...req.body, customer: req.user._id });
+  await invalidatePickupCache(); // clear stale cache
+  res.status(201).json({ success: true, data: pickup });
+});
+
+// ── Rate limit storage with Redis ──
+import RedisStore from 'rate-limit-redis';
+const limiter = rateLimit({
+  store: new RedisStore({ sendCommand: (...args) => redis.sendCommand(args) }),
+  windowMs: 15 * 60 * 1000,
+  max: 100
+});</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+      <p class="text-gray-300">Add Redis caching to WasteGo: Cache GET /pickups for 30 seconds, GET /stats for 5 minutes, GET /regions for 1 hour. Invalidate pickup cache on every POST/PATCH/DELETE to pickups. Store rate limit counters in Redis so they persist across server restarts. Measure response time before and after caching with Postman — document the improvement in a comment.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What is the cache-aside pattern?', options: ['The cache stores data automatically', 'The app checks cache first; on miss, fetches from DB, stores in cache, returns data', 'All writes go to cache first', 'Cache is a write-through layer'], correct: 1 },
+    { question: 'What does redis.setEx(key, ttl, value) do?', options: ['Sets a key that never expires', 'Sets a key with a TTL (time to live) in seconds — auto-deletes after expiry', 'Sets multiple keys', 'Gets and sets atomically'], correct: 1 },
+    { question: 'What is cache invalidation?', options: ['Filling the cache with data', 'Removing or updating cached data when the underlying data changes to prevent stale responses', 'Clearing all Redis keys', 'Setting cache TTL to zero'], correct: 1 },
+    { question: 'Why should you only cache GET requests?', options: ['POST is not supported by Redis', 'GET requests are read-only and safe to serve cached; POST/PATCH/DELETE modify data', 'GET is faster in Redis', 'Only GET has a stable cache key'], correct: 1 },
+    { question: 'What is the X-Cache header used for?', options: ['Cross-cache communication', 'Telling the client whether the response came from cache (HIT) or the database (MISS)', 'Authentication', 'CORS preflight'], correct: 1 },
+    { question: 'Why store rate limit counters in Redis instead of memory?', options: ['Redis is faster', 'In-memory counters reset on server restart and don\'t work with multiple server instances', 'Redis has no limits', 'Memory cannot store integers'], correct: 1 },
+    { question: 'What is a TTL in caching?', options: ['Total Transfer Limit', 'Time To Live — how long a cached item is valid before it expires', 'Type Translation Layer', 'Transaction Total Log'], correct: 1 },
+    { question: 'When should you NOT cache an API response?', options: ['Large responses', 'User-specific data (like "my pickups"), real-time data, or responses that change every request', 'Slow database queries', 'Frequently accessed data'], correct: 1 }
+  ],
+  50,
+  'https://www.youtube.com/embed/jgpVdJB2sKQ'
+),
+
+lesson(
+  '9. Background Jobs & Task Queues with Bull',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-blue-400 mb-2">📖 What You Will Learn</h2>
+      <ul class="list-disc list-inside text-gray-300 space-y-1">
+        <li>Why background jobs matter (don't block the API)</li>
+        <li>Setting up BullMQ with Redis</li>
+        <li>Creating queues and workers</li>
+        <li>Scheduled/cron jobs</li>
+        <li>Retry logic and failed job handling</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">📬 BullMQ Queue Setup</h2>
+      <div class="bg-black/60 rounded-xl p-5 overflow-x-auto">
+        <pre class="text-green-400 text-sm leading-relaxed"><code>import { Queue, Worker, QueueScheduler } from 'bullmq';
+const connection = { host: 'localhost', port: 6379 };
+
+// ── Define Queues ──
+export const emailQueue = new Queue('emails', { connection });
+export const smsQueue   = new Queue('sms',    { connection });
+export const reportQueue = new Queue('reports', { connection });
+
+// ── Add jobs to queue (from your controllers) ──
+// Instead of: await sendEmail(user, pickup); // blocks the response!
+// Do this:
+await emailQueue.add('pickup-confirmation', {
+  userId: user._id,
+  pickupId: pickup._id,
+  email: user.email,
+  name: user.name
+}, {
+  attempts: 3,                          // retry up to 3 times
+  backoff: { type: 'exponential', delay: 5000 }, // wait 5s, 10s, 20s
+  removeOnComplete: 100,                // keep last 100 completed jobs
+  removeOnFail: 500                     // keep last 500 failed jobs
+});
+
+// ── Worker: processes jobs ──
+const emailWorker = new Worker('emails', async (job) => {
+  const { name, email, pickupId } = job.data;
+
+  switch (job.name) {
+    case 'pickup-confirmation':
+      await sendPickupConfirmationEmail(email, name, pickupId);
+      break;
+    case 'rider-assignment':
+      await sendRiderAssignmentEmail(email, name, job.data.riderName);
+      break;
+    case 'weekly-report':
+      const report = await generateWeeklyReport(job.data.userId);
+      await sendReportEmail(email, report);
+      break;
+  }
+
+  return { sent: true, to: email }; // stored as job result
+}, { connection, concurrency: 5 }); // process 5 emails at once
+
+emailWorker.on('completed', (job, result) => {
+  console.log(\`Email job \${job.id} completed:\`, result);
+});
+emailWorker.on('failed', (job, err) => {
+  console.error(\`Email job \${job.id} failed:\`, err.message);
+});
+
+// ── Scheduled/Cron jobs ──
+await reportQueue.add('daily-summary', {}, {
+  repeat: { cron: '0 8 * * *' } // every day at 8am
+});
+
+await emailQueue.add('cleanup-pending', {}, {
+  repeat: { every: 60 * 60 * 1000 } // every hour
+});</code></pre>
+      </div>
+    </div>
+
+    <div class="bg-green-500/10 p-6 rounded-xl">
+      <h2 class="text-xl font-bold text-green-400 mb-2">✅ Practice Task</h2>
+      <p class="text-gray-300">Add a job queue to WasteGo: emailQueue — send confirmation email when pickup is created, assignment email when rider is assigned. smsQueue — send SMS via Hubtel when pickup status changes to "in_progress". reportQueue — generate a daily CSV revenue report every morning at 7am and email it to admin. Set retry logic with exponential backoff on all jobs. Monitor jobs with Bull Board dashboard.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What is the main reason to use background jobs instead of doing work inline in a route handler?', options: ['Background jobs are more secure', 'To avoid blocking the HTTP response — return immediately and process slow tasks asynchronously', 'Jobs are required for emails', 'Route handlers cannot do async work'], correct: 1 },
+    { question: 'What does "concurrency: 5" on a BullMQ worker mean?', options: ['Process 5 queues', 'Process up to 5 jobs simultaneously on this worker', 'Retry 5 times', 'Use 5 Redis connections'], correct: 1 },
+    { question: 'What is exponential backoff in job retry logic?', options: ['The job retries with increasing delays (5s, 10s, 20s), reducing pressure on failing services', 'The job speed increases exponentially', 'Retries happen in parallel', 'Backoff disables retries'], correct: 0 },
+    { question: 'What does a cron expression "0 8 * * *" mean?', options: ['Every 8 minutes', 'Every day at 8:00 AM', 'Every 8 hours', 'At minute 0 of hour 8 on day 8'], correct: 1 },
+    { question: 'What does removeOnComplete: 100 do on a BullMQ job?', options: ['Removes jobs after 100 retries', 'Keeps only the last 100 completed jobs — prevents Redis memory bloat', 'Completes after 100ms', 'Removes 100 jobs at once'], correct: 1 },
+    { question: 'What is a job queue worker?', options: ['A Node.js thread', 'A process that pulls jobs from the queue and executes them', 'A Redis command', 'A cron daemon'], correct: 1 },
+    { question: 'Why use Redis as the backend for BullMQ?', options: ['Only Redis supports queues', 'Redis has atomic operations, persistence, and pub/sub needed for reliable distributed queues', 'MongoDB cannot store jobs', 'Redis is free'], correct: 1 },
+    { question: 'What happens to a failed job in BullMQ after all retries are exhausted?', options: ['It is deleted automatically', 'It moves to the "failed" set and stays there for inspection and manual retry', 'The worker crashes', 'It is re-queued indefinitely'], correct: 1 }
+  ],
+  50,
+  'https://www.youtube.com/embed/iYALMOKZfaA'
+),
+
+lesson(
+  '10. Final Express Project: Production-Ready WasteGo API',
+  `<div class="space-y-6">
+    <div class="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold text-blue-400 mb-2">🏆 Final Project: Full Production API</h2>
+      <p class="text-gray-300">You will build and deploy a complete, production-grade REST API for WasteGo using every Express concept from this course.</p>
+    </div>
+
+    <div>
+      <h2 class="text-xl font-bold text-cyan-400 mb-2">📋 Complete API Specification</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-black/60 p-4 rounded-lg">
+          <p class="text-orange-400 font-semibold mb-2">Auth Endpoints</p>
+          <ul class="text-gray-300 text-sm space-y-1 font-mono">
+            <li>POST /auth/register</li>
+            <li>POST /auth/login</li>
+            <li>GET  /auth/me</li>
+            <li>PATCH /auth/update-password</li>
+            <li>POST /auth/forgot-password</li>
+            <li>PATCH /auth/reset-password/:token</li>
+          </ul>
+        </div>
+        <div class="bg-black/60 p-4 rounded-lg">
+          <p class="text-purple-400 font-semibold mb-2">Pickup Endpoints</p>
+          <ul class="text-gray-300 text-sm space-y-1 font-mono">
+            <li>GET    /pickups (filter, sort, paginate)</li>
+            <li>POST   /pickups</li>
+            <li>GET    /pickups/:id</li>
+            <li>PATCH  /pickups/:id</li>
+            <li>DELETE /pickups/:id (admin)</li>
+            <li>PATCH  /pickups/:id/accept (rider)</li>
+            <li>PATCH  /pickups/:id/complete (rider)</li>
+            <li>POST   /pickups/:id/photo</li>
+          </ul>
+        </div>
+        <div class="bg-black/60 p-4 rounded-lg">
+          <p class="text-cyan-400 font-semibold mb-2">Admin Endpoints</p>
+          <ul class="text-gray-300 text-sm space-y-1 font-mono">
+            <li>GET  /admin/users</li>
+            <li>PATCH /admin/users/:id/ban</li>
+            <li>GET  /admin/stats</li>
+            <li>GET  /admin/revenue</li>
+          </ul>
+        </div>
+        <div class="bg-black/60 p-4 rounded-lg">
+          <p class="text-green-400 font-semibold mb-2">Production Checklist</p>
+          <ul class="text-gray-300 text-sm space-y-1 list-disc list-inside">
+            <li>Helmet + CORS + rate limiting</li>
+            <li>Zod validation on all inputs</li>
+            <li>Redis caching on GET routes</li>
+            <li>BullMQ for emails and SMS</li>
+            <li>Socket.io for live tracking</li>
+            <li>Supertest API tests (80%+ coverage)</li>
+            <li>GitHub Actions CI/CD</li>
+            <li>Deployed on Railway or Render</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-yellow-500/10 p-4 rounded-lg">
+      <p class="text-yellow-300">🎓 <strong>You have mastered Express.js.</strong> Routing, middleware, auth, error handling, real-time, caching, queues, security, and deployment. You can now build any production API. Next: Vibe Coding — putting it all together on real projects.</p>
+    </div>
+  </div>`,
+  [
+    { question: 'What is the recommended structure for a production Express API?', options: ['All code in one file', 'MVC with separate routes, controllers, models, middleware, and services directories', 'Routes only, no controllers', 'One file per HTTP method'], correct: 1 },
+    { question: 'What should the password reset flow look like?', options: ['Email the password directly', 'Generate a signed time-limited token, email a link, verify token on reset, hash new password', 'Store reset PIN in database', 'Ask user to re-register'], correct: 1 },
+    { question: 'What does a health check endpoint (GET /health) do?', options: ['Tests user health', 'Returns server status (uptime, DB connection, memory) for monitoring tools', 'Validates API keys', 'Returns server logs'], correct: 1 },
+    { question: 'What is API versioning (e.g. /api/v1/) for?', options: ['SEO optimization', 'Allowing breaking changes without disrupting existing clients by maintaining old versions', 'Database versioning', 'JWT versioning'], correct: 1 },
+    { question: 'What does the Supertest library test?', options: ['Unit functions only', 'HTTP endpoints by making real requests to your Express app in tests', 'Frontend UI components', 'Database queries'], correct: 1 },
+    { question: 'What should you always do before deploying an API to production?', options: ['Delete all tests', 'Run npm audit, run all tests, review env variables, test auth flows, check error handling', 'Set NODE_ENV to development', 'Remove all console.log statements only'], correct: 1 },
+    { question: 'What is a good API documentation tool for Express?', options: ['README only', 'Swagger/OpenAPI — generates interactive docs from code annotations or schema definitions', 'Postman is for docs', 'HTML pages only'], correct: 1 },
+    { question: 'What monitoring should a production Node.js API have?', options: ['None — it is managed by the host', 'Error tracking (Sentry), uptime monitoring, response time alerts, and database performance metrics', 'Only server logs', 'CPU monitoring only'], correct: 1 }
+  ],
+  100,
+  'https://www.youtube.com/embed/fgTGADljAeg'
+)
+
+]; // end expressLessons
+
+
+
+
 // ─────────────────────────────────────────────
 //  LINK CSS LESSONS
 // ─────────────────────────────────────────────
