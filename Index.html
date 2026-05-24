@@ -1,3 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Light mode defaults (body) */
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+
+  /* Dark mode overrides */
+  .dark body {
+    @apply bg-neon-darker text-gray-100;
+  }
+}
+
+@layer components {
+  .neon-card {
+    @apply bg-white dark:bg-neon-dark/50 backdrop-blur-sm border border-gray-200 dark:border-neon-purple/30 rounded-xl p-6;
+  }
+
+  .neon-button-primary {
+    @apply px-6 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-neon-pink text-white font-semibold transition-all hover:shadow-lg hover:shadow-neon-purple/50;
+  }
+}
+
+/* Bottom navigation spacing – only on mobile */
+body {
+  padding-bottom: 70px;
+}
+
+@media (min-width: 768px) {
+  body {
+    padding-bottom: 0;
+  }
+}
+
+
+
+
 "use client";
 import { useTheme } from '@/contexts/ThemeContext';
 
