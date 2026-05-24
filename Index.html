@@ -3,6 +3,71 @@
 @tailwind utilities;
 
 @layer base {
+  /* Light mode defaults – softer background, darker text */
+  body {
+    background-color: #f3f4f6; /* gray-100 */
+    color: #1f2937; /* gray-800 */
+  }
+
+  /* Dark mode overrides */
+  .dark body {
+    background-color: #050508;
+    color: #e5e7eb;
+  }
+
+  /* Ensure all text utilities have proper contrast in light mode */
+  .text-gray-300, .text-gray-400, .text-gray-500 {
+    color: #4b5563 !important; /* gray-600 – readable */
+  }
+  .dark .text-gray-300, .dark .text-gray-400, .dark .text-gray-500 {
+    color: #9ca3af !important; /* gray-400 */
+  }
+
+  /* Headings and important text */
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-gray-900 dark:text-white;
+  }
+}
+
+@layer components {
+  .neon-card {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  .dark .neon-card {
+    background-color: #0a0a0f;
+    border-color: rgba(191, 75, 246, 0.3);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  }
+
+  .neon-button-primary {
+    @apply px-6 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-neon-pink text-white font-semibold transition-all hover:shadow-lg hover:shadow-neon-purple/50;
+  }
+}
+
+/* Bottom navigation spacing – only on mobile */
+body {
+  padding-bottom: 70px;
+}
+
+@media (min-width: 768px) {
+  body {
+    padding-bottom: 0;
+  }
+}
+
+
+precious
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
   /* Light mode defaults */
   body {
     background-color: #f9fafb;
