@@ -5,6 +5,66 @@
 @layer base {
   /* Light mode defaults */
   body {
+    background-color: #f9fafb;
+    color: #111827;
+  }
+
+  /* Dark mode overrides */
+  .dark body {
+    background-color: #050508;
+    color: #f3f4f6;
+  }
+
+  /* Light mode text contrast fixes */
+  .text-gray-300, .text-gray-400, .text-gray-500 {
+    color: #374151 !important; /* gray-700 */
+  }
+  .dark .text-gray-300, .dark .text-gray-400, .dark .text-gray-500 {
+    color: #d1d5db !important; /* gray-300 */
+  }
+}
+
+@layer components {
+  .neon-card {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+  .dark .neon-card {
+    background-color: #0a0a0f;
+    border-color: rgba(191, 75, 246, 0.3);
+    box-shadow: none;
+  }
+
+  .neon-button-primary {
+    @apply px-6 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-neon-pink text-white font-semibold transition-all hover:shadow-lg hover:shadow-neon-purple/50;
+  }
+}
+
+/* Bottom navigation spacing – only on mobile */
+body {
+  padding-bottom: 70px;
+}
+
+@media (min-width: 768px) {
+  body {
+    padding-bottom: 0;
+  }
+}
+
+Gbate pascal
+
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Light mode defaults */
+  body {
     @apply bg-gray-50 text-gray-900;
   }
 
