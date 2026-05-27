@@ -1,3 +1,21 @@
+fetch('https://devforge-backend-0kqi.onrender.com/api/ai', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${localStorage.getItem('token')}`
+  },
+  body: JSON.stringify({ message: 'Hello' })
+}).then(r => r.json()).then(console.log)
+
+
+
+
+
+
+
+
+
+
 import withPWA from 'next-pwa';
 
 const nextConfig = {
