@@ -1,3 +1,354 @@
+You are a senior full-stack developer with 7+ years of experience building 
+production-grade e-commerce platforms. Your task is to architect and build a 
+complete e-commerce website for a retail business that sells:
+
+  1. Shoes
+  2. Belts
+  3. Hair Creams
+  4. Jewellery
+  5. School & Travel Bags
+
+The UI/UX layout should closely mirror the Jumia e-commerce platform 
+(Africa's leading online marketplace) — including its navigation structure, 
+product grid layout, category browsing, cart system, and checkout flow.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧱 TECH STACK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Frontend:
+  - Next.js 14 (App Router)
+  - Tailwind CSS for styling
+  - shadcn/ui for reusable components
+  - Zustand for global state (cart, auth)
+  - React Query (TanStack) for data fetching & caching
+  - Axios for API calls
+  - Framer Motion for animations
+
+Backend:
+  - Node.js + Express.js (REST API)
+  - MongoDB with Mongoose ODM
+  - JWT for authentication (access + refresh tokens)
+  - Bcrypt for password hashing
+  - Multer + Cloudinary for image uploads
+  - Express Validator for request validation
+  - Cors, Helmet, Morgan for security & logging
+  - Dotenv for environment config
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📁 PROJECT STRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/client  (Next.js)
+  /app
+    /page.tsx                  → Homepage
+    /products/page.tsx         → All products
+    /products/[id]/page.tsx    → Product detail
+    /category/[slug]/page.tsx  → Category page
+    /cart/page.tsx             → Shopping cart
+    /checkout/page.tsx         → Checkout
+    /orders/page.tsx           → Order history
+    /auth/login/page.tsx
+    /auth/register/page.tsx
+    /admin/
+      /dashboard/page.tsx
+      /products/page.tsx       → CRUD products
+      /orders/page.tsx         → Manage orders
+  /components
+    /layout/Navbar.tsx         → Jumia-style top nav
+    /layout/CategoryBar.tsx    → Horizontal category strip
+    /layout/Footer.tsx
+    /home/HeroBanner.tsx       → Carousel banners
+    /home/FlashSales.tsx       → Countdown deals
+    /home/FeaturedCategories.tsx
+    /products/ProductCard.tsx
+    /products/ProductGrid.tsx
+    /products/FilterSidebar.tsx
+    /cart/CartDrawer.tsx
+    /checkout/OrderSummary.tsx
+  /lib/api.ts                  → Axios instance
+  /store/cartStore.ts          → Zustand cart state
+  /store/authStore.ts          → Zustand auth state
+  /hooks/useProducts.ts
+  /hooks/useAuth.ts
+
+/server  (Node.js + Express)
+  /config/db.js                → MongoDB connection
+  /models/
+    User.js
+    Product.js
+    Order.js
+    Category.js
+    Review.js
+  /controllers/
+    authController.js
+    productController.js
+    orderController.js
+    categoryController.js
+    reviewController.js
+    adminController.js
+  /routes/
+    authRoutes.js
+    productRoutes.js
+    orderRoutes.js
+    categoryRoutes.js
+    adminRoutes.js
+  /middleware/
+    authMiddleware.js          → Protect routes
+    adminMiddleware.js         → Admin-only routes
+    errorHandler.js
+    uploadMiddleware.js        → Multer config
+  /utils/
+    generateToken.js
+    cloudinaryUpload.js
+  /validations/
+    authValidation.js
+    productValidation.js
+  server.js
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🗄️ DATABASE SCHEMAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+User:
+  name, email, password (hashed), phone, address[], 
+  role (user | admin), createdAt
+
+Category:
+  name, slug, image, description, parentCategory?
+
+Product:
+  name, slug, description, price, discountPrice,
+  images[], category (ref), brand, stock, sold,
+  ratings (avg), reviews[], tags[], 
+  attributes (size[], color[], material),
+  isFeatured, isFlashSale, flashSaleEnd,
+  createdAt
+
+Order:
+  user (ref), orderItems[{product, qty, price}],
+  shippingAddress, paymentMethod,
+  paymentResult {id, status, email_address},
+  itemsPrice, shippingPrice, totalPrice,
+  isPaid, paidAt, isDelivered, deliveredAt,
+  status (pending|processing|shipped|delivered|cancelled),
+  createdAt
+
+Review:
+  user (ref), product (ref), rating, comment, createdAt
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🌐 API ENDPOINTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+AUTH
+  POST   /api/auth/register
+  POST   /api/auth/login
+  POST   /api/auth/logout
+  GET    /api/auth/me
+  PUT    /api/auth/update-profile
+  PUT    /api/auth/change-password
+
+PRODUCTS
+  GET    /api/products                    → List with filters, sort, pagination
+  GET    /api/products/:id
+  GET    /api/products/search?q=
+  POST   /api/products/:id/reviews
+  GET    /api/products/featured
+  GET    /api/products/flash-sales
+
+CATEGORIES
+  GET    /api/categories
+  GET    /api/categories/:slug/products
+
+ORDERS
+  POST   /api/orders
+  GET    /api/orders/my-orders
+  GET    /api/orders/:id
+  PUT    /api/orders/:id/pay
+
+ADMIN
+  GET    /api/admin/dashboard-stats
+  GET/POST/PUT/DELETE /api/admin/products
+  GET    /api/admin/orders
+  PUT    /api/admin/orders/:id/status
+  GET    /api/admin/users
+  PUT    /api/admin/users/:id/role
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎨 UI/UX REQUIREMENTS (Jumia-inspired)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+HEADER/NAV:
+  - Top bar: logo left, search bar center (large, prominent), 
+    cart icon + account icon right
+  - Secondary nav: horizontal scrollable category links
+    (Shoes | Belts | Hair Creams | Jewellery | Bags | Flash Sales | New In)
+  - Cart icon shows item count badge
+  - Sticky on scroll
+
+HOMEPAGE:
+  - Full-width hero carousel with promotional banners (autoplay)
+  - Category icon grid (6 tiles: one per product type + "See All")
+  - Flash Sales section with countdown timer + horizontal product scroll
+  - "Featured Products" grid (4 columns desktop, 2 mobile)
+  - "New Arrivals" section
+  - Banner ads between sections (like Jumia's ad strips)
+
+PRODUCT LISTING PAGE:
+  - Left sidebar: filters (category, price range slider, brand, 
+    rating, in-stock only)
+  - Top bar: result count + sort dropdown 
+    (Popularity / Price Low-High / Price High-Low / Newest)
+  - Product grid: 4 cols desktop, 2 cols mobile
+  - Pagination or infinite scroll
+  - Quick-view on hover
+
+PRODUCT DETAIL PAGE:
+  - Image gallery with thumbnails (main + 4 sub images)
+  - Product title, rating stars, review count
+  - Price with strikethrough original + discount badge
+  - Variant selectors (size, color)
+  - Quantity selector + Add to Cart button (orange CTA like Jumia)
+  - Buy Now button
+  - Product description tabs (Description | Specifications | Reviews)
+  - Related products carousel at bottom
+
+CART:
+  - Slide-in drawer cart (opens from right)
+  - Item list with image, name, qty stepper, remove
+  - Subtotal + Checkout CTA
+
+CHECKOUT:
+  - Step progress: Address → Payment → Review
+  - Delivery address form
+  - Payment: Cash on Delivery + (optional) card placeholder
+  - Order summary sidebar
+  - Place Order confirmation
+
+ADMIN DASHBOARD:
+  - Stats cards: Total Sales, Orders, Products, Users
+  - Recent orders table
+  - Low stock alerts
+  - Add/Edit/Delete products with image upload
+  - Order status management
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎨 DESIGN TOKENS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Primary Color:   #F68B1E  (Jumia orange)
+Secondary:       #FFFFFF
+Background:      #F4F4F4
+Text Primary:    #1A1A1A
+Text Muted:      #6B7280
+Danger/Sale:     #E53935
+Success:         #2E7D32
+Border:          #E5E7EB
+Card Shadow:     0 1px 4px rgba(0,0,0,0.1)
+Border Radius:   6px (cards), 4px (buttons)
+Font:            'Inter' (body), weight 400/500/700
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔐 AUTH & SECURITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  - JWT stored in httpOnly cookies (not localStorage)
+  - Refresh token rotation
+  - Protected routes: /checkout, /orders, /admin/*
+  - Admin role guard on all /api/admin/* routes
+  - Rate limiting on auth endpoints
+  - Input sanitization on all POST/PUT routes
+  - CORS restricted to frontend origin
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚙️ ENV VARIABLES NEEDED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Backend (.env):
+  PORT=5000
+  MONGO_URI=
+  JWT_SECRET=
+  JWT_REFRESH_SECRET=
+  CLOUDINARY_CLOUD_NAME=
+  CLOUDINARY_API_KEY=
+  CLOUDINARY_API_SECRET=
+  CLIENT_URL=http://localhost:3000
+
+Frontend (.env.local):
+  NEXT_PUBLIC_API_URL=http://localhost:5000/api
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 DEPLOYMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Frontend → Vercel
+  Backend  → Render or Railway
+  Database → MongoDB Atlas
+  Images   → Cloudinary
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 IMPLEMENTATION ORDER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Phase 1 — Backend Foundation
+  1. Setup Express server + MongoDB connection
+  2. Build all Mongoose models
+  3. Auth routes (register/login/me) with JWT
+  4. Product CRUD + image upload to Cloudinary
+  5. Category routes
+  6. Order creation + retrieval
+
+Phase 2 — Frontend Core
+  7. Next.js project + Tailwind + shadcn setup
+  8. Navbar + CategoryBar + Footer layout
+  9. Homepage (Hero carousel, categories, featured grid)
+  10. Product listing page + filters + sort
+  11. Product detail page
+
+Phase 3 — Commerce Flow
+  12. Cart state (Zustand) + CartDrawer
+  13. Auth pages (login/register) + protected routes
+  14. Checkout flow (3 steps)
+  15. Order confirmation + order history
+
+Phase 4 — Admin & Polish
+  16. Admin dashboard + product management
+  17. Order status management
+  18. Search functionality
+  19. SEO (Next.js metadata API)
+  20. Performance: image optimization, lazy loading, skeleton loaders
+
+Generate production-ready code for each phase, one file at a time,
+with full comments. Do not skip error handling. Every API response 
+should follow the format: { success, message, data }.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import express from 'express';
 import Challenge from '../models/Challenge.js';
 import authMiddleware from '../middleware/auth.js';
