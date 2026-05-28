@@ -1,3 +1,164 @@
+import express from 'express';
+import Challenge from '../models/Challenge.js';
+import authMiddleware from '../middleware/auth.js';
+
+const router = express.Router();
+
+// Get challenges created by the current user (not yet completed)
+router.get('/my-created', authMiddleware, async (req, res) => {
+  try {
+    const challenges = await Challenge.find({
+      challengerId: req.user._id,
+      status: { $ne: 'completed' }
+    }).populate('opponentId', 'username');
+    res.json(challenges);
+  } catch (error) {
+    console.error('my-created error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get pending challenges (where current user is opponent)
+router.get('/pending', authMiddleware, async (req, res) => {
+  try {
+    const challenges = await Challenge.find({
+      opponentId: req.user._id,
+      status: 'pending'
+    }).populate('challengerId', 'username');
+    res.json(challenges);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get challenge by ID (for answering)
+router.get('/:id', authMiddleware, async (req, res) => {
+  try {
+    const challenge = await Challenge.findById(req.params.id)
+      .populate('challengerId opponentId', 'username');
+    if (!challenge) return res.status(404).json({ message: 'Challenge not found' });
+    // Only participants can view
+    if (challenge.challengerId._id.toString() !== req.user._id.toString() &&
+        challenge.opponentId._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'You are not part of this challenge' });
+    }
+    res.json(challenge);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Create a challenge
+router.post('/', authMiddleware, async (req, res) => {
+  try {
+    const { opponentId, courseId } = req.body;
+    if (!opponentId || !courseId) {
+      return res.status(400).json({ message: 'Opponent and course required' });
+    }
+    if (opponentId === req.user._id.toString()) {
+      return res.status(400).json({ message: 'Cannot challenge yourself' });
+    }
+    // Generate 5 random questions from the course (you need to implement this)
+    // For now, create a placeholder – you must fetch real questions from your lesson quizzes
+    const questions = [
+      { question: 'Sample question 1?', options: ['A','B','C'], correct: 0 },
+      // ... 5 questions
+    ];
+    const challenge = new Challenge({
+      challengerId: req.user._id,
+      opponentId,
+      courseId,
+      questions,
+      challengerAnswers: [],
+      opponentAnswers: [],
+      status: 'pending',
+    });
+    await challenge.save();
+    res.status(201).json(challenge);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Accept a challenge
+router.post('/:id/accept', authMiddleware, async (req, res) => {
+  try {
+    const challenge = await Challenge.findById(req.params.id);
+    if (!challenge) return res.status(404).json({ message: 'Challenge not found' });
+    if (challenge.opponentId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not your challenge' });
+    }
+    if (challenge.status !== 'pending') {
+      return res.status(400).json({ message: 'Challenge already accepted or completed' });
+    }
+    challenge.status = 'accepted';
+    await challenge.save();
+    res.json(challenge);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Submit answers
+router.post('/:id/submit', authMiddleware, async (req, res) => {
+  try {
+    const { answers } = req.body;
+    const challenge = await Challenge.findById(req.params.id);
+    if (!challenge) return res.status(404).json({ message: 'Challenge not found' });
+    if (challenge.status !== 'accepted') {
+      return res.status(400).json({ message: 'Challenge not ready for answers' });
+    }
+    const userId = req.user._id;
+    if (userId.toString() === challenge.challengerId.toString()) {
+      challenge.challengerAnswers = answers;
+    } else if (userId.toString() === challenge.opponentId.toString()) {
+      challenge.opponentAnswers = answers;
+    } else {
+      return res.status(403).json({ message: 'Not participant' });
+    }
+    // If both answered, calculate winner
+    if (challenge.challengerAnswers.length === 5 && challenge.opponentAnswers.length === 5) {
+      let challengerScore = 0, opponentScore = 0;
+      for (let i = 0; i < 5; i++) {
+        if (challenge.challengerAnswers[i] === challenge.questions[i].correct) challengerScore++;
+        if (challenge.opponentAnswers[i] === challenge.questions[i].correct) opponentScore++;
+      }
+      challenge.winnerId = challengerScore > opponentScore ? challenge.challengerId :
+                           opponentScore > challengerScore ? challenge.opponentId : null;
+      challenge.status = 'completed';
+      challenge.completedAt = new Date();
+      if (challenge.winnerId) {
+        const winner = await User.findById(challenge.winnerId);
+        winner.xp += 50;
+        await winner.save();
+        challenge.xpAwarded = 50;
+      }
+      await challenge.save();
+    }
+    await challenge.save();
+    res.json(challenge);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+export default router;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
