@@ -1,3 +1,16 @@
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://wilder-s-corner-frontend.vercel.app',
+    'https://your-custom-domain.com' // if you add one
+  ],
+  credentials: true,
+}));
+
+
+
+
+
 import HeroBanner from '@/components/home/HeroBanner';
 import ProductGrid from '@/components/products/ProductGrid';
 import MarqueeBanner from '@/components/home/MarqueeBanner';
