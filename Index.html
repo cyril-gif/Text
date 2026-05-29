@@ -1,3 +1,26 @@
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.delay-1000 {
+  animation-delay: 1000ms;
+}
+
+
+
+
+
+
+
 'use client';
 
 import { Star, Truck, Shield, Clock, Award, Heart, Zap, CheckCircle, Sparkles } from 'lucide-react';
