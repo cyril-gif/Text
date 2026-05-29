@@ -7,6 +7,149 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+export default function HeroBanner() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['sliderProducts'],
+    queryFn: () => fetchProducts({ limit: 10, sort: '-createdAt' }),
+  });
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const products = data?.products || [];
+
+  useEffect(() => {
+    if (products.length === 0) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % products.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [products.length]);
+
+  const goToPrevious = () => {
+    setCurrentIndex((prev) => (prev - 1 + products.length) % products.length);
+  };
+
+  const goToNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % products.length);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="relative h-64 md:h-80 bg-gray-200 rounded-lg animate-pulse flex items-center justify-center mb-8">
+        <span className="text-gray-400">Loading products...</span>
+      </div>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <div className="relative h-64 md:h-80 bg-gradient-to-r from-primary/20 to-primary/10 rounded-lg flex items-center justify-center mb-8">
+        <div className="text-center">
+          <p className="text-gray-500">No products available</p>
+          <Link href="/products" className="text-primary hover:underline mt-2 inline-block">
+            Browse Products →
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const product = products[currentIndex];
+  const price = product.discountPrice || product.price;
+  const originalPrice = product.discountPrice ? product.price : null;
+  const discountPercent = originalPrice 
+    ? Math.round(((originalPrice - price) / originalPrice) * 100) 
+    : 0;
+
+  return (
+    <div className="relative mb-8 group">
+      <Link href={`/products/${product.slug || product._id}`}>
+        <div className="relative h-64 md:h-80 rounded-lg overflow-hidden cursor-pointer">
+          <Image
+            src={product.images?.[0] || '/placeholder.jpg'}
+            alt={product.name}
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent flex items-center">
+            <div className="text-white p-6 md:p-8 max-w-md">
+              {discountPercent > 0 && (
+                <span className="bg-red-500 text-white text-xs px-2 py-1 rounded mb-2 inline-block">
+                  -{discountPercent}% OFF
+                </span>
+              )}
+              <h2 className="text-xl md:text-3xl font-bold mb-2">{product.name}</h2>
+              <p className="text-sm md:text-base text-gray-200 mb-3 line-clamp-2">
+                {product.description}
+              </p>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-xl md:text-2xl font-bold">₦{price.toLocaleString()}</span>
+                {originalPrice && (
+                  <span className="text-sm text-gray-300 line-through">₦{originalPrice.toLocaleString()}</span>
+                )}
+              </div>
+              <button className="bg-primary text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-primary/90 transition">
+                Shop Now →
+              </button>
+            </div>
+          </div>
+        </div>
+      </Link>
+
+      {/* Previous Button */}
+      <button
+        onClick={goToPrevious}
+        className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition shadow-md"
+        aria-label="Previous product"
+      >
+        <ChevronLeft className="h-5 w-5 text-gray-800" />
+      </button>
+
+      {/* Next Button */}
+      <button
+        onClick={goToNext}
+        className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition shadow-md"
+        aria-label="Next product"
+      >
+        <ChevronRight className="h-5 w-5 text-gray-800" />
+      </button>
+
+      {/* Dots Indicator */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+        {products.slice(0, 6).map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => setCurrentIndex(idx)}
+            className={`h-2 rounded-full transition-all duration-300 ${
+              idx === currentIndex 
+                ? 'w-6 bg-primary' 
+                : 'w-2 bg-white/70 hover:bg-white/90'
+            }`}
+            aria-label={`Go to slide ${idx + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+
+
+
+
+
+
+
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
+import { fetchProducts } from '@/lib/api';
+import Image from 'next/image';
+import Link from 'next/link';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+
 export default function ProductSlider() {
   const { data, isLoading } = useQuery({
     queryKey: ['sliderProducts'],
