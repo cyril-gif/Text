@@ -1,3 +1,30 @@
+{
+  "orderItems": [
+    {
+      "product": "65a1b2c3d4e5f67890abcdef",
+      "qty": 1,
+      "price": 99.99
+    }
+  ],
+  "shippingAddress": {
+    "fullName": "Test User",
+    "phone": "1234567890",
+    "addressLine1": "123 Test St",
+    "city": "Accra",
+    "state": "Greater Accra",
+    "postalCode": "00233",
+    "country": "Ghana"
+  },
+  "paymentMethod": "cash_on_delivery",
+  "itemsPrice": 99.99,
+  "shippingPrice": 10,
+  "totalPrice": 109.99
+}
+
+
+
+
+
 import { body } from 'express-validator';
 
 export const orderValidation = [
