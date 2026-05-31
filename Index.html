@@ -1,3 +1,54 @@
+function PaystackButton({ email, amount, orderId, onSuccess, onClose }: any) {
+  const [isLoading, setIsLoading] = useState(false);
+  const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
+
+  const handlePayment = () => {
+    setIsLoading(true);
+    const script = document.createElement('script');
+    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.onload = () => {
+      const paystackAmount = Math.round(amount * 100); // ✅ integer in kobo
+      if (isNaN(paystackAmount) || paystackAmount <= 0) {
+        alert('Invalid payment amount');
+        setIsLoading(false);
+        return;
+      }
+      const handler = (window as any).PaystackPop.setup({
+        key: publicKey,
+        email,
+        amount: paystackAmount,
+        ref: `ORDER-${orderId}-${Date.now()}`,
+        metadata: { orderId },
+        callback: () => onSuccess(),
+        onClose: () => onClose(),
+      });
+      handler.openIframe();
+    };
+    script.onerror = () => {
+      alert('Payment service unavailable. Please try again.');
+      setIsLoading(false);
+    };
+    document.body.appendChild(script);
+  };
+
+  return (
+    <Button
+      onClick={handlePayment}
+      disabled={isLoading || !publicKey}
+      className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3"
+    >
+      {isLoading ? 'Loading Paystack...' : '💳 Pay Now'}
+    </Button>
+  );
+}
+
+
+
+
+
+
+
+
 import Product from '../models/Product.js';
 import Category from '../models/Category.js';
 import Review from '../models/Review.js';
