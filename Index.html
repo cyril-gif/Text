@@ -1,3 +1,19 @@
+import { body } from 'express-validator';
+
+export const orderValidation = [
+  body('orderItems').isArray({ min: 1 }).withMessage('At least one item required'),
+  body('shippingAddress.fullName').notEmpty().withMessage('Full name required'),
+  body('shippingAddress.phone').notEmpty().withMessage('Phone required'),
+  body('shippingAddress.addressLine1').notEmpty().withMessage('Address required'),
+  body('shippingAddress.city').notEmpty().withMessage('City required'),
+  body('shippingAddress.state').notEmpty().withMessage('State required'),
+  body('paymentMethod').isIn(['cash_on_delivery', 'paystack']).withMessage('Invalid payment method'),
+];
+
+
+
+
+
 import express from 'express';
 import {
   createOrder,
