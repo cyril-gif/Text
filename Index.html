@@ -1,6 +1,462 @@
 'use client';
 
 import { useState, Suspense } from 'react';
+import { useRouter } } from 'next/navigation';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import useCartStore from '@/store/cartStore';
+import useAuthStore from '@/store/authStore';
+import axios from '@/lib/api';
+
+// Ghana regions and cities data
+const regionsWithCities = {
+  'Greater Accra': ['Accra', 'Tema', 'Adenta', 'Madina', 'Ashaiman', 'Dansoman', 'Dzorwulu', 'Lapaz', 'Achimota', 'Osu'],
+  'Ashanti': ['Kumasi', 'Obuasi', 'Tafo', 'Ejisu', 'Mampong', 'Konongo', 'Offinso', 'Agogo', 'Bekwai'],
+  'Northern': ['Tamale', 'Sagnarigu', 'Yendi', 'Buipe', 'Salaga', 'Gushegu', 'Tolon', 'Kumbungu'],
+  'Eastern': ['Koforidua', 'Nkawkaw', 'Suhum', 'Akropong', 'Aburi', 'Nsawam', 'Mpraeso'],
+  'Central': ['Cape Coast', 'Kasoa', 'Winneba', 'Elmina', 'Twifo Praso', 'Assin Fosu', 'Apam'],
+  'Volta': ['Ho', 'Hohoe', 'Keta', 'Denu', 'Kpando', 'Dzodze', 'Akatsi', 'Sogakope'],
+  'Western': ['Takoradi', 'Sekondi', 'Tarkwa', 'Agona Nkwanta', 'Prestea', 'Bibiani', 'Enchi'],
+  'Upper East': ['Bolgatanga', 'Bawku', 'Navrongo', 'Paga', 'Sandema', 'Zuarungu'],
+  'Upper West': ['Wa', 'Jirapa', 'Nandom', 'Lawra', 'Tumu', 'Hamile', 'Daffiama'],
+  'Bono': ['Sunyani', 'Berekum', 'Dormaa Ahenkro', 'Nsoatre', 'Atebubu'],
+  'Bono East': ['Techiman', 'Kintampo', 'Nkoranza', 'Atebubu', 'Prang'],
+  'Ahafo': ['Goaso', 'Bechem', 'Duayaw Nkwanta', 'Kenyasi', 'Mim'],
+  'Oti': ['Dambai', 'Jasikan', 'Kadjebi', 'Kete Krachi', 'Nkwanta'],
+  'North East': ['Nalerigu', 'Bunkpurugu', 'Gambaga', 'Walewale', 'Yagaba'],
+  'Savannah': ['Damango', 'Salaga', 'Daboya', 'Bole', 'Buipe'],
+  'Western North': ['Sefwi Wiawso', 'Sefwi Asawinso', 'Sefwi Boako', 'Bibiani', 'Nkroful'],
+};
+const allRegions = Object.keys(regionsWithCities);
+
+// Paystack inline component
+function PaystackButton({ email, amount, orderId, onSuccess, onClose }: any) {
+  const [isLoading, setIsLoading] = useState(false);
+  const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
+
+  const handlePayment = () => {
+    setIsLoading(true);
+    const script = document.createElement('script');
+    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.onload = () => {
+      const handler = (window as any).PaystackPop.setup({
+        key: publicKey,
+        email,
+        amount: amount * 100,
+        ref: `ORDER-${orderId}-${Date.now()}`,
+        metadata: { orderId },
+        callback: () => onSuccess(),
+        onClose: () => onClose(),
+      });
+      handler.openIframe();
+    };
+    script.onerror = () => {
+      alert('Payment service unavailable');
+      setIsLoading(false);
+    };
+    document.body.appendChild(script);
+  };
+
+  return (
+    <Button
+      onClick={handlePayment}
+      disabled={isLoading || !publicKey}
+      className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3"
+    >
+      {isLoading ? 'Loading Paystack...' : '💳 Pay Now'}
+    </Button>
+  );
+}
+
+// Main checkout component
+function CheckoutContent() {
+  const router = useRouter();
+  const { items, getSubtotal, clearCart } = useCartStore();
+  const { user } = useAuthStore();
+  const [step, setStep] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState('cash_on_delivery');
+  const [loading, setLoading] = useState(false);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [address, setAddress] = useState({
+    fullName: '',
+    phone: '',
+    addressLine1: '',
+    addressLine2: '',
+    region: '',
+    city: '',
+    postalCode: '',
+    country: 'Ghana',
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const subtotal = getSubtotal();
+  const shipping = subtotal > 500 ? 0 : 50;
+  const total = subtotal + shipping;
+
+  // Redirects
+  if (items.length === 0) {
+    router.push('/cart');
+    return null;
+  }
+  if (!user) {
+    router.push(`/auth/login?redirect=/checkout`);
+    return null;
+  }
+
+  const validateAddress = () => {
+    const newErrors: Record<string, string> = {};
+    if (!address.fullName) newErrors.fullName = 'Full name required';
+    if (!address.phone) newErrors.phone = 'Phone required';
+    if (!address.addressLine1) newErrors.addressLine1 = 'Address required';
+    if (!address.region) newErrors.region = 'Region required';
+    if (!address.city) newErrors.city = 'City required';
+    if (!address.postalCode) newErrors.postalCode = 'Postal code required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const createOrder = async () => {
+    const orderData = {
+      orderItems: items.map((item) => ({
+        product: item.productId,
+        qty: item.qty,
+        size: item.size,
+        color: item.color,
+      })),
+      shippingAddress: {
+        fullName: address.fullName,
+        phone: address.phone,
+        addressLine1: address.addressLine1,
+        addressLine2: address.addressLine2,
+        city: address.city,
+        state: address.region,
+        postalCode: address.postalCode,
+        country: address.country,
+      },
+      paymentMethod,
+      itemsPrice: subtotal,
+      shippingPrice: shipping,
+      totalPrice: total,
+    };
+    const { data } = await axios.post('/orders', orderData);
+    return data.data;
+  };
+
+  const handleAddressSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validateAddress()) {
+      setStep(2);
+    }
+  };
+
+  const handleCOD = async () => {
+    setLoading(true);
+    try {
+      await createOrder();
+      clearCart();
+      router.push('/orders?success=true');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Order failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePaystackFlow = async () => {
+    setLoading(true);
+    try {
+      const order = await createOrder();
+      setCreatedOrderId(order._id);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Order creation failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onPaystackSuccess = () => {
+    clearCart();
+    router.push('/orders?payment=success');
+  };
+
+  const onPaystackClose = () => {
+    setCreatedOrderId(null);
+  };
+
+  const updateAddress = (field: string, value: string) => {
+    setAddress((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
+    if (field === 'region') setAddress((prev) => ({ ...prev, region: value, city: '' }));
+  };
+
+  // Determine available cities based on selected region
+  const availableCities = address.region ? regionsWithCities[address.region] || [] : [];
+
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      {/* Step indicator */}
+      <div className="flex items-center justify-between mb-8 max-w-md mx-auto">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                step >= i ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'
+              }`}
+            >
+              {i}
+            </div>
+            {i < 3 && <div className="w-12 h-0.5 bg-gray-200 mx-2" />}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Main form */}
+        <div className="flex-1">
+          {step === 1 && (
+            <div className="bg-white rounded-xl shadow-card p-6">
+              <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
+              <form onSubmit={handleAddressSubmit} className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Full Name</Label>
+                    <Input
+                      value={address.fullName}
+                      onChange={(e) => updateAddress('fullName', e.target.value)}
+                      required
+                    />
+                    {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
+                  </div>
+                  <div>
+                    <Label>Phone</Label>
+                    <Input
+                      type="tel"
+                      value={address.phone}
+                      onChange={(e) => updateAddress('phone', e.target.value)}
+                      required
+                    />
+                    {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+                  </div>
+                </div>
+                <div>
+                  <Label>Address Line 1</Label>
+                  <Input
+                    value={address.addressLine1}
+                    onChange={(e) => updateAddress('addressLine1', e.target.value)}
+                    required
+                  />
+                  {errors.addressLine1 && <p className="text-red-500 text-xs mt-1">{errors.addressLine1}</p>}
+                </div>
+                <div>
+                  <Label>Address Line 2 (Optional)</Label>
+                  <Input
+                    value={address.addressLine2}
+                    onChange={(e) => updateAddress('addressLine2', e.target.value)}
+                  />
+                </div>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Region</Label>
+                    <select
+                      className="w-full border rounded-md p-2"
+                      value={address.region}
+                      onChange={(e) => updateAddress('region', e.target.value)}
+                      required
+                    >
+                      <option value="">Select Region</option>
+                      {allRegions.map((region) => (
+                        <option key={region} value={region}>
+                          {region}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.region && <p className="text-red-500 text-xs mt-1">{errors.region}</p>}
+                  </div>
+                  <div>
+                    <Label>City</Label>
+                    <select
+                      className="w-full border rounded-md p-2"
+                      value={address.city}
+                      onChange={(e) => updateAddress('city', e.target.value)}
+                      disabled={!address.region}
+                      required
+                    >
+                      <option value="">Select City</option>
+                      {availableCities.map((city) => (
+                        <option key={city} value={city}>
+                          {city}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
+                  </div>
+                  <div>
+                    <Label>Postal Code</Label>
+                    <Input
+                      value={address.postalCode}
+                      onChange={(e) => updateAddress('postalCode', e.target.value)}
+                      required
+                    />
+                    {errors.postalCode && <p className="text-red-500 text-xs mt-1">{errors.postalCode}</p>}
+                  </div>
+                </div>
+                <div>
+                  <Label>Country</Label>
+                  <Input value="Ghana" disabled className="bg-gray-100" />
+                </div>
+                <Button type="submit" className="bg-primary w-full md:w-auto">
+                  Continue to Payment
+                </Button>
+              </form>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="bg-white rounded-xl shadow-card p-6">
+              <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
+              <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
+                <div className="flex items-center space-x-2 border p-3 rounded-lg cursor-pointer hover:border-primary">
+                  <RadioGroupItem value="cash_on_delivery" id="cod" />
+                  <Label htmlFor="cod" className="flex-1 cursor-pointer font-normal">
+                    Cash on Delivery
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 border p-3 rounded-lg cursor-pointer hover:border-primary">
+                  <RadioGroupItem value="paystack" id="paystack" />
+                  <Label htmlFor="paystack" className="flex-1 cursor-pointer font-normal">
+                    Pay with Card (Paystack)
+                  </Label>
+                </div>
+              </RadioGroup>
+              <div className="flex justify-between mt-6">
+                <Button variant="outline" onClick={() => setStep(1)}>
+                  Back
+                </Button>
+                <Button onClick={() => setStep(3)} className="bg-primary">
+                  Review Order
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="bg-white rounded-xl shadow-card p-6">
+              <h2 className="text-xl font-semibold mb-4">Review Order</h2>
+              <div className="mb-6">
+                <h3 className="font-medium mb-2">Shipping Address</h3>
+                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                  {address.fullName}<br />
+                  {address.addressLine1}<br />
+                  {address.city}, {address.region} {address.postalCode}<br />
+                  {address.phone}
+                </div>
+                <button onClick={() => setStep(1)} className="text-primary text-sm mt-2">
+                  Edit
+                </button>
+              </div>
+              <div className="mb-6">
+                <h3 className="font-medium mb-2">Payment Method</h3>
+                <div className="text-sm bg-gray-50 p-3 rounded-lg">
+                  {paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery' : 'Card (Paystack)'}
+                </div>
+                <button onClick={() => setStep(2)} className="text-primary text-sm mt-2">
+                  Edit
+                </button>
+              </div>
+              <div className="border-t pt-4">
+                <div className="flex justify-between mb-2">
+                  <span>Subtotal</span>
+                  <span>₵{subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span>Shipping</span>
+                  <span>{shipping === 0 ? 'Free' : `₵${shipping.toLocaleString()}`}</span>
+                </div>
+                <div className="flex justify-between font-bold text-lg mt-2 pt-2 border-t">
+                  <span>Total</span>
+                  <span>₵{total.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {paymentMethod === 'cash_on_delivery' ? (
+                <Button
+                  onClick={handleCOD}
+                  disabled={loading}
+                  className="w-full mt-6 bg-primary"
+                >
+                  {loading ? 'Placing Order...' : 'Place Order (Cash on Delivery)'}
+                </Button>
+              ) : (
+                <>
+                  {!createdOrderId ? (
+                    <Button
+                      onClick={handlePaystackFlow}
+                      disabled={loading}
+                      className="w-full mt-6 bg-primary"
+                    >
+                      {loading ? 'Creating Order...' : 'Proceed to Payment'}
+                    </Button>
+                  ) : (
+                    <PaystackButton
+                      email={user.email}
+                      amount={total}
+                      orderId={createdOrderId}
+                      onSuccess={onPaystackSuccess}
+                      onClose={onPaystackClose}
+                    />
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Order summary sidebar */}
+        <div className="lg:w-80">
+          <div className="bg-gray-50 rounded-xl shadow-card p-4 sticky top-24">
+            <h3 className="font-semibold text-lg mb-3">Order Summary</h3>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {items.map((item) => (
+                <div key={item.productId} className="flex justify-between text-sm">
+                  <span>{item.name} × {item.qty}</span>
+                  <span>₵{(item.price * item.qty).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+            <div className="border-t mt-3 pt-3">
+              <div className="flex justify-between font-semibold">
+                <span>Total</span>
+                <span>₵{total.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center">Loading checkout...</div>}>
+      <CheckoutContent />
+    </Suspense>
+  );
+}
+
+
+
+
+
+
+
+
+
+'use client';
+
+import { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
