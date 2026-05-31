@@ -9,6 +9,305 @@ import useCartStore from '@/store/cartStore';
 import useAuthStore from '@/store/authStore';
 import axios from '@/lib/api';
 
+// Paystack inline component
+function PaystackButton({ email, amount, orderId, onSuccess, onClose }: any) {
+  const [isLoading, setIsLoading] = useState(false);
+  const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
+
+  const handlePayment = () => {
+    setIsLoading(true);
+    const script = document.createElement('script');
+    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.onload = () => {
+      const handler = (window as any).PaystackPop.setup({
+        key: publicKey,
+        email: email,
+        amount: amount * 100, // Paystack uses kobo (multiply by 100)
+        ref: `ORDER-${orderId}-${Date.now()}`,
+        metadata: { orderId: orderId },
+        callback: (response: any) => {
+          console.log('Payment success:', response);
+          setIsLoading(false);
+          onSuccess();
+        },
+        onClose: () => {
+          console.log('Payment closed');
+          setIsLoading(false);
+          onClose();
+        },
+      });
+      handler.openIframe();
+    };
+    script.onerror = () => {
+      console.error('Failed to load Paystack');
+      setIsLoading(false);
+      alert('Payment service unavailable. Please try again.');
+    };
+    document.body.appendChild(script);
+  };
+
+  return (
+    <Button
+      onClick={handlePayment}
+      disabled={isLoading || !publicKey}
+      className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition"
+    >
+      {isLoading ? 'Loading Paystack...' : '💳 Pay with Card'}
+    </Button>
+  );
+}
+
+function CheckoutContent() {
+  const router = useRouter();
+  const { items, getSubtotal, clearCart } = useCartStore();
+  const { user } = useAuthStore();
+  const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('cash_on_delivery');
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [address, setAddress] = useState({
+    fullName: '',
+    phone: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: 'Ghana',
+  });
+
+  const subtotal = getSubtotal();
+  const shipping = subtotal > 500 ? 0 : 50;
+  const total = subtotal + shipping;
+
+  if (items.length === 0) {
+    router.push('/cart');
+    return null;
+  }
+
+  if (!user) {
+    router.push('/auth/login?redirect=/checkout');
+    return null;
+  }
+
+  // Helper to create order (used by both COD and Paystack)
+  const createOrder = async () => {
+    const orderData = {
+      orderItems: items.map(item => ({
+        product: item.productId,
+        qty: item.qty,
+        size: item.size,
+        color: item.color,
+      })),
+      shippingAddress: {
+        fullName: address.fullName,
+        phone: address.phone,
+        addressLine1: address.addressLine1,
+        addressLine2: address.addressLine2,
+        city: address.city,
+        state: address.state,
+        postalCode: address.postalCode,
+        country: address.country,
+      },
+      paymentMethod: paymentMethod,
+      itemsPrice: subtotal,
+      shippingPrice: shipping,
+      totalPrice: total,
+    };
+    const { data } = await axios.post('/orders', orderData);
+    return data.data; // returns the order object
+  };
+
+  // Handle COD order
+  const handleCODOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await createOrder();
+      clearCart();
+      router.push('/orders?success=true');
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Order failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle Paystack: create order first, then open Paystack modal
+  const handlePaystackOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const order = await createOrder();
+      setCreatedOrderId(order._id);
+      // Paystack will open automatically after state update? We'll use a separate button.
+      // But we can trigger Paystack after order creation.
+      // We'll set createdOrderId and then a useEffect to trigger Paystack? Simpler: show Paystack button after order creation.
+      // However, to keep UX smooth, we'll open Paystack immediately after order creation.
+      // We'll call a function to open Paystack using the order ID.
+      openPaystack(order._id);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to create order. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const openPaystack = (orderId: string) => {
+    // Create a temporary div to render PaystackButton and simulate click
+    // But we already have a PaystackButton component. We'll just show it after order creation.
+    // For simplicity, we'll use a state to show the Paystack button once order is created.
+    // But we want to open automatically. Let's use a ref or just conditionally render the Paystack button after creation.
+    // The user will have to click "Pay Now" after order creation. That's acceptable.
+    setCreatedOrderId(orderId);
+    setLoading(false);
+  };
+
+  const handlePaymentSuccess = async () => {
+    // Optionally call backend to mark order as paid (already handled by webhook, but we can do explicit call)
+    try {
+      await axios.put(`/orders/${createdOrderId}/pay`, { status: 'completed' });
+    } catch (err) {
+      console.error('Failed to update payment status', err);
+    }
+    clearCart();
+    router.push('/orders?payment=success');
+  };
+
+  const handlePaymentClose = () => {
+    setCreatedOrderId(null);
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-6">Checkout</h1>
+      <form onSubmit={paymentMethod === 'cash_on_delivery' ? handleCODOrder : handlePaystackOrder} className="space-y-4">
+        <div>
+          <Label>Full Name</Label>
+          <Input required value={address.fullName} onChange={(e) => setAddress({ ...address, fullName: e.target.value })} />
+        </div>
+        <div>
+          <Label>Phone</Label>
+          <Input required value={address.phone} onChange={(e) => setAddress({ ...address, phone: e.target.value })} />
+        </div>
+        <div>
+          <Label>Address Line 1</Label>
+          <Input required value={address.addressLine1} onChange={(e) => setAddress({ ...address, addressLine1: e.target.value })} />
+        </div>
+        <div>
+          <Label>Address Line 2 (Optional)</Label>
+          <Input value={address.addressLine2} onChange={(e) => setAddress({ ...address, addressLine2: e.target.value })} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>City</Label>
+            <Input required value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} />
+          </div>
+          <div>
+            <Label>Region/State</Label>
+            <Input required value={address.state} onChange={(e) => setAddress({ ...address, state: e.target.value })} />
+          </div>
+        </div>
+        <div>
+          <Label>Postal Code</Label>
+          <Input required value={address.postalCode} onChange={(e) => setAddress({ ...address, postalCode: e.target.value })} />
+        </div>
+        <div>
+          <Label>Country</Label>
+          <Input value="Ghana" disabled className="bg-gray-100" />
+        </div>
+
+        <div className="border-t pt-4 mt-4">
+          <div className="flex justify-between">
+            <span>Subtotal:</span>
+            <span>₵{subtotal.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Shipping:</span>
+            <span>{shipping === 0 ? 'Free' : `₵${shipping.toLocaleString()}`}</span>
+          </div>
+          <div className="flex justify-between font-bold text-lg mt-2">
+            <span>Total:</span>
+            <span>₵{total.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              value="cash_on_delivery"
+              checked={paymentMethod === 'cash_on_delivery'}
+              onChange={() => setPaymentMethod('cash_on_delivery')}
+            />
+            <span>Cash on Delivery</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              value="paystack"
+              checked={paymentMethod === 'paystack'}
+              onChange={() => setPaymentMethod('paystack')}
+            />
+            <span>Pay with Card (Paystack)</span>
+          </label>
+        </div>
+
+        {paymentMethod === 'cash_on_delivery' ? (
+          <Button type="submit" disabled={loading} className="w-full bg-primary">
+            {loading ? 'Placing Order...' : 'Place Order (Cash on Delivery)'}
+          </Button>
+        ) : (
+          <>
+            {!createdOrderId ? (
+              <Button type="submit" disabled={loading} className="w-full bg-primary">
+                {loading ? 'Creating Order...' : 'Proceed to Payment'}
+              </Button>
+            ) : (
+              <PaystackButton
+                email={user.email}
+                amount={total}
+                orderId={createdOrderId}
+                onSuccess={handlePaymentSuccess}
+                onClose={handlePaymentClose}
+              />
+            )}
+          </>
+        )}
+      </form>
+    </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CheckoutContent />
+    </Suspense>
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+'use client';
+
+import { useState, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import useCartStore from '@/store/cartStore';
+import useAuthStore from '@/store/authStore';
+import axios from '@/lib/api';
+
 function CheckoutContent() {
   const router = useRouter();
   const { items, getSubtotal, clearCart } = useCartStore();
