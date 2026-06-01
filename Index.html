@@ -1,3 +1,13 @@
+res.cookie('accessToken', accessToken, {
+  httpOnly: true,
+  secure: true,           // Must be true on HTTPS (Vercel/Render use HTTPS)
+  sameSite: 'none',       // Required for cross-site requests (Vercel → Render)
+  maxAge: 15 * 60 * 1000,
+});
+
+
+
+
 app.use(cors({
   origin: [
     'http://localhost:3000',
