@@ -13,6 +13,22 @@ app.use(cors({
 
 
 
+
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://wilder-s-corner-frontend.vercel.app',
+    'https://wilder-s-corner-backend.onrender.com'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Origin'],
+}));
+
+
+
+
+
 res.cookie('accessToken', accessToken, {
   httpOnly: true,
   secure: true,           // Must be true on HTTPS (Vercel/Render use HTTPS)
