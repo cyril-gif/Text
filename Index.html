@@ -1,3 +1,33 @@
+const deleteProduct = async (id: string) => {
+  if (!confirm('Delete this product?')) return;
+  
+  try {
+    console.log('Deleting product:', id);
+    const response = await axios.delete(`/admin/products/${id}`);
+    console.log('Delete response:', response.data);
+    
+    if (response.data.success) {
+      // Remove from local state
+      setProducts(prev => prev.filter(p => p._id !== id));
+      alert('Product deleted successfully');
+    } else {
+      alert(response.data.message || 'Delete failed');
+    }
+  } catch (err: any) {
+    console.error('Delete error:', err);
+    console.error('Error response:', err.response?.data);
+    alert(err.response?.data?.message || 'Delete failed. Please check console.');
+  }
+};
+
+
+
+
+
+
+
+
+
 import User from '../models/User.js';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/generateToken.js';
 import { validationResult } from 'express-validator';
