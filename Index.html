@@ -1,4 +1,35 @@
 /**
+ * Messaging Routes
+ * SMS and WhatsApp endpoints
+ */
+
+const express = require('express');
+const { verifyToken, requireRole } = require('../middleware/auth');
+const {
+  sendMessage,
+  sendBroadcast,
+  getMessageLogs
+} = require('../controllers/messagingController');
+
+const router = express.Router();
+
+// Admin-only messaging routes
+router.post('/send', verifyToken, requireRole('admin'), sendMessage);
+router.post('/broadcast', verifyToken, requireRole('admin'), sendBroadcast);
+router.get('/logs', verifyToken, requireRole('admin'), getMessageLogs);
+
+module.exports = router;
+
+
+
+
+
+
+
+
+
+
+/**
  * Messaging Controller
  * Handles SMS and WhatsApp notifications via Moolre Messaging API
  */
