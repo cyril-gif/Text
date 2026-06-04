@@ -1,4 +1,447 @@
 /**
+ * Authentication Routes
+ * Registration, login, logout with Ghana phone validation
+ */
+
+const express = require('express');
+const { body, validationResult } = require('express-validator');
+const User = require('../models/User');
+const {
+  verifyToken,
+  generateTokens,
+  setTokenCookie,
+  clearTokenCookie,
+  checkUserRateLimit
+} = require('../middleware/auth');
+
+const router = express.Router();
+
+// Validation rules
+const validateRegistration = [
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Name must be between 2 and 100 characters'),
+  
+  body('phone')
+    .trim()
+    .matches(/^(0)(2[3-9]|5[0-9])\d{7}$/)
+    .withMessage('Valid Ghana phone number required (e.g., 024XXXXXXX)'),
+  
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters'),
+  
+  body('role')
+    .optional()
+    .isIn(['customer', 'rider'])
+    .withMessage('Role must be customer or rider'),
+  
+  body('email')
+    .optional()
+    .isEmail()
+    .withMessage('Valid email required if provided')
+];
+
+const validateLogin = [
+  body('phone')
+    .matches(/^(0)(2[3-9]|5[0-9])\d{7}$/)
+    .withMessage('Valid Ghana phone number required'),
+  
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required')
+];
+
+/**
+ * @route POST /api/auth/register
+ * @desc Register new user (customer or rider)
+ * @access Public
+ */
+router.post('/register', validateRegistration, async (req, res) => {
+  try {
+    // Check validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array(),
+        error: 'VALIDATION_ERROR'
+      });
+    }
+    
+    const { name, phone, password, role = 'customer', email } = req.body;
+    
+    // Check if user already exists
+    const existingUser = await User.findOne({ phone });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: 'User with this phone number already exists',
+        error: 'USER_EXISTS'
+      });
+    }
+    
+    if (email) {
+      const existingEmail = await User.findOne({ email });
+      if (existingEmail) {
+        return res.status(409).json({
+          success: false,
+          message: 'Email already registered',
+          error: 'EMAIL_EXISTS'
+        });
+      }
+    }
+    
+    // Create user
+    const user = new User({
+      name,
+      phone,
+      password,
+      role,
+      email: email || undefined,
+      isVerified: false // Will verify via SMS OTP
+    });
+    
+    await user.save();
+    
+    // Generate tokens
+    const { accessToken } = generateTokens(user);
+    setTokenCookie(res, accessToken);
+    
+    // Return user info (exclude sensitive data)
+    const userResponse = {
+      id: user._id,
+      name: user.name,
+      phone: user.phone,
+      role: user.role,
+      email: user.email,
+      referralCode: user.referralCode,
+      createdAt: user.createdAt
+    };
+    
+    res.status(201).json({
+      success: true,
+      message: 'Registration successful',
+      data: { user: userResponse }
+    });
+    
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Registration failed',
+      error: 'REGISTRATION_FAILED'
+    });
+  }
+});
+
+/**
+ * @route POST /api/auth/login
+ * @desc Login user with phone + password
+ * @access Public
+ */
+router.post('/login', validateLogin, async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array(),
+        error: 'VALIDATION_ERROR'
+      });
+    }
+    
+    const { phone, password } = req.body;
+    
+    // Rate limiting
+    if (!checkUserRateLimit(phone, 'login', 5, 3600000)) {
+      return res.status(429).json({
+        success: false,
+        message: 'Too many login attempts. Please try again in 1 hour.',
+        error: 'RATE_LIMIT_EXCEEDED'
+      });
+    }
+    
+    // Find user with password field
+    const user = await User.findOne({ phone }).select('+password');
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid phone number or password',
+        error: 'INVALID_CREDENTIALS'
+      });
+    }
+    
+    // Check if user is banned
+    if (user.isBanned) {
+      return res.status(403).json({
+        success: false,
+        message: `Account suspended: ${user.banReason || 'Violation of terms'}`,
+        error: 'ACCOUNT_BANNED'
+      });
+    }
+    
+    // Verify password
+    const isValidPassword = await user.comparePassword(password);
+    if (!isValidPassword) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid phone number or password',
+        error: 'INVALID_CREDENTIALS'
+      });
+    }
+    
+    // Generate tokens
+    const { accessToken } = generateTokens(user);
+    setTokenCookie(res, accessToken);
+    
+    // Update last login
+    user.lastLoginAt = new Date();
+    await user.save();
+    
+    const userResponse = {
+      id: user._id,
+      name: user.name,
+      phone: user.phone,
+      role: user.role,
+      email: user.email,
+      referralCode: user.referralCode,
+      isVerified: user.isVerified,
+      riderProfile: user.role === 'rider' ? {
+        isAvailable: user.riderProfile?.isAvailable,
+        totalPickupsCompleted: user.riderProfile?.totalPickupsCompleted,
+        averageRating: user.riderProfile?.averageRating
+      } : undefined
+    };
+    
+    res.json({
+      success: true,
+      message: 'Login successful',
+      data: { user: userResponse }
+    });
+    
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Login failed',
+      error: 'LOGIN_FAILED'
+    });
+  }
+});
+
+/**
+ * @route POST /api/auth/logout
+ * @desc Logout user and clear cookie
+ * @access Private
+ */
+router.post('/logout', verifyToken, async (req, res) => {
+  try {
+    clearTokenCookie(res);
+    
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Logout failed',
+      error: 'LOGOUT_FAILED'
+    });
+  }
+});
+
+/**
+ * @route GET /api/auth/me
+ * @desc Get current authenticated user
+ * @access Private
+ */
+router.get('/me', verifyToken, async (req, res) => {
+  try {
+    const user = req.user;
+    
+    const userResponse = {
+      id: user._id,
+      name: user.name,
+      phone: user.phone,
+      role: user.role,
+      email: user.email,
+      referralCode: user.referralCode,
+      isVerified: user.isVerified,
+      location: user.location,
+      preferences: user.preferences,
+      createdAt: user.createdAt,
+      riderProfile: user.role === 'rider' ? {
+        vehicleType: user.riderProfile?.vehicleType,
+        isAvailable: user.riderProfile?.isAvailable,
+        totalPickupsCompleted: user.riderProfile?.totalPickupsCompleted,
+        averageRating: user.riderProfile?.averageRating,
+        acceptanceRate: user.riderProfile?.acceptanceRate,
+        isVerified: user.riderProfile?.isVerified
+      } : undefined
+    };
+    
+    res.json({
+      success: true,
+      data: { user: userResponse }
+    });
+    
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch profile',
+      error: 'PROFILE_FETCH_FAILED'
+    });
+  }
+});
+
+/**
+ * @route PUT /api/auth/profile
+ * @desc Update user profile
+ * @access Private
+ */
+router.put('/profile', verifyToken, async (req, res) => {
+  try {
+    const { name, email, location, preferences } = req.body;
+    const updates = {};
+    
+    if (name) updates.name = name;
+    if (email) updates.email = email;
+    if (location) updates.location = location;
+    if (preferences) updates.preferences = preferences;
+    
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).select('-password');
+    
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: { user }
+    });
+    
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Profile update failed',
+      error: 'PROFILE_UPDATE_FAILED'
+    });
+  }
+});
+
+/**
+ * @route POST /api/auth/verify-phone
+ * @desc Send OTP for phone verification
+ * @access Private
+ */
+router.post('/verify-phone', verifyToken, async (req, res) => {
+  try {
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Store OTP in user document with expiry
+    await User.findByIdAndUpdate(req.userId, {
+      'verification.otp': otp,
+      'verification.otpExpiry': new Date(Date.now() + 10 * 60000) // 10 minutes
+    });
+    
+    // TODO: Send OTP via Moolre SMS API
+    // await sendSMS(req.user.phone, `Your WasteGo verification code is: ${otp}`);
+    
+    res.json({
+      success: true,
+      message: 'Verification code sent to your phone',
+      // In production, never return OTP
+      debug: process.env.NODE_ENV === 'development' ? { otp } : undefined
+    });
+    
+  } catch (error) {
+    console.error('Send OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send verification code',
+      error: 'OTP_SEND_FAILED'
+    });
+  }
+});
+
+/**
+ * @route POST /api/auth/verify-otp
+ * @desc Verify OTP
+ * @access Private
+ */
+router.post('/verify-otp', verifyToken, async (req, res) => {
+  try {
+    const { otp } = req.body;
+    
+    if (!otp || otp.length !== 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid 6-digit OTP required',
+        error: 'INVALID_OTP'
+      });
+    }
+    
+    const user = await User.findById(req.userId);
+    
+    if (!user.verification?.otp || user.verification.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid verification code',
+        error: 'INVALID_OTP'
+      });
+    }
+    
+    if (new Date() > user.verification.otpExpiry) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification code expired',
+        error: 'OTP_EXPIRED'
+      });
+    }
+    
+    // Mark as verified
+    user.isVerified = true;
+    user.verification = undefined;
+    await user.save();
+    
+    res.json({
+      success: true,
+      message: 'Phone number verified successfully'
+    });
+    
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Verification failed',
+      error: 'VERIFICATION_FAILED'
+    });
+  }
+});
+
+module.exports = router;
+
+
+
+
+
+
+
+
+
+
+/**
  * Authentication Middleware
  * JWT verification with httpOnly cookies
  * Role-based access control for WasteGo
