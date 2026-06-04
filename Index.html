@@ -1,4 +1,732 @@
 /**
+ * Request Controller - Pickup lifecycle management
+ * Handles creation, matching, tracking, and completion
+ */
+
+const Request = require('../models/Request');
+const User = require('../models/User');
+const { io } = require('../../server');
+const { sendWhatsApp, sendSMS } = require('../utils/notifications');
+const { calculatePrice } = require('../utils/pricing');
+const { callAIDispatch } = require('./aiController');
+
+/**
+ * Create new pickup request
+ * @route POST /api/requests/create
+ */
+const createRequest = async (req, res) => {
+  try {
+    const {
+      pickupLocation,
+      wasteDetails,
+      paymentMethod,
+      subscriptionApplied
+    } = req.body;
+
+    // Validate required fields
+    if (!pickupLocation || !pickupLocation.lat || !pickupLocation.lng) {
+      return res.status(400).json({
+        success: false,
+        message: 'Pickup location is required',
+        error: 'MISSING_LOCATION'
+      });
+    }
+
+    if (!wasteDetails || !wasteDetails.loadSize) {
+      return res.status(400).json({
+        success: false,
+        message: 'Waste details and load size required',
+        error: 'MISSING_WASTE_DETAILS'
+      });
+    }
+
+    // Calculate price based on load size and location
+    const price = calculatePrice(wasteDetails.loadSize, pickupLocation.area);
+    
+    // Check if using subscription
+    let subscription = null;
+    if (subscriptionApplied) {
+      subscription = await Subscription.findOne({
+        _id: subscriptionApplied,
+        customer: req.userId,
+        status: 'active'
+      });
+      
+      if (!subscription) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or inactive subscription',
+          error: 'INVALID_SUBSCRIPTION'
+        });
+      }
+      
+      if (subscription.pickupsRemaining <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No pickups remaining in your subscription',
+          error: 'NO_PICKUPS_REMAINING'
+        });
+      }
+    }
+
+    // Create new request
+    const request = new Request({
+      customer: req.userId,
+      pickupLocation,
+      wasteDetails,
+      price,
+      paymentMethod,
+      subscriptionApplied: subscription?._id,
+      paymentStatus: subscription ? 'paid' : 'pending', // Subscription pre-paid
+      status: 'pending'
+    });
+
+    await request.save();
+
+    // If payment is required, initiate Moolre payment
+    if (!subscription && paymentMethod !== 'cash') {
+      // Will be handled by payment controller
+      return res.status(201).json({
+        success: true,
+        message: 'Payment required to complete booking',
+        data: {
+          requestId: request._id,
+          price: request.price,
+          requiresPayment: true
+        }
+      });
+    }
+
+    // Trigger AI dispatch immediately for paid requests
+    if (request.paymentStatus === 'paid') {
+      await triggerAIDispatch(request);
+    }
+
+    // Send notifications
+    await sendCustomerConfirmation(request);
+    await notifyNearbyRiders(request);
+
+    res.status(201).json({
+      success: true,
+      message: 'Pickup request created successfully',
+      data: {
+        requestId: request._id,
+        status: request.status,
+        price: request.price,
+        estimatedWaitTime: 15 // minutes
+      }
+    });
+
+  } catch (error) {
+    console.error('Create request error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create pickup request',
+      error: 'REQUEST_CREATION_FAILED'
+    });
+  }
+};
+
+/**
+ * Get available requests for riders
+ * @route GET /api/requests/available
+ */
+const getAvailableRequests = async (req, res) => {
+  try {
+    const riderId = req.userId;
+    const rider = await User.findById(riderId);
+    
+    if (!rider.location || !rider.location.lat) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please enable location services to see nearby requests',
+        error: 'LOCATION_REQUIRED'
+      });
+    }
+
+    // Find pending requests within 10km radius
+    const availableRequests = await Request.find({
+      status: 'pending',
+      paymentStatus: 'paid',
+      'pickupLocation.lat': { $exists: true },
+      'timeline.requestedAt': { $gt: new Date(Date.now() - 30 * 60000) } // Last 30 min
+    })
+    .populate('customer', 'name phone location')
+    .sort({ aiDispatchScore: -1, 'timeline.requestedAt': 1 })
+    .limit(20);
+
+    // Calculate distance for each request
+    const requestsWithDistance = await Promise.all(availableRequests.map(async (request) => {
+      const distance = await request.calculateDistanceToRider(rider.location);
+      return {
+        ...request.toObject(),
+        distance: distance.toFixed(2),
+        estimatedEarnings: request.riderEarnings
+      };
+    }));
+
+    // Filter to within 10km and sort by distance
+    const nearbyRequests = requestsWithDistance
+      .filter(r => r.distance <= 10)
+      .sort((a, b) => a.distance - b.distance);
+
+    res.json({
+      success: true,
+      data: {
+        requests: nearbyRequests,
+        riderLocation: rider.location
+      }
+    });
+
+  } catch (error) {
+    console.error('Get available requests error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch available requests',
+      error: 'FETCH_FAILED'
+    });
+  }
+};
+
+/**
+ * Rider accepts a pickup request
+ * @route PUT /api/requests/:id/accept
+ */
+const acceptRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const riderId = req.userId;
+    
+    const request = await Request.findById(id);
+    
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: 'Request not found',
+        error: 'REQUEST_NOT_FOUND'
+      });
+    }
+    
+    if (request.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Request already ${request.status}`,
+        error: 'INVALID_STATUS'
+      });
+    }
+    
+    if (request.rider) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request already accepted by another rider',
+        error: 'ALREADY_ACCEPTED'
+      });
+    }
+    
+    // Check if rider is available
+    const rider = await User.findById(riderId);
+    if (!rider.riderProfile?.isAvailable) {
+      return res.status(400).json({
+        success: false,
+        message: 'You are marked as unavailable. Please update your status.',
+        error: 'RIDER_UNAVAILABLE'
+      });
+    }
+    
+    // Assign rider
+    request.rider = riderId;
+    await request.updateStatus('accepted');
+    
+    // Update rider stats
+    await User.findByIdAndUpdate(riderId, {
+      $inc: { 'riderProfile.totalPickupsCompleted': 0 }, // Increment on completion
+      $set: { 'riderProfile.isAvailable': false } // Mark busy
+    });
+    
+    // Populate customer info for notifications
+    await request.populate('customer', 'name phone');
+    
+    // Send real-time notification via socket
+    io.to(`customer_${request.customer._id}`).emit('request:accepted', {
+      requestId: request._id,
+      rider: {
+        id: rider._id,
+        name: rider.name,
+        phone: rider.phone,
+        rating: rider.riderProfile?.averageRating
+      }
+    });
+    
+    // Send WhatsApp/SMS notifications
+    await sendRiderAcceptanceNotification(request);
+    
+    res.json({
+      success: true,
+      message: 'Request accepted successfully',
+      data: {
+        requestId: request._id,
+        status: request.status,
+        customer: {
+          name: request.customer.name,
+          phone: request.customer.phone,
+          location: request.pickupLocation
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Accept request error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to accept request',
+      error: 'ACCEPT_FAILED'
+    });
+  }
+};
+
+/**
+ * Update request status (en_route, arrived, collecting, completed)
+ * @route PUT /api/requests/:id/status
+ */
+const updateRequestStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, location } = req.body;
+    const userId = req.userId;
+    
+    const request = await Request.findById(id);
+    
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: 'Request not found',
+        error: 'REQUEST_NOT_FOUND'
+      });
+    }
+    
+    // Verify user is assigned rider or admin
+    if (request.rider?.toString() !== userId && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to update this request',
+        error: 'UNAUTHORIZED'
+      });
+    }
+    
+    const validStatuses = ['en_route', 'arrived', 'collecting', 'completed'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status update',
+        error: 'INVALID_STATUS'
+      });
+    }
+    
+    // Track rider location if provided
+    if (location && (status === 'en_route' || status === 'arrived')) {
+      request.riderLocations.push({
+        ...location,
+        timestamp: new Date()
+      });
+    }
+    
+    await request.updateStatus(status);
+    
+    // Special handling for completion
+    if (status === 'completed') {
+      // Update rider earnings and stats
+      await User.findByIdAndUpdate(request.rider, {
+        $inc: {
+          'riderProfile.totalPickupsCompleted': 1,
+          'riderProfile.totalEarnings': request.riderEarnings
+        },
+        $set: { 'riderProfile.isAvailable': true }
+      });
+      
+      // Update subscription if used
+      if (request.subscriptionApplied) {
+        await Subscription.findByIdAndUpdate(request.subscriptionApplied, {
+          $inc: { pickupsRemaining: -1 }
+        });
+      }
+      
+      // Send completion notification
+      await sendCompletionNotification(request);
+    }
+    
+    // Notify customer via socket
+    io.to(`customer_${request.customer}`).emit('request:status_update', {
+      requestId: request._id,
+      status: request.status,
+      location: location || null,
+      timestamp: new Date()
+    });
+    
+    res.json({
+      success: true,
+      message: `Request marked as ${status}`,
+      data: {
+        requestId: request._id,
+        status: request.status,
+        timeline: request.timeline
+      }
+    });
+    
+  } catch (error) {
+    console.error('Update status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update request status',
+      error: 'STATUS_UPDATE_FAILED'
+    });
+  }
+};
+
+/**
+ * Track request (customer view)
+ * @route GET /api/requests/:id/track
+ */
+const trackRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.userId;
+    
+    const request = await Request.findById(id)
+      .populate('rider', 'name phone riderProfile.averageRating');
+    
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: 'Request not found',
+        error: 'REQUEST_NOT_FOUND'
+      });
+    }
+    
+    // Check authorization
+    if (request.customer.toString() !== userId && 
+        request.rider?.toString() !== userId && 
+        req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized',
+        error: 'UNAUTHORIZED'
+      });
+    }
+    
+    const trackingData = {
+      requestId: request._id,
+      status: request.status,
+      timeline: request.timeline,
+      pickupLocation: request.pickupLocation,
+      riderLocation: request.riderLocations.length > 0 
+        ? request.riderLocations[request.riderLocations.length - 1] 
+        : null,
+      rider: request.rider ? {
+        name: request.rider.name,
+        rating: request.rider.riderProfile?.averageRating,
+        phone: request.rider.phone
+      } : null,
+      estimatedArrival: calculateETA(request)
+    };
+    
+    res.json({
+      success: true,
+      data: trackingData
+    });
+    
+  } catch (error) {
+    console.error('Track request error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to track request',
+      error: 'TRACKING_FAILED'
+    });
+  }
+};
+
+/**
+ * Cancel request
+ * @route PUT /api/requests/:id/cancel
+ */
+const cancelRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const userId = req.userId;
+    
+    const request = await Request.findById(id);
+    
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: 'Request not found',
+        error: 'REQUEST_NOT_FOUND'
+      });
+    }
+    
+    // Check authorization
+    const isCustomer = request.customer.toString() === userId;
+    const isRider = request.rider?.toString() === userId;
+    const isAdmin = req.user.role === 'admin';
+    
+    if (!isCustomer && !isRider && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized',
+        error: 'UNAUTHORIZED'
+      });
+    }
+    
+    // Check if cancellation is allowed
+    const cancellableStatuses = ['pending', 'assigned', 'accepted'];
+    if (!cancellableStatuses.includes(request.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot cancel request in ${request.status} status`,
+        error: 'CANCELLATION_NOT_ALLOWED'
+      });
+    }
+    
+    request.cancellationReason = {
+      by: isCustomer ? 'customer' : (isRider ? 'rider' : 'admin'),
+      reason: reason || 'No reason provided',
+      timestamp: new Date()
+    };
+    
+    await request.updateStatus('cancelled');
+    
+    // Free up the rider if they were assigned
+    if (request.rider) {
+      await User.findByIdAndUpdate(request.rider, {
+        $set: { 'riderProfile.isAvailable': true }
+      });
+    }
+    
+    // Process refund if payment was made
+    if (request.paymentStatus === 'paid') {
+      await processRefund(request);
+    }
+    
+    // Send cancellation notification
+    await sendCancellationNotification(request);
+    
+    res.json({
+      success: true,
+      message: 'Request cancelled successfully',
+      data: {
+        requestId: request._id,
+        refundProcessed: request.paymentStatus === 'paid'
+      }
+    });
+    
+  } catch (error) {
+    console.error('Cancel request error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to cancel request',
+      error: 'CANCELLATION_FAILED'
+    });
+  }
+};
+
+/**
+ * Get customer request history
+ * @route GET /api/requests/my-history
+ */
+const getMyHistory = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, status } = req.query;
+    const skip = (page - 1) * limit;
+    
+    const query = { customer: req.userId };
+    if (status) query.status = status;
+    
+    const requests = await Request.find(query)
+      .populate('rider', 'name riderProfile.averageRating')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    const total = await Request.countDocuments(query);
+    
+    res.json({
+      success: true,
+      data: {
+        requests,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Get history error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch history',
+      error: 'HISTORY_FETCH_FAILED'
+    });
+  }
+};
+
+/**
+ * Helper: Trigger AI dispatch
+ */
+async function triggerAIDispatch(request) {
+  try {
+    const nearbyRiders = await User.findNearbyRiders(
+      request.pickupLocation.lng,
+      request.pickupLocation.lat,
+      5000, // 5km radius
+      10
+    );
+    
+    if (nearbyRiders.length === 0) {
+      console.log(`No nearby riders for request ${request._id}`);
+      return;
+    }
+    
+    // Call AI dispatch (implemented in Phase 4)
+    const aiDecision = await callAIDispatch(request, nearbyRiders);
+    
+    if (aiDecision && aiDecision.selectedRider) {
+      request.aiDispatchScore = aiDecision.confidence;
+      request.aiDispatchReason = aiDecision.reason;
+      request.aiSuggestedRider = aiDecision.selectedRider;
+      await request.save();
+      
+      // Notify suggested rider
+      await notifySuggestedRider(request, aiDecision.selectedRider);
+    }
+    
+  } catch (error) {
+    console.error('AI dispatch error:', error);
+    // Fallback to proximity-based matching
+    await proximityDispatch(request);
+  }
+}
+
+/**
+ * Helper: Proximity-based dispatch fallback
+ */
+async function proximityDispatch(request) {
+  const nearbyRiders = await User.findNearbyRiders(
+    request.pickupLocation.lng,
+    request.pickupLocation.lat,
+    3000, // 3km radius
+    5
+  );
+  
+  for (const rider of nearbyRiders) {
+    await notifyRiderOfRequest(rider, request);
+  }
+}
+
+/**
+ * Helper: Send notifications
+ */
+async function sendCustomerConfirmation(request) {
+  const message = `✅ WasteGo: Your pickup request has been created! 
+ID: ${request._id.toString().slice(-6)}
+We'll notify you when a rider accepts.
+
+Track status: wastego.app/track/${request._id}`;
+  
+  await sendWhatsApp(request.customer.phone, message);
+}
+
+async function sendRiderAcceptanceNotification(request) {
+  const message = `🚛 WasteGo: Your rider is on the way!
+Rider: ${request.rider.name}
+ETA: Approximately 10-15 minutes
+
+Track live: wastego.app/track/${request._id}`;
+  
+  await sendWhatsApp(request.customer.phone, message);
+  await sendSMS(request.customer.phone, `WasteGo rider arriving soon! Track: wastego.app/track/${request._id}`);
+}
+
+async function sendCompletionNotification(request) {
+  const message = `🎉 WasteGo: Pickup completed!
+Thank you for keeping Ghana clean.
+
+Rate your experience: wastego.app/rate/${request._id}
+Share and earn GHS 5 credit: wastego.app/refer`;
+  
+  await sendWhatsApp(request.customer.phone, message);
+}
+
+async function sendCancellationNotification(request) {
+  const message = `⚠️ WasteGo: Pickup cancelled
+Reason: ${request.cancellationReason.reason}
+
+Need help? Contact support: wastego.app/support`;
+  
+  await sendWhatsApp(request.customer.phone, message);
+}
+
+function calculateETA(request) {
+  // Simplified ETA calculation
+  // Will be enhanced with Google Maps API in production
+  if (request.status === 'accepted') return '10-15 minutes';
+  if (request.status === 'en_route') return '5-10 minutes';
+  if (request.status === 'arrived') return 'Arriving now';
+  return 'Not yet assigned';
+}
+
+async function processRefund(request) {
+  // Will integrate with Moolre refund API
+  console.log(`Processing refund for request ${request._id}`);
+}
+
+async function notifyRiderOfRequest(rider, request) {
+  // Send push notification to rider via socket
+  io.to(`rider_${rider._id}`).emit('new:request', {
+    requestId: request._id,
+    pickupLocation: request.pickupLocation,
+    price: request.price,
+    earnings: request.riderEarnings,
+    distance: await request.calculateDistanceToRider(rider.location)
+  });
+}
+
+async function notifySuggestedRider(request, riderId) {
+  const rider = await User.findById(riderId);
+  if (rider) {
+    io.to(`rider_${riderId}`).emit('ai:suggested', {
+      requestId: request._id,
+      confidence: request.aiDispatchScore,
+      reason: request.aiDispatchReason,
+      priority: true
+    });
+  }
+}
+
+module.exports = {
+  createRequest,
+  getAvailableRequests,
+  acceptRequest,
+  updateRequestStatus,
+  trackRequest,
+  cancelRequest,
+  getMyHistory
+};
+
+
+
+
+
+
+
+
+
+
+
+
+/**
  * Authentication Routes
  * Registration, login, logout with Ghana phone validation
  */
