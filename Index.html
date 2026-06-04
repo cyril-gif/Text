@@ -86,6 +86,332 @@ const processDailyDisbursements = async () => {
         recipientName: rider.name,
         recipientNetwork: rider.momoAccount.network,
         reference: `PAYOUT_${riderId}_${Date.now()}`,
+        narration: `WasteGo earnings for ${today.toLocaleDateString()}${bonus > 0 ? ` + ₵${bonus} bonus` : ''}`
+      });
+      
+      // Update rider wallet
+      await updateRiderWallet(riderId, earnings, bonus, totalPayout);
+    }
+    
+    // Execute bulk disbursement
+    if (disbursements.length > 0) {
+      const result = await moolreClient.bulkDisbursement(disbursements);
+      
+      console.log(`Disbursed to ${disbursements.length} riders, total: ₵${result.totalAmount}`);
+      
+      // Send notifications to each rider
+      for (const disbursement of disbursements) {
+        await sendPayoutNotification(
+          disbursement.recipientPhone,
+          disbursement.amount,
+          disbursement.narration
+        );
+      }
+      
+      return result;
+    }
+    
+  } catch (error) {
+    console.error('Daily disbursement error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update rider wallet with earnings
+ */
+async function updateRiderWallet(riderId, earnings, bonus, totalPayout) {
+  const wallet = await RiderWallet.findOne({ rider: riderId });
+  
+  if (wallet) {
+    wallet.totalEarned += earnings;
+    wallet.totalPaid += totalPayout;
+    wallet.currentBalance = 0; // Paid out fully
+    wallet.transactions.push({
+      amount: totalPayout,
+      type: 'payout',
+      description: `Daily payout - Earnings: ₵${earnings}, Bonus: ₵${bonus}`,
+      date: new Date()
+    });
+    await wallet.save();
+  } else {
+    // Create new wallet if doesn't exist
+    const newWallet = new RiderWallet({
+      rider: riderId,
+      totalEarned: earnings,
+      totalPaid: totalPayout,
+      currentBalance: 0,
+      transactions: [{
+        amount: totalPayout,
+        type: 'payout',
+        description: `Initial payout - Earnings: ₵${earnings}, Bonus: ₵${bonus}`,
+        date: new Date()
+      }]
+    });
+    await newWallet.save();
+  }
+}
+
+/**
+ * Manual payout for admin
+ * @route POST /api/disbursements/manual
+ */
+const manualDisbursement = async (req, res) => {
+  try {
+    const { riderId, amount, reason } = req.body;
+    
+    const rider = await User.findById(riderId);
+    if (!rider || rider.role !== 'rider') {
+      return res.status(404).json({
+        success: false,
+        message: 'Rider not found',
+        error: 'RIDER_NOT_FOUND'
+      });
+    }
+    
+    if (!rider.momoAccount || !rider.momoAccount.number) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rider has no mobile money account set up',
+        error: 'NO_MOMO_ACCOUNT'
+      });
+    }
+    
+    const disbursement = await moolreClient.singleDisbursement({
+      amount,
+      recipientPhone: rider.momoAccount.number,
+      recipientName: rider.name,
+      recipientNetwork: rider.momoAccount.network,
+      reference: `MANUAL_${riderId}_${Date.now()}`,
+      narration: reason || 'Manual payout from admin'
+    });
+    
+    // Update wallet
+    const wallet = await RiderWallet.findOne({ rider: riderId });
+    if (wallet) {
+      wallet.totalPaid += amount;
+      wallet.currentBalance = Math.max(0, wallet.currentBalance - amount);
+      wallet.transactions.push({
+        amount,
+        type: 'manual_payout',
+        description: reason || 'Manual payout',
+        date: new Date()
+      });
+      await wallet.save();
+    }
+    
+    res.json({
+      success: true,
+      message: 'Manual disbursement sent',
+      data: disbursement
+    });
+    
+  } catch (error) {
+    console.error('Manual disbursement error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process manual disbursement',
+      error: 'DISBURSEMENT_FAILED'
+    });
+  }
+};
+
+/**
+ * Get rider wallet balance
+ * @route GET /api/rider/wallet
+ */
+const getRiderWallet = async (req, res) => {
+  try {
+    const wallet = await RiderWallet.findOne({ rider: req.userId });
+    
+    if (!wallet) {
+      return res.json({
+        success: true,
+        data: {
+          totalEarned: 0,
+          totalPaid: 0,
+          currentBalance: 0,
+          transactions: []
+        }
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        totalEarned: wallet.totalEarned,
+        totalPaid: wallet.totalPaid,
+        currentBalance: wallet.currentBalance,
+        lastPayoutDate: wallet.transactions[wallet.transactions.length - 1]?.date,
+        transactions: wallet.transactions.slice(-20) // Last 20 transactions
+      }
+    });
+    
+  } catch (error) {
+    console.error('Get wallet error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch wallet',
+      error: 'WALLET_FETCH_FAILED'
+    });
+  }
+};
+
+/**
+ * Get disbursement history
+ * @route GET /api/disbursements/history
+ */
+const getDisbursementHistory = async (req, res) => {
+  try {
+    const { riderId, startDate, endDate } = req.query;
+    const query = {};
+    
+    if (riderId) query.rider = riderId;
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) query.createdAt.$gte = new Date(startDate);
+      if (endDate) query.createdAt.$lte = new Date(endDate);
+    }
+    
+    const wallet = await RiderWallet.find(query)
+      .populate('rider', 'name phone')
+      .sort({ createdAt: -1 })
+      .limit(100);
+    
+    res.json({
+      success: true,
+      data: wallet
+    });
+    
+  } catch (error) {
+    console.error('Get history error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch history',
+      error: 'HISTORY_FETCH_FAILED'
+    });
+  }
+};
+
+/**
+ * Send payout notification via WhatsApp and SMS
+ */
+async function sendPayoutNotification(phone, amount, narration) {
+  const message = `💰 WasteGo: Payout received!\n\nAmount: ₵${amount.toFixed(2)}\n${narration}\n\nThank you for keeping Ghana clean! 🚛💚`;
+  
+  try {
+    await sendWhatsApp(phone, message);
+    await sendSMS(phone, `WasteGo: ₵${amount.toFixed(2)} sent to your mobile money. ${narration}`);
+  } catch (error) {
+    console.error('Failed to send payout notification:', error);
+  }
+}
+
+module.exports = {
+  processDailyDisbursements,
+  manualDisbursement,
+  getRiderWallet,
+  getDisbursementHistory
+};
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Disbursement Controller
+ * Handles rider payouts via Moolre Disbursements API
+ * Daily automatic payouts with performance bonuses
+ */
+
+const User = require('../models/User');
+const Request = require('../models/Request');
+const Transaction = require('../models/Transaction');
+const RiderWallet = require('../models/RiderWallet');
+const moolreClient = require('../utils/moolreClient');
+const { sendWhatsApp, sendSMS } = require('../utils/notifications');
+
+/**
+ * Process daily rider disbursements
+ * Called by cron job at 10PM daily
+ */
+const processDailyDisbursements = async () => {
+  console.log('Starting daily disbursement process...');
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  try {
+    // Get all completed requests for today
+    const completedRequests = await Request.find({
+      status: 'completed',
+      'timeline.completedAt': {
+        $gte: today,
+        $lt: tomorrow
+      },
+      rider: { $exists: true }
+    }).populate('rider', 'name phone momoAccount');
+    
+    if (completedRequests.length === 0) {
+      console.log('No completed requests for today');
+      return;
+    }
+    
+    // Group by rider
+    const riderEarnings = new Map();
+    for (const request of completedRequests) {
+      const riderId = request.rider._id.toString();
+      if (!riderEarnings.has(riderId)) {
+        riderEarnings.set(riderId, {
+          rider: request.rider,
+          totalEarnings: 0,
+          requests: []
+        });
+      }
+      
+      const data = riderEarnings.get(riderId);
+      data.totalEarnings += request.riderEarnings;
+      data.requests.push(request);
+    }
+    
+    // Calculate bonuses for top performers
+    const earningsArray = Array.from(riderEarnings.values());
+    earningsArray.sort((a, b) => b.totalEarnings - a.totalEarnings);
+    
+    // Top 3 riders get bonus
+    const bonuses = {};
+    for (let i = 0; i < Math.min(3, earningsArray.length); i++) {
+      const bonus = i === 0 ? 20 : (i === 1 ? 10 : 5);
+      bonuses[earningsArray[i].rider._id] = bonus;
+    }
+    
+    // Prepare disbursements
+    const disbursements = [];
+    for (const [riderId, data] of riderEarnings) {
+      const rider = data.rider;
+      const earnings = data.totalEarnings;
+      const bonus = bonuses[riderId] || 0;
+      const totalPayout = earnings + bonus;
+      
+      if (!rider.momoAccount || !rider.momoAccount.number) {
+        console.error(`Rider ${riderId} has no mobile money account`);
+        continue;
+      }
+      
+      disbursements.push({
+        amount: totalPayout,
+        recipientPhone: rider.momoAccount.number,
+        recipientName: rider.name,
+        recipientNetwork: rider.momoAccount.network,
+        reference: `PAYOUT_${riderId}_${Date.now()}`,
         narration: `WasteGo earnings for ${today.toLocaleDateString()}${bonus > 0 ?
 
 
