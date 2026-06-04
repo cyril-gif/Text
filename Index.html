@@ -1,4 +1,306 @@
 /**
+ * User Model - Customers, Riders, and Admins
+ * Includes Ghana phone number validation and role-based access
+ */
+
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+// Ghana phone number regex: starts with 0, then 2 or 5, then 7 digits
+const ghanaPhoneRegex = /^(0)(2[3-9]|5[0-9])\d{7}$/;
+
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'Full name is required'],
+    trim: true,
+    minlength: [2, 'Name must be at least 2 characters'],
+    maxlength: [100, 'Name cannot exceed 100 characters']
+  },
+  
+  phone: {
+    type: String,
+    required: [true, 'Phone number is required'],
+    unique: true,
+    validate: {
+      validator: function(v) {
+        return ghanaPhoneRegex.test(v);
+      },
+      message: 'Please enter a valid Ghana phone number (e.g., 024XXXXXXX)'
+    },
+    index: true
+  },
+  
+  email: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    unique: true,
+    sparse: true, // Allow null but enforce uniqueness when provided
+    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+  },
+  
+  password: {
+    type: String,
+    required: [true, 'Password is required'],
+    minlength: [6, 'Password must be at least 6 characters'],
+    select: false // Don't return password by default
+  },
+  
+  role: {
+    type: String,
+    enum: {
+      values: ['customer', 'rider', 'admin'],
+      message: 'Role must be customer, rider, or admin'
+    },
+    default: 'customer',
+    required: true
+  },
+  
+  // For customers and riders
+  location: {
+    lat: {
+      type: Number,
+      min: -90,
+      max: 90
+    },
+    lng: {
+      type: Number,
+      min: -180,
+      max: 180
+    },
+    area: {
+      type: String,
+      trim: true
+    },
+    region: {
+      type: String,
+      enum: [
+        'Greater Accra', 'Ashanti', 'Western', 'Eastern', 'Central',
+        'Volta', 'Northern', 'Upper East', 'Upper West', 'Bono',
+        'Ahafo', 'Bono East', 'Oti', 'North East', 'Savannah', 'Western North'
+      ]
+    },
+    formattedAddress: String,
+    lastUpdated: {
+      type: Date,
+      default: Date.now
+    }
+  },
+  
+  // Rider-specific fields
+  riderProfile: {
+    vehicleType: {
+      type: String,
+      enum: ['tricycle', 'pickup', 'truck'],
+      default: 'tricycle'
+    },
+    licenseNumber: String,
+    vehicleRegistration: String,
+    isAvailable: {
+      type: Boolean,
+      default: true
+    },
+    totalPickupsCompleted: {
+      type: Number,
+      default: 0
+    },
+    averageRating: {
+      type: Number,
+      min: 0,
+      max: 5,
+      default: 0
+    },
+    acceptanceRate: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 100
+    },
+    isVerified: {
+      type: Boolean,
+      default: false
+    }
+  },
+  
+  // Verification fields
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  
+  isBanned: {
+    type: Boolean,
+    default: false
+  },
+  
+  banReason: String,
+  
+  // Device tokens for push notifications
+  deviceTokens: [{
+    token: String,
+    platform: {
+      type: String,
+      enum: ['web', 'android', 'ios']
+    },
+    lastUsed: Date
+  }],
+  
+  // Preferences
+  preferences: {
+    language: {
+      type: String,
+      enum: ['en', 'tw', 'ha', 'dag'],
+      default: 'en'
+    },
+    notificationEnabled: {
+      type: Boolean,
+      default: true
+    },
+    smsNotifications: {
+      type: Boolean,
+      default: true
+    },
+    whatsappNotifications: {
+      type: Boolean,
+      default: true
+    }
+  },
+  
+  // Payment info (for riders)
+  momoAccount: {
+    network: {
+      type: String,
+      enum: ['mtn', 'vodafone', 'airteltigo']
+    },
+    number: {
+      type: String,
+      validate: {
+        validator: function(v) {
+          return !v || ghanaPhoneRegex.test(v);
+        },
+        message: 'Invalid mobile money number'
+      }
+    }
+  },
+  
+  // Referral tracking
+  referredBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  
+  referralCode: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  
+  // Timestamps
+  lastLoginAt: Date,
+  createdAt: {
+    type: Date,
+    default: Date.now,
+    immutable: true
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Indexes for performance
+userSchema.index({ location: '2dsphere' });
+userSchema.index({ role: 1, isAvailable: 1 });
+userSchema.index({ 'riderProfile.isAvailable': 1, 'location.lat': 1, 'location.lng': 1 });
+
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  
+  try {
+    const salt = await bcrypt.genSalt(12);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update timestamps
+userSchema.pre('findOneAndUpdate', function(next) {
+  this.set({ updatedAt: new Date() });
+  next();
+});
+
+// Generate referral code before saving
+userSchema.pre('save', async function(next) {
+  if (!this.referralCode && this.isNew) {
+    // Generate unique referral code: WASTE + first 4 chars of phone + random
+    const phoneSuffix = this.phone.slice(-4);
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    this.referralCode = `WASTE${phoneSuffix}${random}`;
+  }
+  next();
+});
+
+// Compare password method
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Virtual for full address
+userSchema.virtual('fullAddress').get(function() {
+  if (this.location.formattedAddress) return this.location.formattedAddress;
+  if (this.location.area && this.location.region) {
+    return `${this.location.area}, ${this.location.region}`;
+  }
+  return 'Address not set';
+});
+
+// Static method to find nearby riders
+userSchema.statics.findNearbyRiders = async function(lng, lat, maxDistance = 5000, limit = 10) {
+  return await this.find({
+    role: 'rider',
+    isBanned: false,
+    'riderProfile.isAvailable': true,
+    'riderProfile.isVerified': true,
+    location: {
+      $near: {
+        $geometry: {
+          type: 'Point',
+          coordinates: [lng, lat]
+        },
+        $maxDistance: maxDistance
+      }
+    }
+  }).limit(limit);
+};
+
+// Cleanup method for banned users
+userSchema.methods.softDelete = async function() {
+  this.isBanned = true;
+  this.banReason = 'User requested account deletion';
+  this.updatedAt = new Date();
+  await this.save();
+};
+
+module.exports = mongoose.model('User', userSchema);
+
+
+
+
+
+
+
+
+
+
+/**
  * WasteGo Backend Server
  * Production entry point with comprehensive error handling
  * Optimized for Ghanaian low-bandwidth environments
