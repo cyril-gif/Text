@@ -1,4 +1,104 @@
 /**
+ * Disbursement Controller
+ * Handles rider payouts via Moolre Disbursements API
+ * Daily automatic payouts with performance bonuses
+ */
+
+const User = require('../models/User');
+const Request = require('../models/Request');
+const Transaction = require('../models/Transaction');
+const RiderWallet = require('../models/RiderWallet');
+const moolreClient = require('../utils/moolreClient');
+const { sendWhatsApp, sendSMS } = require('../utils/notifications');
+
+/**
+ * Process daily rider disbursements
+ * Called by cron job at 10PM daily
+ */
+const processDailyDisbursements = async () => {
+  console.log('Starting daily disbursement process...');
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  try {
+    // Get all completed requests for today
+    const completedRequests = await Request.find({
+      status: 'completed',
+      'timeline.completedAt': {
+        $gte: today,
+        $lt: tomorrow
+      },
+      rider: { $exists: true }
+    }).populate('rider', 'name phone momoAccount');
+    
+    if (completedRequests.length === 0) {
+      console.log('No completed requests for today');
+      return;
+    }
+    
+    // Group by rider
+    const riderEarnings = new Map();
+    for (const request of completedRequests) {
+      const riderId = request.rider._id.toString();
+      if (!riderEarnings.has(riderId)) {
+        riderEarnings.set(riderId, {
+          rider: request.rider,
+          totalEarnings: 0,
+          requests: []
+        });
+      }
+      
+      const data = riderEarnings.get(riderId);
+      data.totalEarnings += request.riderEarnings;
+      data.requests.push(request);
+    }
+    
+    // Calculate bonuses for top performers
+    const earningsArray = Array.from(riderEarnings.values());
+    earningsArray.sort((a, b) => b.totalEarnings - a.totalEarnings);
+    
+    // Top 3 riders get bonus
+    const bonuses = {};
+    for (let i = 0; i < Math.min(3, earningsArray.length); i++) {
+      const bonus = i === 0 ? 20 : (i === 1 ? 10 : 5);
+      bonuses[earningsArray[i].rider._id] = bonus;
+    }
+    
+    // Prepare disbursements
+    const disbursements = [];
+    for (const [riderId, data] of riderEarnings) {
+      const rider = data.rider;
+      const earnings = data.totalEarnings;
+      const bonus = bonuses[riderId] || 0;
+      const totalPayout = earnings + bonus;
+      
+      if (!rider.momoAccount || !rider.momoAccount.number) {
+        console.error(`Rider ${riderId} has no mobile money account`);
+        continue;
+      }
+      
+      disbursements.push({
+        amount: totalPayout,
+        recipientPhone: rider.momoAccount.number,
+        recipientName: rider.name,
+        recipientNetwork: rider.momoAccount.network,
+        reference: `PAYOUT_${riderId}_${Date.now()}`,
+        narration: `WasteGo earnings for ${today.toLocaleDateString()}${bonus > 0 ?
+
+
+
+
+
+
+
+
+
+
+
+/**
  * Payment Controller
  * Handles Moolre Collections API for payments and subscriptions
  */
