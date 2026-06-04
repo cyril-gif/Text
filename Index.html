@@ -1,4 +1,234 @@
 /**
+ * Authentication Middleware
+ * JWT verification with httpOnly cookies
+ * Role-based access control for WasteGo
+ */
+
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+
+// Verify JWT token from httpOnly cookie
+const verifyToken = async (req, res, next) => {
+  try {
+    // Get token from cookie or Authorization header
+    let token = req.cookies.token;
+    
+    if (!token && req.headers.authorization) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required. Please login.',
+        error: 'NO_TOKEN'
+      });
+    }
+    
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if user still exists and is not banned
+    const user = await User.findById(decoded.id).select('-password');
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not found. Please login again.',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+    
+    if (user.isBanned) {
+      return res.status(403).json({
+        success: false,
+        message: `Account has been suspended. Reason: ${user.banReason || 'Violation of terms'}`,
+        error: 'ACCOUNT_BANNED'
+      });
+    }
+    
+    // Attach user to request
+    req.user = user;
+    req.userId = user._id;
+    
+    // Update last login time if this is the first request of session
+    if (!req.user.lastLoginAt || (Date.now() - req.user.lastLoginAt) > 3600000) {
+      await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
+    }
+    
+    next();
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid authentication token',
+        error: 'INVALID_TOKEN'
+      });
+    }
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Session expired. Please login again.',
+        error: 'TOKEN_EXPIRED'
+      });
+    }
+    
+    console.error('Auth middleware error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Authentication error',
+      error: 'AUTH_ERROR'
+    });
+  }
+};
+
+// Role-based access control middleware
+const requireRole = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+        error: 'UNAUTHORIZED'
+      });
+    }
+    
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: `Access denied. ${roles.join(' or ')} role required.`,
+        error: 'FORBIDDEN',
+        requiredRoles: roles,
+        userRole: req.user.role
+      });
+    }
+    
+    next();
+  };
+};
+
+// Optional authentication (doesn't require token, but attaches user if present)
+const optionalAuth = async (req, res, next) => {
+  try {
+    let token = req.cookies.token;
+    
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.id).select('-password');
+      if (user && !user.isBanned) {
+        req.user = user;
+        req.userId = user._id;
+      }
+    }
+  } catch (error) {
+    // Silent fail - user just won't be attached
+  }
+  next();
+};
+
+// Generate JWT tokens (access + refresh)
+const generateTokens = (user) => {
+  const accessToken = jwt.sign(
+    { id: user._id, role: user.role, phone: user.phone },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+  
+  const refreshToken = jwt.sign(
+    { id: user._id },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: '30d' }
+  );
+  
+  return { accessToken, refreshToken };
+};
+
+// Set JWT cookie with security options
+const setTokenCookie = (res, token) => {
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/',
+    domain: process.env.COOKIE_DOMAIN || undefined
+  });
+};
+
+// Clear authentication cookie
+const clearTokenCookie = (res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/'
+  });
+};
+
+// Check if user has completed profile setup
+const requireCompleteProfile = async (req, res, next) => {
+  if (req.user.role === 'rider') {
+    const isComplete = req.user.riderProfile &&
+                      req.user.riderProfile.licenseNumber &&
+                      req.user.riderProfile.vehicleRegistration &&
+                      req.user.momoAccount?.number;
+    
+    if (!isComplete) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please complete your rider profile before accepting jobs',
+        error: 'INCOMPLETE_PROFILE',
+        requiredFields: ['licenseNumber', 'vehicleRegistration', 'momoAccount']
+      });
+    }
+  }
+  
+  next();
+};
+
+// Rate limit for specific user actions
+const userRateLimit = new Map();
+
+const checkUserRateLimit = (userId, action, limit = 10, windowMs = 60000) => {
+  const key = `${userId}:${action}`;
+  const now = Date.now();
+  const userActions = userRateLimit.get(key) || [];
+  
+  // Remove old entries
+  const recentActions = userActions.filter(timestamp => now - timestamp < windowMs);
+  
+  if (recentActions.length >= limit) {
+    return false;
+  }
+  
+  recentActions.push(now);
+  userRateLimit.set(key, recentActions);
+  return true;
+};
+
+module.exports = {
+  verifyToken,
+  requireRole,
+  optionalAuth,
+  generateTokens,
+  setTokenCookie,
+  clearTokenCookie,
+  requireCompleteProfile,
+  checkUserRateLimit
+};
+
+
+
+
+
+
+
+
+
+
+
+/**
  * Request Model - Tracks complete waste pickup lifecycle
  * From creation to completion with real-time status
  */
