@@ -1,4 +1,41 @@
 /**
+ * USSD Routes
+ * Moolre USSD webhook endpoint
+ */
+
+const express = require('express');
+const { handleUSSD } = require('../controllers/ussdController');
+
+const router = express.Router();
+
+// Moolre USSD webhook endpoint
+router.post('/handler', handleUSSD);
+
+// Test endpoint for development
+router.get('/test', (req, res) => {
+  res.json({
+    message: 'USSD service is running',
+    endpoint: '/api/ussd/handler',
+    method: 'POST',
+    example: {
+      sessionId: 'session123',
+      serviceCode: '*714#',
+      phoneNumber: '024XXXXXXX',
+      text: '1*1',
+      network: 'mtn'
+    }
+  });
+});
+
+module.exports = router;
+
+
+
+
+
+
+
+/**
  * USSD Controller
  * Handles Moolre USSD webhook for feature phone users
  * Critical for reaching Ghanaians without smartphones
