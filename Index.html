@@ -1,3 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#00A651">
+  <meta name="description" content="WasteGo Rider - Earn money collecting waste in Ghana">
+  <title>WasteGo Rider - Earn While Keeping Ghana Clean</title>
+  
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #F7F9F7;
+      color: #1A2E1A;
+    }
+    
+    /* App Container */
+    .app-container {
+      max-width: 600px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: #F7F9F7;
+      position: relative;
+      padding-bottom: 80px;
+    }
+    
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #00A651 0%, #007A3D 100%);
+      color: white;
+      padding: 20px 16px;
+      border-radius: 0 0 24px 24px;
+    }
+    
+    .rider-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .rider-details h1 {
+      font-size: 20px;
+      margin: 0;
+    }
+    
+    .rider-details p {
+      font-size: 12px;
+      opacity: 0.9;
+      margin: 4px 0 0;
+    }
+    
+    .rating-badge {
+      background: rgba(255,255,255,0.2);
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    /* Stats Cards */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+    
+    .stat-card {
+      background: rgba(255,255,255,0.15);
+      padding: 10px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 20px;
+      font-weight: bold;
+    }
+    
+    .stat-label {
+      font-size: 10px;
+      opacity: 0.9;
+      margin-top: 4px;
+    }
+    
+    /* Availability Toggle */
+    .availability-card {
+      background: white;
+      margin: 16px;
+      padding: 16px;
+      border-radius: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .toggle-switch {
+      width: 52px;
+      height: 28px;
+      background: #ccc;
+      border-radius: 28px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    .toggle-switch.active {
+      background: #00A651;
+    }
+    
+    .toggle-switch::after {
+      content: '';
+      width: 24px;
+      height: 24px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      transition: transform 0.3s;
+    }
+    
+    .toggle-switch.active::after {
+      transform: translateX(22px);
+    }
+    
+    /* Requests Section */
+    .requests-section {
+      padding: 0 16px;
+      margin-top: 16px;
+    }
+    
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .request-count {
+      background: #00A651;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    /* Request Card */
+    .request-card {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+    
+    .request-card:hover {
+      transform: translateY(-2px);
+    }
+    
+    .request-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    
+    .request-id {
+      font-size: 12px;
+      color: #6B7B6B;
+      font-family: monospace;
+    }
+    
+    .request-price {
+      font-size: 18px;
+      font-weight: 700;
+      color: #00A651;
+    }
+    
+    .request-location {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    
+    .request-distance {
+      font-size: 12px;
+      color: #6B7B6B;
+      margin-bottom: 12px;
+    }
+    
+    .request-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    
+    .btn-accept {
+      flex: 1;
+      background: #00A651;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .btn-accept:hover {
+      background: #007A3D;
+    }
+    
+    .btn-decline {
+      flex: 1;
+      background: #f0f0f0;
+      color: #CE1126;
+      border: none;
+      padding: 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    /* Active Ride Card */
+    .active-ride-card {
+      background: linear-gradient(135deg, #FCD116 0%, #D4A800 100%);
+      color: #1A2E1A;
+      margin: 16px;
+      padding: 20px;
+      border-radius: 16px;
+    }
+    
+    .active-ride-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .active-ride-status {
+      background: rgba(0,0,0,0.2);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .customer-info {
+      margin-bottom: 16px;
+    }
+    
+    .customer-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    
+    .btn-navigate {
+      width: 100%;
+      background: #1A2E1A;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 600;
+      margin-top: 12px;
+      cursor: pointer;
+    }
+    
+    /* Earnings Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 24px;
+      padding: 24px;
+      max-width: 90%;
+      width: 320px;
+      text-align: center;
+    }
+    
+    .earnings-amount {
+      font-size: 48px;
+      font-weight: 800;
+      color: #00A651;
+      margin: 16px 0;
+    }
+    
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      display: flex;
+      justify-content: space-around;
+      padding: 12px 16px;
+      border-top: 1px solid #E0EBE0;
+      max-width: 600px;
+      margin: 0 auto;
+      z-index: 100;
+    }
+    
+    .nav-item {
+      text-align: center;
+      color: #6B7B6B;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    
+    .nav-item.active {
+      color: #00A651;
+    }
+    
+    .nav-icon {
+      font-size: 24px;
+    }
+    
+    .nav-label {
+      font-size: 11px;
+      margin-top: 4px;
+    }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6B7B6B;
+    }
+    
+    .empty-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+    
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #6B7B6B;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #E0EBE0;
+      border-top-color: #00A651;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="rider-info">
+        <div class="rider-details">
+          <h1 id="riderName">Loading...</h1>
+          <p>ID: <span id="riderId">---</span></p>
+        </div>
+        <div class="rating-badge">
+          ⭐ <span id="riderRating">0.0</span>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-value" id="totalPickups">0</div>
+          <div class="stat-label">Pickups</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="totalEarnings">₵0</div>
+          <div class="stat-label">Earnings</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="acceptanceRate">100%</div>
+          <div class="stat-label">Acceptance</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Availability Toggle -->
+    <div class="availability-card">
+      <div>
+        <strong>🟢 Available for pickups</strong>
+        <p style="font-size: 12px; color: #6B7B6B; margin-top: 4px;">Toggle to receive requests</p>
+      </div>
+      <div class="toggle-switch" id="availabilityToggle"></div>
+    </div>
+    
+    <!-- Active Ride Section (shows when on a job) -->
+    <div id="activeRideSection" style="display: none;">
+      <div class="active-ride-card">
+        <div class="active-ride-header">
+          <span>🚛 Current Pickup</span>
+          <span class="active-ride-status" id="rideStatus">En Route</span>
+        </div>
+        <div class="customer-info">
+          <div class="customer-name" id="customerName">Loading...</div>
+          <p id="pickupAddress" style="font-size: 14px; margin-top: 4px;">📍 Loading...</p>
+          <p id="customerPhone" style="font-size: 12px; margin-top: 8px;">📞 Loading...</p>
+        </div>
+        <button class="btn-navigate" id="navigateBtn" onclick="openMaps()">
+          🗺️ Navigate to Pickup
+        </button>
+        <button class="btn-navigate" id="completeBtn" style="background: #00A651; margin-top: 8px;" onclick="completePickup()">
+          ✅ Complete Pickup
+        </button>
+      </div>
+    </div>
+    
+    <!-- Available Requests Section -->
+    <div class="requests-section" id="requestsSection">
+      <div class="section-header">
+        <div class="section-title">Available Requests</div>
+        <div class="request-count" id="requestCount">0</div>
+      </div>
+      <div id="requestsList">
+        <div class="loading">
+          <div class="spinner"></div>
+          <p>Loading nearby requests...</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <div class="nav-item active" data-page="requests">
+        <div class="nav-icon">🚛</div>
+        <div class="nav-label">Requests</div>
+      </div>
+      <div class="nav-item" data-page="earnings">
+        <div class="nav-icon">💰</div>
+        <div class="nav-label">Earnings</div>
+      </div>
+      <div class="nav-item" data-page="profile">
+        <div class="nav-icon">👤</div>
+        <div class="nav-label">Profile</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Earnings Modal -->
+  <div id="earningsModal" class="modal">
+    <div class="modal-content">
+      <span style="font-size: 48px;">🎉</span>
+      <h2 style="margin: 16px 0 8px;">Pickup Complete!</h2>
+      <p>You earned</p>
+      <div class="earnings-amount" id="modalEarnings">₵0.00</div>
+      <p style="font-size: 12px; color: #6B7B6B;">Amount has been added to your wallet</p>
+      <button onclick="closeEarningsModal()" style="width: 100%; padding: 14px; background: #00A651; color: white; border: none; border-radius: 12px; margin-top: 20px; font-weight: 600; cursor: pointer;">
+        Continue
+      </button>
+    </div>
+  </div>
+  
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script>
+    // Global variables
+    let currentUser = null;
+    let socket = null;
+    let isAvailable = true;
+    let currentPosition = null;
+    let watchId = null;
+    let activeRequest = null;
+    let availableRequests = [];
+    let refreshInterval = null;
+    
+    // API Base URL
+    const API_BASE = window.location.origin;
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuth();
+      await loadRiderProfile();
+      await loadTodayStats();
+      initSocket();
+      initLocationTracking();
+      startPolling();
+      initEventListeners();
+      checkActiveJob();
+    });
+    
+    // Check authentication
+    async function checkAuth() {
+      const token = localStorage.getItem('wastego_token');
+      if (!token) {
+        window.location.href = '/auth/login.html';
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+          currentUser = result.data.user;
+          if (currentUser.role !== 'rider') {
+            window.location.href = `/${currentUser.role}/dashboard.html`;
+          }
+          document.getElementById('riderName').textContent = currentUser.name.split(' ')[0];
+          document.getElementById('riderId').textContent = currentUser._id?.slice(-6) || 'NEW';
+          document.getElementById('riderRating').textContent = currentUser.riderProfile?.averageRating?.toFixed(1) || '0.0';
+          isAvailable = currentUser.riderProfile?.isAvailable || false;
+          updateToggleUI();
+        } else {
+          throw new Error('Auth failed');
+        }
+      } catch (error) {
+        console.error('Auth error:', error);
+        localStorage.removeItem('wastego_token');
+        window.location.href = '/auth/login.html';
+      }
+    }
+    
+    // Load rider profile stats
+    async function loadRiderProfile() {
+      try {
+        const response = await fetch(`${API_BASE}/api/rider/wallet`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('wastego_token')}` }
+        });
+        const result = await response.json();
+        if (result.success) {
+          document.getElementById('totalEarnings').textContent = `₵${result.data.totalEarned?.toFixed(2) || '0'}`;
+        }
+      } catch (error) {
+        console.error('Load wallet error:', error);
+      }
+    }
+    
+    // Load today's stats
+    async function loadTodayStats() {
+      try {
+        const token = localStorage.getItem('wastego_token');
+        const response = await fetch(`${API_BASE}/api/requests/my-history?limit=100`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await response.json();
+        if (result.success) {
+          const completed = result.data.requests.filter(r => r.status === 'completed');
+          document.getElementById('totalPickups').textContent = completed.length;
+        }
+      } catch (error) {
+        console.error('Load stats error:', error);
+      }
+    }
+    
+    // Initialize Socket.IO
+    function initSocket() {
+      socket = io(window.location.origin, {
+        transports: ['websocket', 'polling']
+      });
+      
+      socket.on('connect', () => {
+        console.log('Socket connected');
+        socket.emit('auth', {
+          userId: currentUser?._id,
+          userType: 'rider',
+          token: localStorage.getItem('wastego_token')
+        });
+        socket.emit('rider:join', currentUser?._id);
+      });
+      
+      socket.on('new:request', (data) => {
+        console.log('New request received:', data);
+        loadAvailableRequests();
+        showNotification('New pickup request available!');
+      });
+      
+      socket.on('ai:suggested', (data) => {
+        console.log('AI suggested request:', data);
+        showNotification(`🎯 AI recommends: Pickup request #${data.requestId.slice(-6)}`);
+      });
+    }
+    
+    // Start location tracking
+    function initLocationTracking() {
+      if (!navigator.geolocation) {
+        console.error('Geolocation not supported');
+        return;
+      }
+      
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          currentPosition = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          
+          // Send location to server if on active job
+          if (activeRequest) {
+            socket.emit('rider:location', {
+              riderId: currentUser._id,
+              requestId: activeRequest._id,
+              location: currentPosition
+            });
+          }
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
+    
+    // Start polling for requests
+    function startPolling() {
+      loadAvailableRequests();
+      refreshInterval = setInterval(() => {
+        if (isAvailable && !activeRequest) {
+          loadAvailableRequests();
+        }
+      }, 10000);
+    }
+    
+    // Load available requests
+    async function loadAvailableRequests() {
+      if (!isAvailable || activeRequest) return;
+      
+      try {
+        const token = localStorage.getItem('wastego_token');
+        const response = await fetch(`${API_BASE}/api/requests/available`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+          availableRequests = result.data.requests || [];
+          renderRequestsList();
+        }
+      } catch (error) {
+        console.error('Load requests error:', error);
+      }
+    }
+    
+    // Render requests list
+    function renderRequestsList() {
+      const container = document.getElementById('requestsList');
+      const countSpan = document.getElementById('requestCount');
+      countSpan.textContent = availableRequests.length;
+      
+      if (availableRequests.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🚛</div>
+            <p>No available requests nearby</p>
+            <p style="font-size: 12px; margin-top: 8px;">Check back soon!</p>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = availableRequests.map(request => `
+        <div class="request-card" data-request-id="${request._id}">
+          <div class="request-header">
+            <span class="request-id">#${request._id.slice(-6)}</span>
+            <span class="request-price">₵${request.estimatedEarnings?.toFixed(2) || request.price?.toFixed(2) || '0.00'}</span>
+          </div>
+          <div class="request-location">
+            <span>📍</span>
+            <span>${request.pickupLocation?.address || 'Location provided'}</span>
+          </div>
+          <div class="request-distance">
+            🚶 ${request.distance || '0'} km away
+          </div>
+          <div class="request-actions">
+            <button class="btn-accept" onclick="acceptRequest('${request._id}')">Accept</button>
+            <button class="btn-decline" onclick="declineRequest('${request._id}')">Decline</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    // Accept a request
+    async function acceptRequest(requestId) {
+      try {
+        const token = localStorage.getItem('wastego_token');
+        const response = await fetch(`${API_BASE}/api/requests/${requestId}/accept`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          showNotification('Request accepted! Navigate to pickup.');
+          checkActiveJob();
+          isAvailable = false;
+          updateToggleUI();
+          loadAvailableRequests();
+        } else {
+          showNotification(result.message || 'Failed to accept request');
+        }
+      } catch (error) {
+        console.error('Accept error:', error);
+        showNotification('Error accepting request');
+      }
+    }
+    
+    // Decline a request
+    async function declineRequest(requestId) {
+      // Just remove from UI, no API call needed
+      availableRequests = availableRequests.filter(r => r._id !== requestId);
+      renderRequestsList();
+      showNotification('Request declined');
+    }
+    
+    // Check if rider has active job
+    async function checkActiveJob() {
+      try {
+        const token = localStorage.getItem('wastego_token');
+        const response = await fetch(`${API_BASE}/api/requests/my-history?limit=5`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+          const active = result.data.requests.find(r => 
+            ['pending', 'accepted', 'en_route', 'arrived', 'collecting'].includes(r.status)
+          );
+          
+          if (active && active.rider?._id === currentUser?._id) {
+            activeRequest = active;
+            showActiveRide(active);
+            isAvailable = false;
+            updateToggleUI();
+            document.getElementById('requestsSection').style.display = 'none';
+            document.getElementById('activeRideSection').style.display = 'block';
+          } else {
+            activeRequest = null;
+            document.getElementById('requestsSection').style.display = 'block';
+            document.getElementById('activeRideSection').style.display = 'none';
+            if (isAvailable) {
+              loadAvailableRequests();
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Check active job error:', error);
+      }
+    }
+    
+    // Show active ride UI
+    function showActiveRide(request) {
+      document.getElementById('customerName').textContent = request.customer?.name || 'Customer';
+      document.getElementById('pickupAddress').textContent = `📍 ${request.pickupLocation?.address || 'Pickup location'}`;
+      document.getElementById('customerPhone').textContent = `📞 ${request.customer?.phone || 'Loading...'}`;
+      
+      const statusMap = {
+        'accepted': 'On the way',
+        'en_route': 'En Route',
+        'arrived': 'Arrived',
+        'collecting': 'Collecting Waste',
+        'pending': 'Waiting'
+      };
+      document.getElementById('rideStatus').textContent = statusMap[request.status] || request.status;
+      
+      // Update button based on status
+      const navigateBtn = document.getElementById('navigateBtn');
+      const completeBtn = document.getElementById('completeBtn');
+      
+      if (request.status === 'arrived') {
+        completeBtn.textContent = '✅ Complete Pickup';
+        completeBtn.style.background = '#00A651';
+      } else if (request.status === 'collecting') {
+        completeBtn.textContent = '💰 Mark Collected';
+        completeBtn.style.background = '#FCD116';
+      } else {
+        completeBtn.textContent = '✅ Mark as Arrived';
+        completeBtn.style.background = '#00A651';
+      }
+    }
+    
+    // Update request status
+    async function updateRequestStatus(status) {
+      if (!activeRequest) return;
+      
+      try {
+        const token = localStorage.getItem('wastego_token');
+        const response = await fetch(`${API_BASE}/api/requests/${activeRequest._id}/status`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status, location: currentPosition })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          if (status === 'completed') {
+            showEarningsModal(activeRequest.riderEarnings || activeRequest.price * 0.85);
+            activeRequest = null;
+            document.getElementById('requestsSection').style.display = 'block';
+            document.getElementById('activeRideSection').style.display = 'none';
+            isAvailable = true;
+            updateToggleUI();
+            loadTodayStats();
+            loadRiderProfile();
+            loadAvailableRequests();
+          } else {
+            activeRequest.status = status;
+            showActiveRide(activeRequest);
+            showNotification(`Status updated: ${status}`);
+          }
+        }
+      } catch (error) {
+        console.error('Update status error:', error);
+        showNotification('Failed to update status');
+      }
+    }
+    
+    // Complete pickup flow
+    async function completePickup() {
+      if (!activeRequest) return;
+      
+      if (activeRequest.status === 'arrived') {
+        updateRequestStatus('collecting');
+      } else if (activeRequest.status === 'collecting') {
+        updateRequestStatus('completed');
+      } else if (activeRequest.status === 'accepted' || activeRequest.status === 'en_route') {
+        updateRequestStatus('arrived');
+      } else {
+        updateRequestStatus('completed');
+      }
+    }
+    
+    // Open maps navigation
+    function openMaps() {
+      if (!activeRequest?.pickupLocation) return;
+      
+      const { lat, lng } = activeRequest.pickupLocation;
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+      window.open(url, '_blank');
+    }
+    
+    // Show earnings modal
+    function showEarningsModal(amount) {
+      document.getElementById('modalEarnings').textContent = `₵${amount.toFixed(2)}`;
+      document.getElementById('earningsModal').classList.add('active');
+    }
+    
+    function closeEarningsModal() {
+      document.getElementById('earningsModal').classList.remove('active');
+      checkActiveJob();
+    }
+    
+    // Toggle availability
+    function updateToggleUI() {
+      const toggle = document.getElementById('availabilityToggle');
+      if (isAvailable) {
+        toggle.classList.add('active');
+      } else {
+        toggle.classList.remove('active');
+      }
+    }
+    
+    async function toggleAvailability() {
+      isAvailable = !isAvailable;
+      updateToggleUI();
+      
+      try {
+        const token = localStorage.getItem('wastego_token');
+        await fetch(`${API_BASE}/api/rider/availability`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ isAvailable })
+        });
+        
+        if (isAvailable && !activeRequest) {
+          loadAvailableRequests();
+        }
+        showNotification(isAvailable ? 'You are now available for pickups' : 'You are offline');
+      } catch (error) {
+        console.error('Toggle availability error:', error);
+      }
+    }
+    
+    // Show notification
+    function showNotification(message) {
+      const toast = document.createElement('div');
+      toast.textContent = message;
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 80px;
+        left: 16px;
+        right: 16px;
+        background: #1A2E1A;
+        color: white;
+        padding: 12px;
+        border-radius: 12px;
+        text-align: center;
+        z-index: 1000;
+        animation: slideUp 0.3s ease;
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+    
+    // Event listeners
+    function initEventListeners() {
+      document.getElementById('availabilityToggle').addEventListener('click', toggleAvailability);
+      
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const page = item.dataset.page;
+          if (page === 'earnings') {
+            loadRiderProfile();
+            showNotification(`Total earnings: ${document.getElementById('totalEarnings').textContent}`);
+          } else if (page === 'profile') {
+            window.location.href = '/rider/profile.html';
+          }
+        });
+      });
+    }
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+      if (socket) {
+        socket.disconnect();
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
 cd client
 
 # Create missing directories
