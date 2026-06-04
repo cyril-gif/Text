@@ -1,4 +1,126 @@
 /**
+ * Pricing Calculator
+ * Dynamic pricing based on load size, location, and demand
+ */
+
+const PRICE_CONFIG = {
+  small: {
+    base: 5.00,
+    per_km: 1.50
+  },
+  medium: {
+    base: 8.00,
+    per_km: 2.00
+  },
+  large: {
+    base: 12.00,
+    per_km: 3.00
+  }
+};
+
+const REGION_MULTIPLIERS = {
+  'Greater Accra': 1.0,
+  'Ashanti': 0.95,
+  'Western': 0.90,
+  'Eastern': 0.90,
+  'Central': 0.90,
+  'Volta': 0.85,
+  'Northern': 0.85,
+  'Upper East': 0.80,
+  'Upper West': 0.80,
+  'Bono': 0.85,
+  'Ahafo': 0.85,
+  'Bono East': 0.85,
+  'Oti': 0.85,
+  'North East': 0.80,
+  'Savannah': 0.80,
+  'Western North': 0.85
+};
+
+// Peak hours (6-9 AM, 4-7 PM)
+const isPeakHour = () => {
+  const hour = new Date().getHours();
+  return (hour >= 6 && hour <= 9) || (hour >= 16 && hour <= 19);
+};
+
+// Demand multiplier (would integrate with real demand data)
+const getDemandMultiplier = async (area) => {
+  // In production, calculate based on recent request volume
+  // For now, return baseline
+  return 1.0;
+};
+
+const calculatePrice = async (loadSize, area = null, distance = 3) => {
+  try {
+    const config = PRICE_CONFIG[loadSize];
+    if (!config) {
+      throw new Error(`Invalid load size: ${loadSize}`);
+    }
+    
+    let price = config.base + (config.per_km * distance);
+    
+    // Apply region multiplier
+    let regionMultiplier = 1.0;
+    if (area && REGION_MULTIPLIERS[area]) {
+      regionMultiplier = REGION_MULTIPLIERS[area];
+    }
+    price *= regionMultiplier;
+    
+    // Apply peak hour surcharge
+    if (isPeakHour()) {
+      price *= 1.15; // 15% surcharge during peak hours
+    }
+    
+    // Apply demand multiplier
+    const demandMultiplier = await getDemandMultiplier(area);
+    price *= demandMultiplier;
+    
+    // Round to 2 decimal places
+    return Math.round(price * 100) / 100;
+    
+  } catch (error) {
+    console.error('Price calculation error:', error);
+    // Return default price
+    return PRICE_CONFIG[loadSize]?.base || 10.00;
+  }
+};
+
+const calculateRiderEarnings = (price, commissionRate = 0.15) => {
+  const commission = price * commissionRate;
+  const earnings = price - commission;
+  return {
+    total: price,
+    commission: Math.round(commission * 100) / 100,
+    riderEarnings: Math.round(earnings * 100) / 100
+  };
+};
+
+const calculateDistancePrice = (loadSize, distanceKm) => {
+  const config = PRICE_CONFIG[loadSize];
+  if (!config) return 10.00;
+  
+  let price = config.base + (config.per_km * distanceKm);
+  return Math.round(price * 100) / 100;
+};
+
+module.exports = {
+  calculatePrice,
+  calculateRiderEarnings,
+  calculateDistancePrice,
+  PRICE_CONFIG,
+  REGION_MULTIPLIERS,
+  isPeakHour
+};
+
+
+
+
+
+
+
+
+
+/**
  * Socket.io Event Handlers
  * Real-time rider location tracking and notifications
  */
