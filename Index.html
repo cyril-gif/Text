@@ -1,4 +1,625 @@
 /**
+ * USSD Controller
+ * Handles Moolre USSD webhook for feature phone users
+ * Critical for reaching Ghanaians without smartphones
+ */
+
+const User = require('../models/User');
+const Request = require('../models/Request');
+const UssdSession = require('../models/UssdSession');
+const moolreClient = require('../utils/moolreClient');
+const { sendUSSDConfirmation } = require('../utils/notifications');
+
+/**
+ * Main USSD handler - Moolre webhook endpoint
+ * @route POST /api/ussd/handler
+ */
+const handleUSSD = async (req, res) => {
+  try {
+    const { sessionId, serviceCode, phoneNumber, text, network } = req.body;
+    
+    console.log(`USSD Request: ${sessionId}, ${phoneNumber}, text: "${text}"`);
+    
+    // Get or create USSD session
+    let session = await UssdSession.findOne({ sessionId });
+    if (!session) {
+      session = new UssdSession({
+        sessionId,
+        phoneNumber,
+        currentMenu: 'main',
+        menuHistory: [],
+        pendingRequestData: {}
+      });
+      await session.save();
+    }
+    
+    // Parse USSD input
+    const userInput = text ? text.split('*') : [];
+    const level = userInput.length;
+    
+    let response = '';
+    let continueSession = true;
+    
+    // Main menu (level 0)
+    if (text === '') {
+      response = generateMainMenu();
+    }
+    // Handle menu selections
+    else {
+      const menuResult = await processUSSDMenu(session, userInput, level);
+      response = menuResult.response;
+      continueSession = menuResult.continueSession;
+    }
+    
+    // Send response back to Moolre
+    res.set('Content-Type', 'text/plain');
+    res.send(`${continueSession ? 'CON' : 'END'} ${response}`);
+    
+    // Update session
+    session.lastActivity = new Date();
+    await session.save();
+    
+  } catch (error) {
+    console.error('USSD handler error:', error);
+    res.set('Content-Type', 'text/plain');
+    res.send('END Technical error. Please try again later. Dial *714# for WasteGo.');
+  }
+};
+
+/**
+ * Generate main USSD menu
+ */
+function generateMainMenu() {
+  return `WasteGo - Clean Ghana 🇬🇭
+1. Request Pickup
+2. Check Status
+3. My Wallet
+4. Subscription
+5. Rate Rider
+6. Support
+0. Exit`;
+}
+
+/**
+ * Process USSD menu navigation
+ */
+async function processUSSDMenu(session, userInput, level) {
+  const mainChoice = userInput[0];
+  
+  // Exit
+  if (mainChoice === '0') {
+    return {
+      response: 'Thank you for using WasteGo! Keep Ghana clean. 🇬🇭',
+      continueSession: false
+    };
+  }
+  
+  // Request Pickup flow
+  if (mainChoice === '1') {
+    return await processPickupFlow(session, userInput, level);
+  }
+  
+  // Check Status flow
+  if (mainChoice === '2') {
+    return await processStatusFlow(session, userInput, level);
+  }
+  
+  // My Wallet flow
+  if (mainChoice === '3') {
+    return await processWalletFlow(session, userInput, level);
+  }
+  
+  // Subscription flow
+  if (mainChoice === '4') {
+    return await processSubscriptionFlow(session, userInput, level);
+  }
+  
+  // Rate Rider flow
+  if (mainChoice === '5') {
+    return await processRatingFlow(session, userInput, level);
+  }
+  
+  // Support
+  if (mainChoice === '6') {
+    return {
+      response: `WasteGo Support
+Call: 055 123 4567
+WhatsApp: 055 123 4567
+Email: support@wastego.app
+We're here 24/7! 🇬🇭`,
+      continueSession: false
+    };
+  }
+  
+  return {
+    response: 'Invalid option. Please try again.\n' + generateMainMenu(),
+    continueSession: true
+  };
+}
+
+/**
+ * Process pickup request via USSD
+ */
+async function processPickupFlow(session, userInput, level) {
+  // Level 1: Select load size
+  if (level === 1) {
+    return {
+      response: `Select waste size:
+1. Small (2-3 bags) - GHS 5-8
+2. Medium (4-6 bags) - GHS 8-12
+3. Large (7+ bags) - GHS 12-20
+0. Back`,
+      continueSession: true
+    };
+  }
+  
+  // Level 2: Enter location
+  if (level === 2) {
+    const sizeOption = userInput[1];
+    const sizeMap = {
+      '1': { size: 'small', price: 7 },
+      '2': { size: 'medium', price: 10 },
+      '3': { size: 'large', price: 15 }
+    };
+    
+    if (sizeOption === '0') {
+      return {
+        response: generateMainMenu(),
+        continueSession: true
+      };
+    }
+    
+    if (!sizeMap[sizeOption]) {
+      return {
+        response: 'Invalid option. Please select 1, 2, or 3.\n0. Back',
+        continueSession: true
+      };
+    }
+    
+    // Store selection
+    session.pendingRequestData = {
+      loadSize: sizeMap[sizeOption].size,
+      price: sizeMap[sizeOption].price
+    };
+    await session.save();
+    
+    return {
+      response: `Enter your location (area/landmark):
+Example: Circle, near Melcom
+Or send 'GPS' for location link`,
+      continueSession: true
+    };
+  }
+  
+  // Level 3: Confirm and pay
+  if (level === 3) {
+    const location = userInput[2];
+    
+    if (location.toLowerCase() === 'back') {
+      return {
+        response: generateMainMenu(),
+        continueSession: true
+      };
+    }
+    
+    session.pendingRequestData.location = location;
+    await session.save();
+    
+    return {
+      response: `Confirm pickup:
+Location: ${location}
+Size: ${session.pendingRequestData.loadSize}
+Price: GHS ${session.pendingRequestData.price}
+
+1. Confirm & Pay
+2. Cancel
+0. Main Menu`,
+      continueSession: true
+    };
+  }
+  
+  // Level 4: Process payment
+  if (level === 4) {
+    const confirm = userInput[3];
+    
+    if (confirm === '2' || confirm === '0') {
+      session.pendingRequestData = {};
+      await session.save();
+      return {
+        response: generateMainMenu(),
+        continueSession: true
+      };
+    }
+    
+    if (confirm !== '1') {
+      return {
+        response: 'Invalid option. Send 1 to confirm or 2 to cancel.',
+        continueSession: true
+      };
+    }
+    
+    // Process payment via Moolre
+    try {
+      const payment = await moolreClient.initiatePayment({
+        amount: session.pendingRequestData.price,
+        customerPhone: session.phoneNumber,
+        paymentMethod: 'momo_mtn', // Default to MTN MoMo
+        reference: `USSD_${session.sessionId}_${Date.now()}`,
+        description: `WasteGo USSD pickup - ${session.pendingRequestData.loadSize}`
+      });
+      
+      // Create request in database
+      const request = new Request({
+        customer: null, // Will be created/linked later
+        pickupLocation: {
+          address: session.pendingRequestData.location,
+          lat: 0, // Will be updated if GPS provided
+          lng: 0,
+          area: session.pendingRequestData.location
+        },
+        wasteDetails: {
+          loadSize: session.pendingRequestData.loadSize,
+          wasteType: 'mixed'
+        },
+        price: session.pendingRequestData.price,
+        paymentMethod: 'momo',
+        paymentStatus: 'pending',
+        moolreTransactionRef: payment.transactionRef,
+        status: 'pending'
+      });
+      
+      await request.save();
+      
+      // Send SMS confirmation
+      await sendUSSDConfirmation(
+        session.phoneNumber,
+        request._id,
+        session.pendingRequestData.price
+      );
+      
+      // Clear session data
+      session.pendingRequestData = {};
+      await session.save();
+      
+      return {
+        response: `Request created! Reference: ${request._id.toString().slice(-6)}
+Pay GHS ${session.pendingRequestData.price} via MoMo to complete.
+You'll receive SMS confirmation.
+
+Thank you for keeping Ghana clean! 🇬🇭`,
+        continueSession: false
+      };
+      
+    } catch (error) {
+      console.error('USSD payment error:', error);
+      return {
+        response: 'Payment failed. Please try again or call 055 123 4567 for assistance.',
+        continueSession: false
+      };
+    }
+  }
+  
+  return {
+    response: generateMainMenu(),
+    continueSession: true
+  };
+}
+
+/**
+ * Check request status
+ */
+async function processStatusFlow(session, userInput, level) {
+  if (level === 1) {
+    return {
+      response: `Enter your request ID (found in your SMS):
+Example: ${Math.random().toString(36).substr(2, 6).toUpperCase()}
+0. Main Menu`,
+      continueSession: true
+    };
+  }
+  
+  if (level === 2) {
+    const requestId = userInput[1];
+    
+    if (requestId === '0') {
+      return {
+        response: generateMainMenu(),
+        continueSession: true
+      };
+    }
+    
+    // Find request
+    const request = await Request.findOne({
+      _id: { $regex: requestId, $options: 'i' }
+    }).populate('rider', 'name');
+    
+    if (!request) {
+      return {
+        response: `Request ${requestId} not found.
+Check your SMS or try again.
+0. Main Menu`,
+        continueSession: true
+      };
+    }
+    
+    const statusMessages = {
+      'pending': 'Looking for rider...',
+      'assigned': 'Rider assigned! On the way.',
+      'accepted': 'Rider accepted your request.',
+      'en_route': 'Rider is coming to you.',
+      'arrived': 'Rider has arrived!',
+      'collecting': 'Collecting waste...',
+      'completed': 'Completed! Thank you!',
+      'cancelled': 'Cancelled.'
+    };
+    
+    let response = `Request #${request._id.toString().slice(-6)}
+Status: ${statusMessages[request.status] || request.status}`;
+    
+    if (request.rider) {
+      response += `\nRider: ${request.rider.name}`;
+    }
+    
+    if (request.status === 'en_route' && request.riderLocations.length > 0) {
+      const lastLocation = request.riderLocations[request.riderLocations.length - 1];
+      response += `\nETA: ~10 minutes`;
+    }
+    
+    response += `\n\n0. Main Menu`;
+    
+    return {
+      response: response,
+      continueSession: true
+    };
+  }
+  
+  return {
+    response: generateMainMenu(),
+    continueSession: true
+  };
+}
+
+/**
+ * Check wallet balance
+ */
+async function processWalletFlow(session, userInput, level) {
+  // Find or create user by phone
+  let user = await User.findOne({ phone: session.phoneNumber });
+  
+  if (!user) {
+    return {
+      response: `You're not registered. Please register via web: wastego.app
+Or call 055 123 4567 for help.
+0. Main Menu`,
+      continueSession: true
+    };
+  }
+  
+  const RiderWallet = require('../models/RiderWallet');
+  let wallet = await RiderWallet.findOne({ rider: user._id });
+  
+  if (!wallet) {
+    wallet = { totalEarned: 0, currentBalance: 0 };
+  }
+  
+  return {
+    response: `WasteGo Wallet - ${user.name}
+Total Earned: GHS ${wallet.totalEarned.toFixed(2)}
+Available: GHS ${wallet.currentBalance.toFixed(2)}
+Next payout: 10 PM today
+
+0. Main Menu`,
+    continueSession: true
+  };
+}
+
+/**
+ * Subscription management
+ */
+async function processSubscriptionFlow(session, userInput, level) {
+  if (level === 1) {
+    return {
+      response: `WasteGo Subscriptions
+1. Weekly Plan - GHS 30/week
+2. Monthly Plan - GHS 100/month
+3. My Subscription
+4. Cancel Subscription
+0. Back`,
+      continueSession: true
+    };
+  }
+  
+  const subChoice = userInput[1];
+  
+  if (subChoice === '0') {
+    return {
+      response: generateMainMenu(),
+      continueSession: true
+    };
+  }
+  
+  let user = await User.findOne({ phone: session.phoneNumber });
+  
+  if (!user && (subChoice === '3' || subChoice === '4')) {
+    return {
+      response: 'Please register via web first: wastego.app',
+      continueSession: false
+    };
+  }
+  
+  if (subChoice === '1') {
+    return {
+      response: `Weekly Plan: GHS 30/week
+Includes: 5 pickups per week
+Savings: Save 20% vs pay-as-you-go
+
+Send 1 to subscribe, 0 to cancel`,
+      continueSession: true
+    };
+  }
+  
+  if (subChoice === '1' && level === 2 && userInput[2] === '1') {
+    // Initiate subscription via Moolre
+    return {
+      response: `To subscribe, visit wastego.app/subscribe
+Or call 055 123 4567 for assistance.
+0. Main Menu`,
+      continueSession: true
+    };
+  }
+  
+  if (subChoice === '2') {
+    return {
+      response: `Monthly Plan: GHS 100/month
+Includes: 25 pickups per month
+Savings: Save 30% vs pay-as-you-go
+Free weekend pickups!
+
+Send 1 to subscribe, 0 to cancel`,
+      continueSession: true
+    };
+  }
+  
+  if (subChoice === '3') {
+    const Subscription = require('../models/Subscription');
+    const subscription = await Subscription.findOne({
+      customer: user._id,
+      status: 'active'
+    });
+    
+    if (!subscription) {
+      return {
+        response: 'No active subscription. Send 1 or 2 to subscribe!',
+        continueSession: true
+      };
+    }
+    
+    return {
+      response: `Your Subscription:
+Plan: ${subscription.plan || 'Weekly'}
+Pickups used: ${subscription.totalPickups - (subscription.pickupsRemaining || 0)}/${subscription.totalPickups}
+Next renewal: ${subscription.nextBillingDate?.toLocaleDateString()}
+
+0. Main Menu`,
+      continueSession: true
+    };
+  }
+  
+  if (subChoice === '4') {
+    return {
+      response: `To cancel subscription, visit wastego.app/profile
+Or call support: 055 123 4567
+0. Main Menu`,
+      continueSession: true
+    };
+  }
+  
+  return {
+    response: generateMainMenu(),
+    continueSession: true
+  };
+}
+
+/**
+ * Rate rider
+ */
+async function processRatingFlow(session, userInput, level) {
+  if (level === 1) {
+    const lastRequest = await Request.findOne({
+      customer: session.phoneNumber,
+      status: 'completed',
+      rating: { $exists: false }
+    }).sort({ 'timeline.completedAt': -1 });
+    
+    if (!lastRequest) {
+      return {
+        response: `No recent completed pickups to rate.
+Thank you for using WasteGo!
+0. Main Menu`,
+        continueSession: true
+      };
+    }
+    
+    session.pendingRequestData.lastRequestId = lastRequest._id;
+    await session.save();
+    
+    return {
+      response: `Rate your last rider:
+1. ⭐ - Poor
+2. ⭐⭐ - Fair
+3. ⭐⭐⭐ - Good
+4. ⭐⭐⭐⭐ - Very Good
+5. ⭐⭐⭐⭐⭐ - Excellent
+0. Skip`,
+      continueSession: true
+    };
+  }
+  
+  if (level === 2) {
+    const rating = parseInt(userInput[1]);
+    
+    if (rating === 0) {
+      return {
+        response: generateMainMenu(),
+        continueSession: true
+      };
+    }
+    
+    if (rating < 1 || rating > 5) {
+      return {
+        response: 'Invalid rating. Send 1-5 stars.\n0. Main Menu',
+        continueSession: true
+      };
+    }
+    
+    // Update request with rating
+    await Request.findByIdAndUpdate(session.pendingRequestData.lastRequestId, {
+      rating: rating,
+      review: 'Rated via USSD'
+    });
+    
+    // Update rider's average rating
+    const request = await Request.findById(session.pendingRequestData.lastRequestId);
+    if (request && request.rider) {
+      const riderRequests = await Request.find({
+        rider: request.rider,
+        rating: { $exists: true }
+      });
+      
+      const avgRating = riderRequests.reduce((sum, r) => sum + r.rating, 0) / riderRequests.length;
+      await User.findByIdAndUpdate(request.rider, {
+        'riderProfile.averageRating': avgRating
+      });
+    }
+    
+    session.pendingRequestData = {};
+    await session.save();
+    
+    return {
+      response: `Thank you for rating! ⭐
+Your feedback helps us improve.
+0. Main Menu`,
+      continueSession: true
+    };
+  }
+  
+  return {
+    response: generateMainMenu(),
+    continueSession: true
+  };
+}
+
+module.exports = { handleUSSD };
+
+
+
+
+
+
+
+
+
+/**
  * AI Chat Widget
  * Embedded chatbot for customer support
  */
