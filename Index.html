@@ -1,4 +1,64 @@
 /**
+ * AI Routes
+ * Claude API integration for smart dispatch and chatbot
+ */
+
+const express = require('express');
+const { verifyToken, requireRole } = require('../middleware/auth');
+const {
+  smartDispatch,
+  chatAssistant,
+  predictPickupTime,
+  generatePromotion,
+  getAIAnalytics
+} = require('../controllers/aiController');
+
+const router = express.Router();
+
+// Smart dispatch (admin trigger or automatic after payment)
+router.post('/dispatch', verifyToken, requireRole('admin'), smartDispatch);
+
+// Customer chat assistant (authenticated or optional)
+router.post('/chat', verifyToken, chatAssistant);
+
+// Time prediction (any user)
+router.post('/predict-time', verifyToken, predictPickupTime);
+
+// Promotion generator (authenticated users)
+router.post('/promotion', verifyToken, generatePromotion);
+
+// AI analytics (admin only)
+router.get('/analytics', verifyToken, requireRole('admin'), getAIAnalytics);
+
+// Public chat endpoint for non-logged in users (limited)
+router.post('/chat/public', async (req, res) => {
+  try {
+    const { message } = req.body;
+    const aiClient = require('../utils/aiClient');
+    
+    const response = await aiClient.chatSupport(message, { role: 'guest' }, []);
+    
+    res.json({
+      success: true,
+      data: {
+        response: response.response,
+        language: response.language
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+module.exports = router;
+
+
+
+
+
+
+
+/**
  * AI Controller
  * Handles smart dispatch and customer chat assistant
  */
