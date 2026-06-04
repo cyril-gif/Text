@@ -1,4 +1,157 @@
 /**
+ * Cron Job: Daily Rider Disbursements
+ * Runs every day at 10 PM Ghana time
+ */
+
+const cron = require('node-cron');
+const { processDailyDisbursements } = require('../controllers/disbursementController');
+
+// Schedule: 10 PM daily (Ghana time = UTC+0)
+// Runs at 22:00 every day
+const scheduleDailyDisbursements = () => {
+  cron.schedule('0 22 * * *', async () => {
+    console.log('Running daily disbursement job...', new Date().toISOString());
+    
+    try {
+      const result = await processDailyDisbursements();
+      console.log('Daily disbursement completed:', result);
+      
+      // Log to database for audit
+      await logJobExecution('daily_disbursement', 'success', { result });
+      
+    } catch (error) {
+      console.error('Daily disbursement job failed:', error);
+      await logJobExecution('daily_disbursement', 'failed', { error: error.message });
+      
+      // Send alert to admin
+      await sendAdminAlert('Daily disbursement failed', error.message);
+    }
+  });
+};
+
+/**
+ * Cron Job: Subscription Renewals
+ * Runs every hour to process due renewals
+ */
+const scheduleSubscriptionRenewals = () => {
+  cron.schedule('0 * * * *', async () => {
+    console.log('Checking subscription renewals...', new Date().toISOString());
+    
+    try {
+      const Subscription = require('../models/Subscription');
+      const moolreClient = require('../utils/moolreClient');
+      
+      // Find subscriptions due for renewal in the next hour
+      const dueSubscriptions = await Subscription.find({
+        status: 'active',
+        nextBillingDate: { $lte: new Date(Date.now() + 60 * 60 * 1000) }
+      }).populate('customer');
+      
+      for (const subscription of dueSubscriptions) {
+        // Moolre will handle automatic renewal via webhook
+        console.log(`Subscription ${subscription._id} due for renewal`);
+      }
+      
+      await logJobExecution('subscription_renewals', 'success', { 
+        processed: dueSubscriptions.length 
+      });
+      
+    } catch (error) {
+      console.error('Subscription renewal check failed:', error);
+      await logJobExecution('subscription_renewals', 'failed', { error: error.message });
+    }
+  });
+};
+
+/**
+ * Cron Job: Pickup Reminders
+ * Sends reminders for scheduled pickups (morning and evening)
+ */
+const schedulePickupReminders = () => {
+  // Run at 7 AM and 6 PM daily
+  cron.schedule('0 7,18 * * *', async () => {
+    console.log('Sending pickup reminders...', new Date().toISOString());
+    
+    try {
+      const Request = require('../models/Request');
+      const { sendWhatsApp, sendSMS } = require('../utils/notifications');
+      
+      // Find customers with active subscriptions who haven't requested pickup this week
+      const Subscription = require('../models/Subscription');
+      const activeSubscribers = await Subscription.find({
+        status: 'active',
+        plan: { $in: ['weekly', 'monthly'] }
+      }).populate('customer');
+      
+      for (const subscriber of activeSubscribers) {
+        const message = `🚛 WasteGo Reminder: Don't forget to schedule your waste pickup today!\n\nClick: wastego.app/request\n\nKeep Ghana clean! 💚`;
+        
+        await sendWhatsApp(subscriber.customer.phone, message);
+      }
+      
+      await logJobExecution('pickup_reminders', 'success', { 
+        sent: activeSubscribers.length 
+      });
+      
+    } catch (error) {
+      console.error('Pickup reminders failed:', error);
+      await logJobExecution('pickup_reminders', 'failed', { error: error.message });
+    }
+  });
+};
+
+/**
+ * Helper: Log job execution to database
+ */
+async function logJobExecution(jobName, status, details) {
+  try {
+    const JobLog = require('../models/JobLog');
+    const log = new JobLog({
+      jobName,
+      status,
+      details,
+      executedAt: new Date()
+    });
+    await log.save();
+  } catch (error) {
+    console.error('Failed to log job execution:', error);
+  }
+}
+
+/**
+ * Helper: Send admin alert
+ */
+async function sendAdminAlert(subject, message) {
+  try {
+    const { sendWhatsApp } = require('../utils/notifications');
+    const adminPhone = process.env.ADMIN_PHONE || '024XXXXXXX';
+    
+    await sendWhatsApp(adminPhone, `⚠️ WasteGo Alert: ${subject}\n\n${message}`);
+  } catch (error) {
+    console.error('Failed to send admin alert:', error);
+  }
+}
+
+// Initialize all cron jobs
+const initCronJobs = () => {
+  console.log('Initializing cron jobs...');
+  scheduleDailyDisbursements();
+  scheduleSubscriptionRenewals();
+  schedulePickupReminders();
+  console.log('Cron jobs initialized');
+};
+
+module.exports = { initCronJobs };
+
+
+
+
+
+
+
+
+
+/**
  * Disbursement Controller
  * Handles rider payouts via Moolre Disbursements API
  * Daily automatic payouts with performance bonuses
