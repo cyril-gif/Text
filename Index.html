@@ -1,4 +1,457 @@
 /**
+ * AI Controller
+ * Handles smart dispatch and customer chat assistant
+ */
+
+const aiClient = require('../utils/aiClient');
+const User = require('../models/User');
+const Request = require('../models/Request');
+const { notifyRider } = require('../socket/riderLocation');
+
+/**
+ * Smart dispatch endpoint
+ * @route POST /api/ai/dispatch
+ */
+const smartDispatch = async (req, res) => {
+  try {
+    const { requestId } = req.body;
+    
+    const request = await Request.findById(requestId);
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: 'Request not found',
+        error: 'REQUEST_NOT_FOUND'
+      });
+    }
+    
+    // Check if already assigned
+    if (request.rider) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request already assigned to a rider',
+        error: 'ALREADY_ASSIGNED'
+      });
+    }
+    
+    // Find nearby available riders
+    const nearbyRiders = await User.findNearbyRiders(
+      request.pickupLocation.lng,
+      request.pickupLocation.lat,
+      5000, // 5km radius
+      10
+    );
+    
+    if (nearbyRiders.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No riders available nearby',
+        error: 'NO_RIDERS_AVAILABLE'
+      });
+    }
+    
+    // Calculate distances and today's earnings for each rider
+    const ridersWithData = await Promise.all(nearbyRiders.map(async (rider) => {
+      const distance = await request.calculateDistanceToRider(rider.location);
+      
+      // Get today's earnings
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      
+      const todayRequests = await Request.find({
+        rider: rider._id,
+        status: 'completed',
+        'timeline.completedAt': { $gte: todayStart }
+      });
+      
+      const todayEarnings = todayRequests.reduce((sum, r) => sum + (r.riderEarnings || 0), 0);
+      
+      return {
+        ...rider.toObject(),
+        distance,
+        todayEarnings
+      };
+    }));
+    
+    // Call AI for optimal assignment
+    const aiDecision = await aiClient.smartDispatch(request, ridersWithData);
+    
+    if (!aiDecision.selectedRiderId) {
+      throw new Error('AI could not select a rider');
+    }
+    
+    // Assign the selected rider
+    const selectedRider = await User.findById(aiDecision.selectedRiderId);
+    
+    request.rider = selectedRider._id;
+    request.aiDispatchScore = aiDecision.confidenceScore;
+    request.aiDispatchReason = aiDecision.reasoning;
+    await request.updateStatus('assigned');
+    await request.save();
+    
+    // Mark rider as busy
+    await User.findByIdAndUpdate(selectedRider._id, {
+      'riderProfile.isAvailable': false
+    });
+    
+    // Notify the selected rider
+    notifyRider(selectedRider._id, 'ai:dispatched', {
+      requestId: request._id,
+      pickupLocation: request.pickupLocation,
+      price: request.price,
+      earnings: request.riderEarnings,
+      estimatedArrival: aiDecision.estimatedArrivalMinutes,
+      reasoning: aiDecision.reasoning
+    });
+    
+    // Notify customer
+    const { sendWhatsApp, sendSMS } = require('../utils/notifications');
+    await sendWhatsApp(request.customer.phone, 
+      `✅ Rider assigned! ${selectedRider.name} will arrive in ~${aiDecision.estimatedArrivalMinutes} minutes.\n\nTrack live: wastego.app/track/${request._id}`
+    );
+    
+    res.json({
+      success: true,
+      message: 'Rider assigned via AI dispatch',
+      data: {
+        requestId: request._id,
+        rider: {
+          id: selectedRider._id,
+          name: selectedRider.name,
+          rating: selectedRider.riderProfile?.averageRating
+        },
+        confidenceScore: aiDecision.confidenceScore,
+        reasoning: aiDecision.reasoning,
+        estimatedArrivalMinutes: aiDecision.estimatedArrivalMinutes
+      }
+    });
+    
+  } catch (error) {
+    console.error('Smart dispatch error:', error);
+    
+    // Fallback to simple proximity matching
+    try {
+      const { requestId } = req.body;
+      const request = await Request.findById(requestId);
+      
+      const nearestRider = await User.findOne({
+        role: 'rider',
+        isBanned: false,
+        'riderProfile.isAvailable': true,
+        'riderProfile.isVerified': true,
+        location: {
+          $near: {
+            $geometry: {
+              type: 'Point',
+              coordinates: [request.pickupLocation.lng, request.pickupLocation.lat]
+            },
+            $maxDistance: 5000
+          }
+        }
+      });
+      
+      if (nearestRider) {
+        request.rider = nearestRider._id;
+        request.aiDispatchScore = 0.5;
+        request.aiDispatchReason = "Fallback to proximity matching (AI unavailable)";
+        await request.updateStatus('assigned');
+        await request.save();
+        
+        return res.json({
+          success: true,
+          message: 'Rider assigned via fallback dispatch',
+          data: { riderId: nearestRider._id, method: 'fallback' }
+        });
+      }
+      
+      throw new Error('No fallback rider available');
+      
+    } catch (fallbackError) {
+      res.status(500).json({
+        success: false,
+        message: 'Dispatch failed - no riders available',
+        error: 'DISPATCH_FAILED'
+      });
+    }
+  }
+};
+
+/**
+ * Customer chat assistant
+ * @route POST /api/ai/chat
+ */
+const chatAssistant = async (req, res) => {
+  try {
+    const { message, context } = req.body;
+    
+    if (!message || message.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message is required',
+        error: 'EMPTY_MESSAGE'
+      });
+    }
+    
+    // Get user context
+    let userContext = {
+      name: req.user?.name,
+      phone: req.user?.phone,
+      role: req.user?.role || 'customer'
+    };
+    
+    // Get active request if any
+    if (req.userId) {
+      const activeRequest = await Request.findOne({
+        customer: req.userId,
+        status: { $in: ['pending', 'accepted', 'en_route', 'arrived', 'collecting'] }
+      }).populate('rider', 'name phone riderProfile.averageRating');
+      
+      if (activeRequest) {
+        userContext.activeRequest = activeRequest;
+      }
+      
+      // Get subscription if any
+      const Subscription = require('../models/Subscription');
+      const subscription = await Subscription.findOne({
+        customer: req.userId,
+        status: 'active'
+      });
+      
+      if (subscription) {
+        userContext.subscription = subscription;
+      }
+    }
+    
+    // Get conversation history from session or request
+    const history = req.body.history || [];
+    
+    // Call AI for response
+    const aiResponse = await aiClient.chatSupport(message, userContext, history);
+    
+    // Analyze sentiment for support prioritization
+    const sentiment = await aiClient.analyzeSentiment(message);
+    
+    // If urgent sentiment, flag for human review
+    if (sentiment.priority === 'critical' || sentiment.requiresHuman) {
+      await flagForHumanSupport(req.userId, message, sentiment);
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        response: aiResponse.response,
+        language: aiResponse.language,
+        sentiment: sentiment,
+        requiresHuman: sentiment.requiresHuman,
+        timestamp: new Date().toISOString()
+      }
+    });
+    
+  } catch (error) {
+    console.error('Chat assistant error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Chat service unavailable. Please try again or contact support.',
+      error: 'CHAT_UNAVAILABLE'
+    });
+  }
+};
+
+/**
+ * Predict optimal pickup time
+ * @route POST /api/ai/predict-time
+ */
+const predictPickupTime = async (req, res) => {
+  try {
+    const { location, loadSize } = req.body;
+    
+    const currentTime = new Date();
+    const prediction = await aiClient.predictPickupTime(location, loadSize, currentTime);
+    
+    res.json({
+      success: true,
+      data: prediction
+    });
+    
+  } catch (error) {
+    console.error('Time prediction error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Prediction failed',
+      error: 'PREDICTION_FAILED'
+    });
+  }
+};
+
+/**
+ * Generate personalized promotion
+ * @route POST /api/ai/promotion
+ */
+const generatePromotion = async (req, res) => {
+  try {
+    const { userId, offerType } = req.body;
+    
+    const user = await User.findById(userId || req.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+    
+    // Get user stats
+    const completedRequests = await Request.countDocuments({
+      customer: user._id,
+      status: 'completed'
+    });
+    
+    const userWithStats = {
+      ...user.toObject(),
+      totalPickups: completedRequests,
+      hasSubscription: !!(await require('../models/Subscription').findOne({
+        customer: user._id,
+        status: 'active'
+      }))
+    };
+    
+    const promotion = await aiClient.generatePromotion(userWithStats, offerType || 'referral');
+    
+    res.json({
+      success: true,
+      data: {
+        message: promotion,
+        offerType: offerType || 'referral'
+      }
+    });
+    
+  } catch (error) {
+    console.error('Promotion generation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate promotion',
+      error: 'PROMOTION_FAILED'
+    });
+  }
+};
+
+/**
+ * Get AI dispatch analytics
+ * @route GET /api/ai/analytics
+ */
+const getAIAnalytics = async (req, res) => {
+  try {
+    // Only admins can access analytics
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required',
+        error: 'FORBIDDEN'
+      });
+    }
+    
+    // Get dispatch stats from last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const aiDispatched = await Request.find({
+      aiDispatchScore: { $exists: true },
+      'timeline.assignedAt': { $gte: thirtyDaysAgo }
+    });
+    
+    const avgConfidence = aiDispatched.reduce((sum, r) => sum + (r.aiDispatchScore || 0), 0) / (aiDispatched.length || 1);
+    const avgAcceptanceTime = calculateAvgAcceptanceTime(aiDispatched);
+    
+    res.json({
+      success: true,
+      data: {
+        totalAIDispatches: aiDispatched.length,
+        averageConfidenceScore: avgConfidence.toFixed(2),
+        averageAcceptanceTimeMinutes: avgAcceptanceTime,
+        dispatchSuccessRate: calculateDispatchSuccessRate(aiDispatched),
+        timestamp: new Date().toISOString()
+      }
+    });
+    
+  } catch (error) {
+    console.error('AI analytics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch analytics',
+      error: 'ANALYTICS_FAILED'
+    });
+  }
+};
+
+/**
+ * Helper: Calculate average acceptance time
+ */
+function calculateAvgAcceptanceTime(requests) {
+  const accepted = requests.filter(r => r.timeline.acceptedAt && r.timeline.assignedAt);
+  if (accepted.length === 0) return 0;
+  
+  const totalMinutes = accepted.reduce((sum, r) => {
+    const minutes = (r.timeline.acceptedAt - r.timeline.assignedAt) / (1000 * 60);
+    return sum + minutes;
+  }, 0);
+  
+  return Math.round(totalMinutes / accepted.length);
+}
+
+/**
+ * Helper: Calculate dispatch success rate
+ */
+function calculateDispatchSuccessRate(requests) {
+  const completed = requests.filter(r => r.status === 'completed').length;
+  return (completed / (requests.length || 1)) * 100;
+}
+
+/**
+ * Helper: Flag urgent issues for human support
+ */
+async function flagForHumanSupport(userId, message, sentiment) {
+  try {
+    const SupportTicket = require('../models/SupportTicket');
+    
+    const ticket = new SupportTicket({
+      user: userId,
+      message: message,
+      sentiment: sentiment,
+      priority: sentiment.priority,
+      status: 'open',
+      source: 'ai_chat',
+      createdAt: new Date()
+    });
+    
+    await ticket.save();
+    
+    // Notify admin via WhatsApp
+    const { sendWhatsApp } = require('../utils/notifications');
+    await sendWhatsApp(
+      process.env.ADMIN_PHONE || '024XXXXXXX',
+      `🚨 Urgent Support Ticket #${ticket._id.toString().slice(-6)}\n\nPriority: ${sentiment.priority}\nMessage: ${message.substring(0, 100)}...\n\nAction required.`
+    );
+    
+  } catch (error) {
+    console.error('Failed to flag support ticket:', error);
+  }
+}
+
+module.exports = {
+  smartDispatch,
+  chatAssistant,
+  predictPickupTime,
+  generatePromotion,
+  getAIAnalytics
+};
+
+
+
+
+
+
+
+/**
  * Anthropic Claude AI Client
  * Powers smart dispatch and multilingual customer support
  * Optimized for Ghanaian context with Twi/Pidgin support
