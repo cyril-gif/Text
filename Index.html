@@ -1,4 +1,232 @@
 /**
+ * Socket.io Event Handlers
+ * Real-time rider location tracking and notifications
+ */
+
+const { io } = require('../../server');
+const Request = require('../models/Request');
+const User = require('../models/User');
+
+// Store active connections
+const activeRiders = new Map(); // riderId -> socketId
+const activeCustomers = new Map(); // customerId -> socketId
+const requestTracking = new Map(); // requestId -> [customerSocketIds]
+
+const initializeSocketHandlers = () => {
+  io.on('connection', (socket) => {
+    console.log(`Socket connected: ${socket.id}`);
+    
+    // Authenticate and identify user type
+    socket.on('auth', async (data) => {
+      const { userId, userType, token } = data;
+      
+      // In production, verify JWT token here
+      if (userType === 'rider') {
+        activeRiders.set(userId, socket.id);
+        socket.userId = userId;
+        socket.userType = 'rider';
+        
+        // Join rider's personal room
+        socket.join(`rider_${userId}`);
+        
+        // Send current pending requests
+        const pendingRequests = await Request.find({
+          status: 'pending',
+          paymentStatus: 'paid'
+        }).limit(10);
+        
+        socket.emit('initial:requests', pendingRequests);
+        
+        console.log(`Rider ${userId} connected`);
+      } 
+      else if (userType === 'customer') {
+        activeCustomers.set(userId, socket.id);
+        socket.userId = userId;
+        socket.userType = 'customer';
+        
+        // Join customer's personal room
+        socket.join(`customer_${userId}`);
+        
+        // Check for active requests
+        const activeRequest = await Request.findOne({
+          customer: userId,
+          status: { $in: ['accepted', 'en_route', 'arrived', 'collecting'] }
+        }).populate('rider', 'name phone riderProfile.averageRating');
+        
+        if (activeRequest) {
+          socket.emit('active:request', activeRequest);
+        }
+        
+        console.log(`Customer ${userId} connected`);
+      }
+    });
+    
+    // Rider location updates
+    socket.on('rider:location', async (data) => {
+      const { requestId, location } = data;
+      
+      if (socket.userType !== 'rider') {
+        return socket.emit('error', { message: 'Unauthorized' });
+      }
+      
+      // Update request with rider location
+      const request = await Request.findById(requestId);
+      if (request && request.rider.toString() === socket.userId) {
+        request.riderLocations.push({
+          ...location,
+          timestamp: new Date()
+        });
+        await request.save();
+        
+        // Broadcast to customers tracking this request
+        socket.to(`request_${requestId}`).emit('rider:position', {
+          riderId: socket.userId,
+          location,
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+    
+    // Customer tracking a request
+    socket.on('customer:track', async (data) => {
+      const { requestId } = data;
+      
+      if (socket.userType !== 'customer') {
+        return socket.emit('error', { message: 'Unauthorized' });
+      }
+      
+      const request = await Request.findById(requestId);
+      if (request && request.customer.toString() === socket.userId) {
+        // Join the request room for real-time updates
+        socket.join(`request_${requestId}`);
+        
+        // Add to tracking map
+        if (!requestTracking.has(requestId)) {
+          requestTracking.set(requestId, new Set());
+        }
+        requestTracking.get(requestId).add(socket.id);
+        
+        // Send latest rider location if available
+        if (request.riderLocations.length > 0) {
+          const lastLocation = request.riderLocations[request.riderLocations.length - 1];
+          socket.emit('rider:position', {
+            riderId: request.rider,
+            location: lastLocation,
+            timestamp: lastLocation.timestamp
+          });
+        }
+      }
+    });
+    
+    // Stop tracking
+    socket.on('customer:untrack', (data) => {
+      const { requestId } = data;
+      if (requestTracking.has(requestId)) {
+        requestTracking.get(requestId).delete(socket.id);
+        if (requestTracking.get(requestId).size === 0) {
+          requestTracking.delete(requestId);
+        }
+      }
+      socket.leave(`request_${requestId}`);
+    });
+    
+    // Rider availability toggle
+    socket.on('rider:availability', async (data) => {
+      const { isAvailable } = data;
+      
+      if (socket.userType !== 'rider') {
+        return socket.emit('error', { message: 'Unauthorized' });
+      }
+      
+      await User.findByIdAndUpdate(socket.userId, {
+        'riderProfile.isAvailable': isAvailable
+      });
+      
+      socket.emit('availability:updated', { isAvailable });
+      
+      if (isAvailable) {
+        // Send nearby pending requests
+        const rider = await User.findById(socket.userId);
+        if (rider.location) {
+          const nearbyRequests = await Request.find({
+            status: 'pending',
+            paymentStatus: 'paid',
+            'pickupLocation.lat': { $exists: true }
+          }).limit(10);
+          
+          socket.emit('available:requests', nearbyRequests);
+        }
+      }
+    });
+    
+    // Disconnect handler
+    socket.on('disconnect', () => {
+      console.log(`Socket disconnected: ${socket.id}`);
+      
+      // Remove from active maps
+      if (socket.userId) {
+        if (socket.userType === 'rider') {
+          activeRiders.delete(socket.userId);
+          // Optionally mark rider as unavailable
+          User.findByIdAndUpdate(socket.userId, {
+            'riderProfile.isAvailable': false
+          }).catch(console.error);
+        } 
+        else if (socket.userType === 'customer') {
+          activeCustomers.delete(socket.userId);
+        }
+      }
+      
+      // Clean up tracking
+      for (const [requestId, sockets] of requestTracking.entries()) {
+        if (sockets.has(socket.id)) {
+          sockets.delete(socket.id);
+          if (sockets.size === 0) {
+            requestTracking.delete(requestId);
+          }
+        }
+      }
+    });
+  });
+};
+
+// Helper function to emit to specific users
+const notifyCustomer = (customerId, event, data) => {
+  const socketId = activeCustomers.get(customerId);
+  if (socketId) {
+    io.to(socketId).emit(event, data);
+  }
+};
+
+const notifyRider = (riderId, event, data) => {
+  const socketId = activeRiders.get(riderId);
+  if (socketId) {
+    io.to(socketId).emit(event, data);
+  }
+};
+
+const notifyRequestTrackers = (requestId, event, data) => {
+  io.to(`request_${requestId}`).emit(event, data);
+};
+
+module.exports = {
+  initializeSocketHandlers,
+  notifyCustomer,
+  notifyRider,
+  notifyRequestTrackers
+};
+
+
+
+
+
+
+
+
+
+
+
+/**
  * Request Routes - Pickup management endpoints
  */
 
