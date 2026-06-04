@@ -1,4 +1,387 @@
 /**
+ * Payment Controller
+ * Handles Moolre Collections API for payments and subscriptions
+ */
+
+const Request = require('../models/Request');
+const User = require('../models/User');
+const Transaction = require('../models/Transaction');
+const Subscription = require('../models/Subscription');
+const moolreClient = require('../utils/moolreClient');
+const { sendWhatsApp, sendSMS } = require('../utils/notifications');
+
+/**
+ * Initiate payment for a pickup request
+ * @route POST /api/payments/initiate
+ */
+const initiatePayment = async (req, res) => {
+  try {
+    const { requestId, paymentMethod, paymentChannel } = req.body;
+    
+    const request = await Request.findById(requestId);
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: 'Request not found',
+        error: 'REQUEST_NOT_FOUND'
+      });
+    }
+    
+    // Verify user owns this request
+    if (request.customer.toString() !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized',
+        error: 'UNAUTHORIZED'
+      });
+    }
+    
+    // Check if already paid
+    if (request.paymentStatus === 'paid') {
+      return res.status(400).json({
+        success: false,
+        message: 'Request already paid for',
+        error: 'ALREADY_PAID'
+      });
+    }
+    
+    const customer = await User.findById(req.userId);
+    
+    // Map payment method to Moolre format
+    const moolrePaymentMethod = mapPaymentMethod(paymentMethod, paymentChannel);
+    
+    // Initiate Moolre payment
+    const payment = await moolreClient.initiatePayment({
+      amount: request.price,
+      customerPhone: customer.phone,
+      customerEmail: customer.email || `${customer.phone}@wastego.app`,
+      paymentMethod: moolrePaymentMethod,
+      reference: `WASTE_${request._id}_${Date.now()}`,
+      description: `Waste pickup - ${request.wasteDetails.loadSize} load`,
+      callbackUrl: `${process.env.CLIENT_URL}/api/payments/webhook`,
+      redirectUrl: `${process.env.CLIENT_URL}/customer/payment-status?requestId=${request._id}`
+    });
+    
+    // Store transaction record
+    const transaction = new Transaction({
+      user: req.userId,
+      request: request._id,
+      type: 'payment',
+      amount: request.price,
+      status: 'pending',
+      moolreTransactionRef: payment.transactionRef,
+      paymentMethod: paymentMethod,
+      metadata: {
+        requestId: request._id,
+        loadSize: request.wasteDetails.loadSize
+      }
+    });
+    await transaction.save();
+    
+    // Update request with transaction ref
+    request.moolreTransactionRef = payment.transactionRef;
+    await request.save();
+    
+    res.json({
+      success: true,
+      message: 'Payment initiated',
+      data: {
+        transactionRef: payment.transactionRef,
+        paymentUrl: payment.paymentUrl,
+        amount: request.price,
+        status: 'pending'
+      }
+    });
+    
+  } catch (error) {
+    console.error('Initiate payment error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to initiate payment',
+      error: 'PAYMENT_INIT_FAILED'
+    });
+  }
+};
+
+/**
+ * Verify payment status
+ * @route GET /api/payments/verify/:transactionRef
+ */
+const verifyPayment = async (req, res) => {
+  try {
+    const { transactionRef } = req.params;
+    
+    const verification = await moolreClient.verifyPayment(transactionRef);
+    
+    if (verification.success && verification.status === 'success') {
+      // Update transaction and request
+      const transaction = await Transaction.findOneAndUpdate(
+        { moolreTransactionRef: transactionRef },
+        {
+          status: 'completed',
+          completedAt: new Date(),
+          moolreResponse: verification
+        },
+        { new: true }
+      );
+      
+      if (transaction) {
+        const request = await Request.findById(transaction.request);
+        if (request) {
+          request.paymentStatus = 'paid';
+          await request.save();
+          
+          // Send confirmation
+          await sendPaymentConfirmation(request, transaction);
+          
+          // Trigger AI dispatch
+          await triggerDispatchAfterPayment(request);
+        }
+      }
+      
+      return res.json({
+        success: true,
+        message: 'Payment verified successfully',
+        data: { status: 'paid' }
+      });
+    }
+    
+    res.json({
+      success: false,
+      message: 'Payment not completed',
+      data: { status: verification.status }
+    });
+    
+  } catch (error) {
+    console.error('Verify payment error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Payment verification failed',
+      error: 'VERIFICATION_FAILED'
+    });
+  }
+};
+
+/**
+ * Create subscription plan
+ * @route POST /api/payments/subscription/plan
+ */
+const createSubscriptionPlan = async (req, res) => {
+  try {
+    const { name, amount, interval, description } = req.body;
+    
+    const plan = await moolreClient.createSubscriptionPlan({
+      name,
+      amount,
+      interval,
+      description
+    });
+    
+    res.json({
+      success: true,
+      message: 'Subscription plan created',
+      data: plan
+    });
+    
+  } catch (error) {
+    console.error('Create plan error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create subscription plan',
+      error: 'PLAN_CREATION_FAILED'
+    });
+  }
+};
+
+/**
+ * Subscribe customer to plan
+ * @route POST /api/payments/subscription/create
+ */
+const createSubscription = async (req, res) => {
+  try {
+    const { planId, paymentMethod } = req.body;
+    
+    const customer = await User.findById(req.userId);
+    
+    const subscription = await moolreClient.createSubscription({
+      customerPhone: customer.phone,
+      customerEmail: customer.email || `${customer.phone}@wastego.app`,
+      customerName: customer.name,
+      planId,
+      paymentMethod: mapPaymentMethod(paymentMethod)
+    });
+    
+    // Store subscription in database
+    const dbSubscription = new Subscription({
+      customer: req.userId,
+      planId: planId,
+      moolreSubscriptionId: subscription.subscriptionId,
+      status: subscription.status,
+      amount: 0, // Will be set from plan
+      startDate: new Date(),
+      nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    });
+    await dbSubscription.save();
+    
+    res.json({
+      success: true,
+      message: 'Subscription created successfully',
+      data: {
+        subscriptionId: dbSubscription._id,
+        status: subscription.status
+      }
+    });
+    
+  } catch (error) {
+    console.error('Create subscription error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create subscription',
+      error: 'SUBSCRIPTION_FAILED'
+    });
+  }
+};
+
+/**
+ * Cancel subscription
+ * @route POST /api/payments/subscription/cancel
+ */
+const cancelSubscription = async (req, res) => {
+  try {
+    const { subscriptionId } = req.params;
+    
+    const subscription = await Subscription.findOne({
+      _id: subscriptionId,
+      customer: req.userId
+    });
+    
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: 'Subscription not found',
+        error: 'SUBSCRIPTION_NOT_FOUND'
+      });
+    }
+    
+    const cancellation = await moolreClient.cancelSubscription(subscription.moolreSubscriptionId);
+    
+    subscription.status = 'cancelled';
+    subscription.cancelledAt = new Date();
+    await subscription.save();
+    
+    res.json({
+      success: true,
+      message: 'Subscription cancelled',
+      data: { subscriptionId: subscription._id }
+    });
+    
+  } catch (error) {
+    console.error('Cancel subscription error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to cancel subscription',
+      error: 'CANCELLATION_FAILED'
+    });
+  }
+};
+
+/**
+ * Handle Moolre payment webhook
+ * @route POST /api/payments/webhook
+ */
+const handleWebhook = async (req, res) => {
+  try {
+    const signature = req.headers['x-moolre-signature'];
+    const result = await moolreClient.handleWebhook(req.body, signature);
+    
+    res.json({ success: true, received: true });
+    
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Helper: Map payment method to Moolre format
+ */
+function mapPaymentMethod(method, channel = null) {
+  const mapping = {
+    'momo': 'momo_mtn', // Default to MTN
+    'momo_mtn': 'momo_mtn',
+    'momo_vodafone': 'momo_vodafone',
+    'momo_airteltigo': 'momo_airteltigo',
+    'card': 'card',
+    'ghqr': 'ghqr',
+    'cash': 'cash'
+  };
+  
+  if (channel && mapping[`${method}_${channel}`]) {
+    return mapping[`${method}_${channel}`];
+  }
+  
+  return mapping[method] || 'momo_mtn';
+}
+
+/**
+ * Helper: Send payment confirmation
+ */
+async function sendPaymentConfirmation(request, transaction) {
+  const message = `✅ WasteGo: Payment confirmed!\n\nAmount: ₵${request.price}\nRef: ${transaction.moolreTransactionRef.slice(-8)}\n\nYour rider will be assigned shortly. Track status: wastego.app/track/${request._id}`;
+  
+  await sendWhatsApp(request.customer.phone, message);
+  await sendSMS(request.customer.phone, `WasteGo payment confirmed: ₵${request.price}. Track: wastego.app/track/${request._id}`);
+}
+
+/**
+ * Helper: Trigger dispatch after payment
+ */
+async function triggerDispatchAfterPayment(request) {
+  // This will be implemented with AI dispatch in Phase 4
+  console.log(`Payment confirmed for request ${request._id}, triggering dispatch`);
+  
+  // Find nearby riders
+  const nearbyRiders = await User.findNearbyRiders(
+    request.pickupLocation.lng,
+    request.pickupLocation.lat,
+    5000,
+    10
+  );
+  
+  // Notify riders
+  for (const rider of nearbyRiders) {
+    // Send push notification via socket
+    const { notifyRider } = require('../socket/riderLocation');
+    notifyRider(rider._id, 'new:request', {
+      requestId: request._id,
+      pickupLocation: request.pickupLocation,
+      price: request.price,
+      earnings: request.riderEarnings
+    });
+  }
+}
+
+module.exports = {
+  initiatePayment,
+  verifyPayment,
+  createSubscriptionPlan,
+  createSubscription,
+  cancelSubscription,
+  handleWebhook
+};
+
+
+
+
+
+
+
+
+
+
+
+
+/**
  * Moolre API Client
  * Handles Collections, Disbursements, SMS/WhatsApp, and USSD APIs
  * Production-ready with retry logic and comprehensive error handling
