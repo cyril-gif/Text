@@ -1,3 +1,27 @@
+cd client
+
+# Create missing directories
+mkdir -p rider auth assets/css
+
+# Create HTML files
+echo > rider/dashboard.html
+echo > auth/login.html
+echo > auth/register.html
+echo > index.html
+
+# Create CSS files
+echo > assets/css/tokens.css
+echo > assets/css/global.css
+echo > assets/css/components.css
+
+# Create JS utilities (if not exist)
+echo > assets/js/api.js
+echo > assets/js/auth.js
+echo > assets/js/storage.js
+
+
+
+
 cd server && npm init -y && npm install express@4.18.2 cors@2.8.5 helmet@7.1.0 compression@1.7.4 morgan@1.10.0 cookie-parser@1.4.6 mongoose@8.0.0 bcryptjs@2.4.3 jsonwebtoken@9.0.2 axios@1.6.0 @anthropic-ai/sdk@0.24.0 socket.io@4.5.4 node-cron@3.0.3 express-validator@7.0.1 express-rate-limit@7.1.5 dotenv@16.3.1 && npm install -D nodemon@3.0.1
 
 
