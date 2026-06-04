@@ -1,3 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#00A651">
+  <meta name="description" content="WasteGo - Ghana's first on-demand waste collection platform. Book pickups, track riders, and keep Ghana clean.">
+  <title>WasteGo - Clean Streets. Fast Pickups. Ghana Moving.</title>
+  
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/global.css">
+  
+  <style>
+    .hero {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 60px 20px 100px;
+      text-align: center;
+      clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+    }
+    
+    .hero h1 {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    
+    .hero p {
+      font-size: 18px;
+      opacity: 0.9;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    
+    .stats-banner {
+      background: white;
+      border-radius: var(--radius-2xl);
+      padding: 32px;
+      margin: -40px 20px 40px;
+      box-shadow: var(--shadow-xl);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      text-align: center;
+    }
+    
+    .stat-number {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+    
+    .features {
+      padding: 40px 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .section-title {
+      text-align: center;
+      font-size: 32px;
+      margin-bottom: 48px;
+    }
+    
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 32px;
+    }
+    
+    .feature-card {
+      text-align: center;
+      padding: 32px;
+    }
+    
+    .feature-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    
+    .cta-section {
+      background: var(--bg-dark);
+      color: white;
+      text-align: center;
+      padding: 60px 20px;
+      margin-top: 40px;
+    }
+    
+    .cta-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 32px;
+      flex-wrap: wrap;
+    }
+    
+    .btn-large {
+      padding: 16px 32px;
+      font-size: 18px;
+    }
+    
+    .how-it-works {
+      padding: 40px 20px;
+      background: var(--bg-main);
+    }
+    
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 32px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    
+    .step {
+      text-align: center;
+    }
+    
+    .step-number {
+      width: 60px;
+      height: 60px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      margin: 0 auto 16px;
+    }
+    
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 32px;
+      }
+      
+      .stats-banner {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <h1>🚛 WasteGo</h1>
+    <p>Clean Streets. Fast Pickups. Ghana Moving.</p>
+  </div>
+  
+  <div class="stats-banner">
+    <div>
+      <div class="stat-number">12,000+</div>
+      <div>Tons Collected</div>
+    </div>
+    <div>
+      <div class="stat-number">500+</div>
+      <div>Active Riders</div>
+    </div>
+    <div>
+      <div class="stat-number">50,000+</div>
+      <div>Happy Customers</div>
+    </div>
+  </div>
+  
+  <div class="how-it-works">
+    <h2 class="section-title">How It Works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <h3>Request Pickup</h3>
+        <p>Tell us your location and waste size</p>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <h3>Get Matched</h3>
+        <p>We assign the nearest rider</p>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <h3>Track Live</h3>
+        <p>Watch your rider approach in real-time</p>
+      </div>
+      <div class="step">
+        <div class="step-number">4</div>
+        <h3>Pay & Rate</h3>
+        <p>Pay with MoMo and rate your experience</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="features">
+    <h2 class="section-title">Why Choose WasteGo?</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🚛</div>
+        <h3>Fast Pickups</h3>
+        <p>Average pickup time under 20 minutes</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💰</div>
+        <h3>Best Prices</h3>
+        <p>Transparent pricing starting at GHS 5</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <h3>Works Offline</h3>
+        <p>Book even without internet connection</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🇬🇭</div>
+        <h3>USSD Support</h3>
+        <p>Dial *714# on any phone</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💚</div>
+        <h3>Eco-Friendly</h3>
+        <p>Proper waste disposal & recycling</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <h3>AI Assistant</h3>
+        <p>24/7 support in English & Twi</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="cta-section">
+    <h2>Ready to Keep Ghana Clean?</h2>
+    <p style="margin-top: 16px;">Join thousands of Ghanaians using WasteGo every day</p>
+    <div class="cta-buttons">
+      <a href="/auth/register.html" class="btn btn-primary btn-large">Get Started →</a>
+      <a href="/auth/login.html" class="btn btn-outline btn-large" style="background: transparent; border-color: white; color: white;">Login</a>
+    </div>
+    <p style="margin-top: 32px; font-size: 14px; opacity: 0.8;">
+      📱 Also available on USSD: Dial <strong>*714#</strong> on any phone
+    </p>
+  </div>
+  
+  <script>
+    // Check if user is already logged in
+    const token = localStorage.getItem('wastego_token');
+    if (token) {
+      // Redirect to appropriate dashboard
+      fetch('/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const role = data.data.user.role;
+          if (role === 'customer') window.location.href = '/customer/dashboard.html';
+          else if (role === 'rider') window.location.href = '/rider/dashboard.html';
+          else if (role === 'admin') window.location.href = '/admin/dashboard.html';
+        }
+      })
+      .catch(console.error);
+    }
+    
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('SW registered:', reg))
+          .catch(err => console.error('SW error:', err));
+      });
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
 /**
  * WasteGo Offline Storage Manager
  * Handles localStorage, IndexedDB, and cloud sync with JSONBin.io
