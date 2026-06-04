@@ -1,4 +1,58 @@
 /**
+ * Admin Routes
+ * All routes protected by admin role middleware
+ */
+
+const express = require('express');
+const { verifyToken, requireRole } = require('../middleware/auth');
+const {
+  getPlatformStats,
+  getUsers,
+  toggleUserBan,
+  updateUserRole,
+  getAllRequests,
+  getAllTransactions,
+  updatePricing,
+  getRiderPerformance
+} = require('../controllers/adminController');
+
+const router = express.Router();
+
+// All admin routes require authentication and admin role
+router.use(verifyToken);
+router.use(requireRole('admin'));
+
+// Dashboard stats
+router.get('/stats', getPlatformStats);
+
+// User management
+router.get('/users', getUsers);
+router.put('/users/:id/ban', toggleUserBan);
+router.put('/users/:id/role', updateUserRole);
+
+// Request management
+router.get('/requests', getAllRequests);
+
+// Transaction management
+router.get('/transactions', getAllTransactions);
+
+// Configuration
+router.put('/pricing', updatePricing);
+
+// Analytics
+router.get('/riders/performance', getRiderPerformance);
+
+module.exports = router;
+
+
+
+
+
+
+
+
+
+/**
  * Admin Controller
  * Platform management, analytics, user moderation
  */
