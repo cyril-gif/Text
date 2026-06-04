@@ -1,4 +1,52 @@
 /**
+ * Payment Routes
+ * Moolre Collections API endpoints
+ */
+
+const express = require('express');
+const { verifyToken, requireRole } = require('../middleware/auth');
+const {
+  initiatePayment,
+  verifyPayment,
+  createSubscriptionPlan,
+  createSubscription,
+  cancelSubscription,
+  handleWebhook
+} = require('../controllers/paymentController');
+
+const router = express.Router();
+
+// Public webhook endpoint (no auth required)
+router.post('/webhook', handleWebhook);
+
+// Protected payment routes
+router.post('/initiate', verifyToken, initiatePayment);
+router.get('/verify/:transactionRef', verifyToken, verifyPayment);
+
+// Subscription routes
+router.post('/subscription/plan', verifyToken, requireRole('admin'), createSubscriptionPlan);
+router.post('/subscription/create', verifyToken, createSubscription);
+router.post('/subscription/:subscriptionId/cancel', verifyToken, cancelSubscription);
+
+// Disbursement routes (admin only)
+router.post('/disbursements/manual', verifyToken, requireRole('admin'), require('../controllers/disbursementController').manualDisbursement);
+router.get('/disbursements/history', verifyToken, requireRole('admin'), require('../controllers/disbursementController').getDisbursementHistory);
+
+// Rider wallet routes
+router.get('/rider/wallet', verifyToken, requireRole('rider'), require('../controllers/disbursementController').getRiderWallet);
+
+module.exports = router;
+
+
+
+
+
+
+
+
+
+
+/**
  * Cron Job: Daily Rider Disbursements
  * Runs every day at 10 PM Ghana time
  */
