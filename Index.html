@@ -1,4 +1,561 @@
 /**
+ * AI Chat Widget
+ * Embedded chatbot for customer support
+ */
+
+class AIChatWidget {
+  constructor(options = {}) {
+    this.options = {
+      position: 'bottom-right',
+      theme: 'light',
+      language: 'en',
+      ...options
+    };
+    
+    this.isOpen = false;
+    this.messages = [];
+    this.conversationId = this.generateConversationId();
+    this.socket = null;
+    
+    this.init();
+  }
+  
+  init() {
+    this.createWidget();
+    this.loadStyles();
+    this.bindEvents();
+    this.loadHistory();
+  }
+  
+  createWidget() {
+    // Create container
+    const container = document.createElement('div');
+    container.id = 'wastego-ai-chat';
+    container.className = `chat-widget ${this.options.position} ${this.options.theme}`;
+    container.innerHTML = `
+      <div class="chat-button" id="chat-toggle">
+        <span class="chat-icon">💬</span>
+        <span class="chat-label">Chat with WasteGo AI</span>
+      </div>
+      <div class="chat-container" style="display: none;">
+        <div class="chat-header">
+          <div class="chat-header-info">
+            <span class="chat-avatar">🤖</span>
+            <div>
+              <div class="chat-title">WasteGo Assistant</div>
+              <div class="chat-status">Online • Responds in English & Twi</div>
+            </div>
+          </div>
+          <button class="chat-close" id="chat-close">✕</button>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="message bot">
+            <div class="message-content">
+              Welcome to WasteGo! 👋<br><br>
+              I can help you with:
+              • Requesting pickups
+              • Tracking your rider
+              • Understanding prices
+              • Managing subscriptions<br><br>
+              How can I help you today? (Mepɛ sɛ mmoa? 🇬🇭)
+            </div>
+            <div class="message-time">Just now</div>
+          </div>
+        </div>
+        <div class="chat-input-container">
+          <textarea 
+            id="chat-input" 
+            placeholder="Type your message... (Twi/English/Pidgin)"
+            rows="1"
+          ></textarea>
+          <button id="chat-send" class="send-button">
+            <span>➤</span>
+          </button>
+        </div>
+        <div class="chat-footer">
+          <span>Powered by Claude AI</span>
+          <span>•</span>
+          <span>Human support available 24/7</span>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(container);
+  }
+  
+  loadStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+      #wastego-ai-chat {
+        position: fixed;
+        z-index: 10000;
+        font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+      
+      #wastego-ai-chat.bottom-right {
+        bottom: 20px;
+        right: 20px;
+      }
+      
+      #wastego-ai-chat.bottom-left {
+        bottom: 20px;
+        left: 20px;
+      }
+      
+      .chat-button {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #00A651 0%, #007A3D 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,166,81,0.3);
+        transition: transform 0.2s;
+        position: relative;
+      }
+      
+      .chat-button:hover {
+        transform: scale(1.05);
+      }
+      
+      .chat-icon {
+        font-size: 28px;
+        color: white;
+      }
+      
+      .chat-label {
+        position: absolute;
+        right: 70px;
+        background: white;
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        display: none;
+      }
+      
+      .chat-button:hover .chat-label {
+        display: block;
+      }
+      
+      .chat-container {
+        position: absolute;
+        bottom: 80px;
+        right: 0;
+        width: 380px;
+        height: 550px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: slideUp 0.3s ease;
+      }
+      
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      .chat-header {
+        background: linear-gradient(135deg, #00A651 0%, #007A3D 100%);
+        color: white;
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .chat-header-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      
+      .chat-avatar {
+        font-size: 32px;
+      }
+      
+      .chat-title {
+        font-weight: 600;
+        font-size: 16px;
+      }
+      
+      .chat-status {
+        font-size: 11px;
+        opacity: 0.9;
+      }
+      
+      .chat-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
+      
+      .chat-close:hover {
+        background: rgba(255,255,255,0.1);
+      }
+      
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        background: #f5f5f5;
+      }
+      
+      .message {
+        margin-bottom: 16px;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .message.user {
+        align-items: flex-end;
+      }
+      
+      .message.bot {
+        align-items: flex-start;
+      }
+      
+      .message-content {
+        max-width: 80%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      
+      .message.user .message-content {
+        background: #00A651;
+        color: white;
+        border-bottom-right-radius: 4px;
+      }
+      
+      .message.bot .message-content {
+        background: white;
+        color: #333;
+        border-bottom-left-radius: 4px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      }
+      
+      .message-time {
+        font-size: 10px;
+        color: #999;
+        margin-top: 4px;
+        margin-left: 8px;
+      }
+      
+      .chat-input-container {
+        display: flex;
+        padding: 12px;
+        background: white;
+        border-top: 1px solid #e0e0e0;
+        gap: 8px;
+        align-items: flex-end;
+      }
+      
+      #chat-input {
+        flex: 1;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        padding: 10px 16px;
+        font-size: 14px;
+        resize: none;
+        font-family: inherit;
+        max-height: 80px;
+      }
+      
+      #chat-input:focus {
+        outline: none;
+        border-color: #00A651;
+      }
+      
+      .send-button {
+        background: #00A651;
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+      }
+      
+      .send-button:hover {
+        background: #007A3D;
+      }
+      
+      .chat-footer {
+        padding: 8px 12px;
+        background: #f9f9f9;
+        font-size: 10px;
+        color: #999;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+      }
+      
+      .typing-indicator {
+        display: flex;
+        gap: 4px;
+        padding: 10px 14px;
+      }
+      
+      .typing-indicator span {
+        width: 6px;
+        height: 6px;
+        background: #999;
+        border-radius: 50%;
+        animation: typing 1.4s infinite;
+      }
+      
+      .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      
+      .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      
+      @keyframes typing {
+        0%, 60%, 100% {
+          transform: translateY(0);
+        }
+        30% {
+          transform: translateY(-6px);
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .chat-container {
+          width: calc(100vw - 40px);
+          height: calc(100vh - 100px);
+          right: -10px;
+          bottom: 70px;
+        }
+      }
+    `;
+    
+    document.head.appendChild(style);
+  }
+  
+  bindEvents() {
+    const toggleBtn = document.getElementById('chat-toggle');
+    const closeBtn = document.getElementById('chat-close');
+    const sendBtn = document.getElementById('chat-send');
+    const input = document.getElementById('chat-input');
+    
+    toggleBtn.addEventListener('click', () => this.toggle());
+    closeBtn.addEventListener('click', () => this.close());
+    sendBtn.addEventListener('click', () => this.sendMessage());
+    
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        this.sendMessage();
+      }
+    });
+    
+    // Auto-resize textarea
+    input.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+    });
+  }
+  
+  toggle() {
+    this.isOpen = !this.isOpen;
+    const container = document.querySelector('.chat-container');
+    container.style.display = this.isOpen ? 'flex' : 'none';
+    
+    if (this.isOpen) {
+      this.scrollToBottom();
+      document.getElementById('chat-input').focus();
+    }
+  }
+  
+  close() {
+    this.isOpen = false;
+    document.querySelector('.chat-container').style.display = 'none';
+  }
+  
+  async sendMessage() {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Add user message to UI
+    this.addMessage(message, 'user');
+    input.value = '';
+    input.style.height = 'auto';
+    
+    // Show typing indicator
+    this.showTypingIndicator();
+    
+    try {
+      // Get auth token if user is logged in
+      const token = localStorage.getItem('wastego_token');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers
+        },
+        body: JSON.stringify({
+          message: message,
+          history: this.messages.slice(-10),
+          context: {
+            url: window.location.pathname,
+            userAgent: navigator.userAgent
+          }
+        })
+      });
+      
+      const result = await response.json();
+      
+      // Remove typing indicator
+      this.hideTypingIndicator();
+      
+      if (result.success) {
+        this.addMessage(result.data.response, 'bot');
+        
+        // If sentiment requires human support, show special notice
+        if (result.data.requiresHuman) {
+          this.addMessage(
+            "📞 I've escalated your concern to a human support agent. They'll contact you within 15 minutes. Thank you for your patience! 🇬🇭",
+            'bot'
+          );
+        }
+      } else {
+        this.addMessage("Sorry, I'm having trouble right now. Please try again or call our support team at 055 123 4567.", 'bot');
+      }
+      
+    } catch (error) {
+      console.error('Chat error:', error);
+      this.hideTypingIndicator();
+      this.addMessage("Network error. Please check your connection and try again. 🇬🇭", 'bot');
+    }
+  }
+  
+  addMessage(text, sender) {
+    const messagesContainer = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}`;
+    
+    messageDiv.innerHTML = `
+      <div class="message-content">${this.formatMessage(text)}</div>
+      <div class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    this.messages.push({ role: sender, content: text, timestamp: new Date() });
+    this.scrollToBottom();
+  }
+  
+  formatMessage(text) {
+    // Convert links to clickable
+    text = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: #00A651;">$1</a>');
+    
+    // Convert line breaks to <br>
+    text = text.replace(/\n/g, '<br>');
+    
+    // Highlight emojis
+    text = text.replace(/([🇬🇭🚛💚✅🎉💰📍📞])/g, '<span style="font-size: 1.1em;">$1</span>');
+    
+    return text;
+  }
+  
+  showTypingIndicator() {
+    const messagesContainer = document.getElementById('chat-messages');
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'message bot';
+    typingDiv.id = 'typing-indicator';
+    typingDiv.innerHTML = `
+      <div class="message-content">
+        <div class="typing-indicator">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    `;
+    messagesContainer.appendChild(typingDiv);
+    this.scrollToBottom();
+  }
+  
+  hideTypingIndicator() {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) indicator.remove();
+  }
+  
+  scrollToBottom() {
+    const messagesContainer = document.getElementById('chat-messages');
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+  
+  generateConversationId() {
+    return 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }
+  
+  loadHistory() {
+    const saved = localStorage.getItem(`wastego_chat_${this.conversationId}`);
+    if (saved) {
+      const history = JSON.parse(saved);
+      history.forEach(msg => {
+        this.addMessage(msg.content, msg.role);
+      });
+    }
+  }
+  
+  saveHistory() {
+    localStorage.setItem(`wastego_chat_${this.conversationId}`, JSON.stringify(this.messages));
+  }
+}
+
+// Initialize chat widget when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  // Only initialize if not on admin page
+  if (!window.location.pathname.includes('/admin/')) {
+    window.wastegoChat = new AIChatWidget({
+      position: 'bottom-right',
+      theme: 'light'
+    });
+  }
+});
+
+
+
+
+
+
+
+
+/**
  * AI Routes
  * Claude API integration for smart dispatch and chatbot
  */
