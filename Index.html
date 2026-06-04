@@ -1,4 +1,199 @@
 /**
+ * WasteGo Authentication Manager
+ * Handles user session, token storage, and role management
+ */
+
+class AuthManager {
+  constructor() {
+    this.token = localStorage.getItem('wastego_token');
+    this.user = null;
+    this.tokenExpiry = null;
+  }
+  
+  /**
+   * Check if user is authenticated
+   */
+  isAuthenticated() {
+    if (!this.token) return false;
+    
+    // Check token expiry
+    if (this.tokenExpiry && Date.now() > this.tokenExpiry) {
+      this.logout();
+      return false;
+    }
+    
+    return true;
+  }
+  
+  /**
+   * Get current user
+   */
+  async getCurrentUser() {
+    if (this.user) return this.user;
+    
+    try {
+      const response = await apiRequest('/api/auth/me');
+      if (response.success) {
+        this.user = response.data.user;
+        return this.user;
+      }
+    } catch (error) {
+      console.error('Failed to get current user:', error);
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Login user
+   */
+  async login(phone, password) {
+    try {
+      const response = await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ phone, password })
+      });
+      
+      if (response.success) {
+        this.token = response.token;
+        this.user = response.data.user;
+        localStorage.setItem('wastego_token', this.token);
+        
+        // Decode token to get expiry
+        try {
+          const payload = JSON.parse(atob(this.token.split('.')[1]));
+          this.tokenExpiry = payload.exp * 1000;
+        } catch (e) {}
+        
+        return { success: true, user: this.user };
+      }
+      
+      return { success: false, message: response.message };
+      
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+  
+  /**
+   * Register new user
+   */
+  async register(userData) {
+    try {
+      const response = await apiRequest('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(userData)
+      });
+      
+      if (response.success) {
+        return { success: true, user: response.data.user };
+      }
+      
+      return { success: false, message: response.message };
+      
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+  
+  /**
+   * Logout user
+   */
+  async logout() {
+    try {
+      await apiRequest('/api/auth/logout', { method: 'POST' });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    
+    this.token = null;
+    this.user = null;
+    this.tokenExpiry = null;
+    localStorage.removeItem('wastego_token');
+    localStorage.removeItem('offline_queue');
+    
+    window.location.href = '/auth/login.html';
+  }
+  
+  /**
+   * Check if user has required role
+   */
+  hasRole(requiredRole) {
+    if (!this.user) return false;
+    
+    if (requiredRole === 'any') return true;
+    if (Array.isArray(requiredRole)) {
+      return requiredRole.includes(this.user.role);
+    }
+    
+    return this.user.role === requiredRole;
+  }
+  
+  /**
+   * Redirect based on user role
+   */
+  redirectToRoleDashboard() {
+    if (!this.user) return;
+    
+    const rolePaths = {
+      customer: '/customer/dashboard.html',
+      rider: '/rider/dashboard.html',
+      admin: '/admin/dashboard.html'
+    };
+    
+    const path = rolePaths[this.user.role];
+    if (path && window.location.pathname !== path) {
+      window.location.href = path;
+    }
+  }
+  
+  /**
+   * Protect route - redirect if not authenticated
+   */
+  async protectRoute(allowedRoles = null) {
+    if (!this.isAuthenticated()) {
+      window.location.href = '/auth/login.html';
+      return false;
+    }
+    
+    await this.getCurrentUser();
+    
+    if (allowedRoles && !this.hasRole(allowedRoles)) {
+      this.redirectToRoleDashboard();
+      return false;
+    }
+    
+    return true;
+  }
+}
+
+// Create global auth instance
+const auth = new AuthManager();
+
+// Validate Ghana phone number
+function validateGhanaPhone(phone) {
+  const phoneRegex = /^(0)(2[3-9]|5[0-9])\d{7}$/;
+  return phoneRegex.test(phone);
+}
+
+// Format Ghana phone number for display
+function formatGhanaPhone(phone) {
+  if (!phone) return '';
+  if (phone.length === 10) {
+    return `${phone.slice(0, 3)} ${phone.slice(3, 6)} ${phone.slice(6)}`;
+  }
+  return phone;
+}
+
+
+
+
+
+
+
+
+
+/**
  * WasteGo API Client
  * Handles all HTTP requests with retry logic for Ghana's network conditions
  */
