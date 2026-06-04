@@ -1,4 +1,119 @@
 /**
+ * Request Routes - Pickup management endpoints
+ */
+
+const express = require('express');
+const { body } = require('express-validator');
+const {
+  verifyToken,
+  requireRole,
+  requireCompleteProfile
+} = require('../middleware/auth');
+const {
+  createRequest,
+  getAvailableRequests,
+  acceptRequest,
+  updateRequestStatus,
+  trackRequest,
+  cancelRequest,
+  getMyHistory
+} = require('../controllers/requestController');
+
+const router = express.Router();
+
+// Validation middleware
+const validateCreateRequest = [
+  body('pickupLocation.lat').isFloat({ min: -90, max: 90 }),
+  body('pickupLocation.lng').isFloat({ min: -180, max: 180 }),
+  body('pickupLocation.address').notEmpty(),
+  body('wasteDetails.loadSize').isIn(['small', 'medium', 'large']),
+  body('paymentMethod').isIn(['momo', 'card', 'cash', 'subscription'])
+];
+
+const validateStatusUpdate = [
+  body('status').isIn(['en_route', 'arrived', 'collecting', 'completed']),
+  body('location').optional().isObject()
+];
+
+// Customer routes
+router.post('/create', 
+  verifyToken, 
+  requireRole('customer'),
+  validateCreateRequest,
+  createRequest
+);
+
+router.get('/my-history',
+  verifyToken,
+  requireRole('customer'),
+  getMyHistory
+);
+
+router.get('/:id/track',
+  verifyToken,
+  trackRequest
+);
+
+router.put('/:id/cancel',
+  verifyToken,
+  cancelRequest
+);
+
+// Rider routes
+router.get('/available',
+  verifyToken,
+  requireRole('rider'),
+  requireCompleteProfile,
+  getAvailableRequests
+);
+
+router.put('/:id/accept',
+  verifyToken,
+  requireRole('rider'),
+  requireCompleteProfile,
+  acceptRequest
+);
+
+router.put('/:id/status',
+  verifyToken,
+  requireRole('rider'),
+  validateStatusUpdate,
+  updateRequestStatus
+);
+
+// Admin routes
+router.get('/admin/all',
+  verifyToken,
+  requireRole('admin'),
+  async (req, res) => {
+    try {
+      const requests = await Request.find()
+        .populate('customer', 'name phone')
+        .populate('rider', 'name phone')
+        .sort({ createdAt: -1 })
+        .limit(100);
+      
+      res.json({ success: true, data: requests });
+    } catch (error) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  }
+);
+
+module.exports = router;
+
+
+
+
+
+
+
+
+
+
+
+
+/**
  * Request Controller - Pickup lifecycle management
  * Handles creation, matching, tracking, and completion
  */
