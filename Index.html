@@ -1,3 +1,117 @@
+{
+  "name": "WasteGo - Ghana's Waste Collection",
+  "short_name": "WasteGo",
+  "description": "On-demand waste collection in Ghana. Book pickups, track riders, and keep Ghana clean.",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#00A651",
+  "background_color": "#F7F9F7",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/home.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "WasteGo Home Screen"
+    },
+    {
+      "src": "/screenshots/request.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Request Pickup"
+    },
+    {
+      "src": "/screenshots/track.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Track Your Rider"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Request Pickup",
+      "short_name": "Request",
+      "description": "Book a waste pickup",
+      "url": "/customer/dashboard.html",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Track Order",
+      "short_name": "Track",
+      "description": "Track your active pickup",
+      "url": "/customer/track.html",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
+    }
+  ],
+  "categories": ["utilities", "lifestyle", "productivity"],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "features": ["Cross-platform", "Offline-capable", "Real-time tracking", "Mobile money payments"]
+}
+
+
+
+
+
+
+
+
 /**
  * WasteGo Service Worker
  * Offline-first PWA for Ghanaian low-bandwidth environments
