@@ -4,6 +4,232 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#00A651">
+  <title>WasteGo - Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/global.css">
+  <style>
+    .auth-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #00A651 0%, #007A3D 100%);
+    }
+    
+    .auth-card {
+      background: white;
+      border-radius: 32px;
+      padding: 40px 24px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    
+    .logo h1 {
+      font-size: 32px;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    
+    .logo p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+    }
+    
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .input-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 16px;
+      transition: border-color 0.2s;
+    }
+    
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .btn-login {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: transform 0.2s;
+    }
+    
+    .btn-login:active {
+      transform: scale(0.98);
+    }
+    
+    .register-link {
+      text-align: center;
+      margin-top: 24px;
+      color: var(--text-muted);
+    }
+    
+    .register-link a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    .error-message {
+      background: #ffebee;
+      color: var(--danger);
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .demo-credentials {
+      background: var(--bg-main);
+      padding: 16px;
+      border-radius: 12px;
+      margin-top: 24px;
+      font-size: 12px;
+    }
+    
+    @media (max-width: 480px) {
+      .auth-card {
+        padding: 32px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="logo">
+        <h1>🚛 WasteGo</h1>
+        <p>Clean Streets. Fast Pickups. Ghana Moving.</p>
+      </div>
+      
+      <div class="error-message" id="errorMessage"></div>
+      
+      <form id="loginForm">
+        <div class="input-group">
+          <label>📱 Phone Number</label>
+          <input type="tel" id="phone" placeholder="024XXXXXXX" required>
+        </div>
+        
+        <div class="input-group">
+          <label>🔒 Password</label>
+          <input type="password" id="password" placeholder="Enter your password" required>
+        </div>
+        
+        <button type="submit" class="btn-login">Login →</button>
+      </form>
+      
+      <div class="register-link">
+        Don't have an account? <a href="/auth/register.html">Sign up</a>
+      </div>
+      
+      <div class="demo-credentials">
+        <strong>🎯 Demo Credentials:</strong><br>
+        Customer: 024XXXXXXX / password123<br>
+        Rider: 025XXXXXXX / password123<br>
+        Admin: 024XXXXXXX / admin123
+      </div>
+    </div>
+  </div>
+  
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const errorDiv = document.getElementById('errorMessage');
+    
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const phone = document.getElementById('phone').value;
+      const password = document.getElementById('password').value;
+      
+      // Validate Ghana phone number
+      const phoneRegex = /^(0)(2[3-9]|5[0-9])\d{7}$/;
+      if (!phoneRegex.test(phone)) {
+        showError('Please enter a valid Ghana phone number (e.g., 024XXXXXXX)');
+        return;
+      }
+      
+      try {
+        const response = await apiRequest('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ phone, password })
+        });
+        
+        if (response.success) {
+          // Store token
+          localStorage.setItem('wastego_token', response.token);
+          
+          // Redirect based on role
+          const role = response.data.user.role;
+          if (role === 'customer') {
+            window.location.href = '/customer/dashboard.html';
+          } else if (role === 'rider') {
+            window.location.href = '/rider/dashboard.html';
+          } else if (role === 'admin') {
+            window.location.href = '/admin/dashboard.html';
+          }
+        } else {
+          showError(response.message || 'Login failed');
+        }
+      } catch (error) {
+        showError('Network error. Please try again.');
+      }
+    });
+    
+    function showError(message) {
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#00A651">
   <meta name="description" content="WasteGo Rider - Earn money collecting waste in Ghana">
   <title>WasteGo Rider - Earn While Keeping Ghana Clean</title>
   
