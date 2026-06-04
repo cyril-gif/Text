@@ -1,4 +1,194 @@
 /**
+ * Notification Utilities
+ * Wrapper for Moolre SMS/WhatsApp API with Ghana-specific templates
+ */
+
+const moolreClient = require('./moolreClient');
+
+/**
+ * Send WhatsApp message
+ */
+const sendWhatsApp = async (phone, message) => {
+  try {
+    // Clean phone number (ensure Ghana format)
+    const cleanPhone = phone.startsWith('0') ? `233${phone.slice(1)}` : phone;
+    
+    const result = await moolreClient.sendMessage({
+      to: cleanPhone,
+      message,
+      channel: 'whatsapp'
+    });
+    
+    return result;
+  } catch (error) {
+    console.error('WhatsApp send error:', error);
+    // Don't throw - notification failures shouldn't break core flow
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Send SMS message
+ */
+const sendSMS = async (phone, message) => {
+  try {
+    const cleanPhone = phone.startsWith('0') ? `233${phone.slice(1)}` : phone;
+    
+    const result = await moolreClient.sendMessage({
+      to: cleanPhone,
+      message,
+      channel: 'sms'
+    });
+    
+    return result;
+  } catch (error) {
+    console.error('SMS send error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Template: Pickup confirmation
+ */
+const sendPickupConfirmation = async (phone, requestId, pickupTime) => {
+  const message = `✅ *WasteGo Pickup Confirmed*\n\n` +
+    `Request ID: #${requestId.slice(-6)}\n` +
+    `Pickup Time: ${pickupTime}\n` +
+    `Amount: Will be calculated after pickup\n\n` +
+    `Track your ride: wastego.app/track/${requestId}\n\n` +
+    `_Keep Ghana clean! 🇬🇭_`;
+  
+  return await sendWhatsApp(phone, message);
+};
+
+/**
+ * Template: Rider assigned
+ */
+const sendRiderAssigned = async (customerPhone, riderName, riderPhone, eta, requestId) => {
+  const message = `🚛 *Rider Assigned!*\n\n` +
+    `Rider: ${riderName}\n` +
+    `Contact: ${riderPhone}\n` +
+    `ETA: ${eta} minutes\n\n` +
+    `Track live: wastego.app/track/${requestId}\n\n` +
+    `Reply with any issues.`;
+  
+  return await sendWhatsApp(customerPhone, message);
+};
+
+/**
+ * Template: Pickup completed
+ */
+const sendPickupCompleted = async (phone, amount, requestId) => {
+  const message = `🎉 *Pickup Complete!*\n\n` +
+    `Thank you for using WasteGo!\n` +
+    `Amount paid: ₵${amount.toFixed(2)}\n` +
+    `Request: #${requestId.slice(-6)}\n\n` +
+    `⭐ Rate your experience: wastego.app/rate/${requestId}\n\n` +
+    `Refer a friend and earn ₵5 credit: wastego.app/refer`;
+  
+  return await sendWhatsApp(phone, message);
+};
+
+/**
+ * Template: Payment receipt
+ */
+const sendPaymentReceipt = async (phone, amount, transactionRef, date) => {
+  const message = `🧾 *WasteGo Payment Receipt*\n\n` +
+    `Amount: ₵${amount.toFixed(2)}\n` +
+    `Reference: ${transactionRef}\n` +
+    `Date: ${date}\n\n` +
+    `Thank you for keeping Ghana clean!\n\n` +
+    `_This is your official receipt_`;
+  
+  return await sendWhatsApp(phone, message);
+};
+
+/**
+ * Template: Rider payout notification
+ */
+const sendRiderPayout = async (phone, amount, bonus = 0) => {
+  const bonusText = bonus > 0 ? `\n🏆 Bonus: ₵${bonus.toFixed(2)}` : '';
+  
+  const message = `💰 *Payout Received!*\n\n` +
+    `Amount: ₵${amount.toFixed(2)}${bonusText}\n` +
+    `Sent to your mobile money wallet.\n\n` +
+    `Thank you for your service! 🚛💚\n\n` +
+    `Keep up the great work keeping Ghana clean.`;
+  
+  return await sendWhatsApp(phone, message);
+};
+
+/**
+ * Template: Subscription reminder
+ */
+const sendSubscriptionReminder = async (phone, planName, nextPickupDate, remainingPickups) => {
+  const message = `📅 *Subscription Reminder*\n\n` +
+    `Plan: ${planName}\n` +
+    `Next scheduled pickup: ${nextPickupDate}\n` +
+    `Remaining pickups this cycle: ${remainingPickups}\n\n` +
+    `Schedule an extra pickup: wastego.app/request\n\n` +
+    `_Never miss a pickup!_`;
+  
+  return await sendWhatsApp(phone, message);
+};
+
+/**
+ * Template: USSD confirmation (SMS only - for feature phones)
+ */
+const sendUSSDConfirmation = async (phone, requestId, amount) => {
+  const message = `WasteGo: Pickup request #${requestId.slice(-6)} created. Amount: GHS ${amount}. Track status: wastego.app/track/${requestId}`;
+  
+  return await sendSMS(phone, message);
+};
+
+/**
+ * Template: Support response
+ */
+const sendSupportResponse = async (phone, message, ticketId) => {
+  const formattedMessage = `📞 *WasteGo Support*\n\n` +
+    `Ticket #${ticketId}\n\n` +
+    `${message}\n\n` +
+    `Reply to this message for more help.\n\n` +
+    `_We're here for you 24/7_`;
+  
+  return await sendWhatsApp(phone, formattedMessage);
+};
+
+/**
+ * Template: Promotional broadcast
+ */
+const sendPromotion = async (phone, offer, code, expiryDate) => {
+  const message = `🎉 *Special Offer!*\n\n` +
+    `${offer}\n\n` +
+    `Use code: *${code}*\n` +
+    `Valid until: ${expiryDate}\n\n` +
+    `Book now: wastego.app/request\n\n` +
+    `_Keep Ghana clean and save money!_`;
+  
+  return await sendWhatsApp(phone, message);
+};
+
+module.exports = {
+  sendWhatsApp,
+  sendSMS,
+  sendPickupConfirmation,
+  sendRiderAssigned,
+  sendPickupCompleted,
+  sendPaymentReceipt,
+  sendRiderPayout,
+  sendSubscriptionReminder,
+  sendUSSDConfirmation,
+  sendSupportResponse,
+  sendPromotion
+};
+
+
+
+
+
+
+
+/**
  * Messaging Routes
  * SMS and WhatsApp endpoints
  */
