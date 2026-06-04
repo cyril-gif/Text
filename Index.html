@@ -1,4 +1,575 @@
 /**
+ * Admin Controller
+ * Platform management, analytics, user moderation
+ */
+
+const User = require('../models/User');
+const Request = require('../models/Request');
+const Transaction = require('../models/Transaction');
+const Subscription = require('../models/Subscription');
+const RiderWallet = require('../models/RiderWallet');
+const { sendWhatsApp, sendSMS } = require('../utils/notifications');
+
+/**
+ * Get platform statistics
+ * @route GET /api/admin/stats
+ */
+const getPlatformStats = async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const monthAgo = new Date(today);
+    monthAgo.setDate(monthAgo.getDate() - 30);
+
+    // User stats
+    const totalCustomers = await User.countDocuments({ role: 'customer' });
+    const totalRiders = await User.countDocuments({ role: 'rider' });
+    const activeRiders = await User.countDocuments({ 
+      role: 'rider', 
+      'riderProfile.isAvailable': true 
+    });
+    const newUsersWeek = await User.countDocuments({ 
+      createdAt: { $gte: weekAgo } 
+    });
+
+    // Request stats
+    const totalRequests = await Request.countDocuments();
+    const completedToday = await Request.countDocuments({
+      status: 'completed',
+      'timeline.completedAt': { $gte: today }
+    });
+    const completedWeek = await Request.countDocuments({
+      status: 'completed',
+      'timeline.completedAt': { $gte: weekAgo }
+    });
+    const completionRate = totalRequests > 0 
+      ? (await Request.countDocuments({ status: 'completed' }) / totalRequests * 100).toFixed(1)
+      : 0;
+
+    // Revenue stats
+    const transactions = await Transaction.aggregate([
+      { $match: { status: 'completed', type: 'payment' } },
+      { $group: {
+        _id: null,
+        totalRevenue: { $sum: '$amount' },
+        avgTransaction: { $avg: '$amount' }
+      }}
+    ]);
+    
+    const revenueToday = await Transaction.aggregate([
+      { $match: { 
+        status: 'completed', 
+        type: 'payment',
+        completedAt: { $gte: today }
+      }},
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+
+    const revenueMonth = await Transaction.aggregate([
+      { $match: { 
+        status: 'completed', 
+        type: 'payment',
+        completedAt: { $gte: monthAgo }
+      }},
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+
+    // Payout stats
+    const totalPaidOut = await RiderWallet.aggregate([
+      { $group: { _id: null, total: { $sum: '$totalPaid' } } }
+    ]);
+
+    // Subscription stats
+    const activeSubscriptions = await Subscription.countDocuments({ status: 'active' });
+    const subscriptionRevenue = await Subscription.aggregate([
+      { $match: { status: 'active' } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        users: {
+          totalCustomers,
+          totalRiders,
+          activeRiders,
+          newUsersWeek
+        },
+        operations: {
+          totalRequests,
+          completedToday,
+          completedWeek,
+          completionRate: parseFloat(completionRate)
+        },
+        revenue: {
+          total: transactions[0]?.totalRevenue || 0,
+          today: revenueToday[0]?.total || 0,
+          month: revenueMonth[0]?.total || 0,
+          averageTransaction: transactions[0]?.avgTransaction || 0
+        },
+        payouts: {
+          totalPaid: totalPaidOut[0]?.total || 0,
+          platformCommission: (transactions[0]?.totalRevenue || 0) * 0.15
+        },
+        subscriptions: {
+          active: activeSubscriptions,
+          revenue: subscriptionRevenue[0]?.total || 0
+        },
+        timestamp: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('Stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch statistics',
+      error: 'STATS_FETCH_FAILED'
+    });
+  }
+};
+
+/**
+ * Get all users with pagination and filters
+ * @route GET /api/admin/users
+ */
+const getUsers = async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 20, 
+      role, 
+      isVerified, 
+      isBanned,
+      search 
+    } = req.query;
+    
+    const skip = (page - 1) * limit;
+    const query = {};
+    
+    if (role) query.role = role;
+    if (isVerified !== undefined) query.isVerified = isVerified === 'true';
+    if (isBanned !== undefined) query.isBanned = isBanned === 'true';
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const users = await User.find(query)
+      .select('-password')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    const total = await User.countDocuments(query);
+    
+    res.json({
+      success: true,
+      data: {
+        users,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch users',
+      error: 'USERS_FETCH_FAILED'
+    });
+  }
+};
+
+/**
+ * Ban/unban user
+ * @route PUT /api/admin/users/:id/ban
+ */
+const toggleUserBan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { ban, reason } = req.body;
+    
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+    
+    // Prevent admin from banning themselves
+    if (user._id.toString() === req.userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot ban yourself',
+        error: 'SELF_BAN'
+      });
+    }
+    
+    user.isBanned = ban;
+    if (ban && reason) user.banReason = reason;
+    if (!ban) user.banReason = undefined;
+    await user.save();
+    
+    // If banning a rider, make them unavailable
+    if (ban && user.role === 'rider') {
+      user.riderProfile.isAvailable = false;
+      await user.save();
+    }
+    
+    // Send notification
+    const message = ban 
+      ? `⚠️ Your WasteGo account has been suspended.\nReason: ${reason || 'Violation of terms'}\nContact support: wastego.app/support`
+      : `✅ Your WasteGo account has been reinstated. Welcome back!`;
+    
+    await sendWhatsApp(user.phone, message);
+    
+    res.json({
+      success: true,
+      message: ban ? 'User banned successfully' : 'User unbanned successfully',
+      data: { userId: user._id, isBanned: user.isBanned }
+    });
+    
+  } catch (error) {
+    console.error('Ban error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update user status',
+      error: 'BAN_FAILED'
+    });
+  }
+};
+
+/**
+ * Promote/demote user role
+ * @route PUT /api/admin/users/:id/role
+ */
+const updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+    
+    if (!['customer', 'rider', 'admin'].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid role',
+        error: 'INVALID_ROLE'
+      });
+    }
+    
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+    
+    user.role = role;
+    await user.save();
+    
+    // If promoting to rider, create wallet
+    if (role === 'rider') {
+      const existingWallet = await RiderWallet.findOne({ rider: user._id });
+      if (!existingWallet) {
+        const wallet = new RiderWallet({
+          rider: user._id,
+          totalEarned: 0,
+          totalPaid: 0,
+          currentBalance: 0
+        });
+        await wallet.save();
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: `User role updated to ${role}`,
+      data: { userId: user._id, role: user.role }
+    });
+    
+  } catch (error) {
+    console.error('Role update error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update user role',
+      error: 'ROLE_UPDATE_FAILED'
+    });
+  }
+};
+
+/**
+ * Get all requests (admin view)
+ * @route GET /api/admin/requests
+ */
+const getAllRequests = async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 20, 
+      status, 
+      startDate, 
+      endDate,
+      riderId,
+      customerId
+    } = req.query;
+    
+    const skip = (page - 1) * limit;
+    const query = {};
+    
+    if (status) query.status = status;
+    if (riderId) query.rider = riderId;
+    if (customerId) query.customer = customerId;
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) query.createdAt.$gte = new Date(startDate);
+      if (endDate) query.createdAt.$lte = new Date(endDate);
+    }
+    
+    const requests = await Request.find(query)
+      .populate('customer', 'name phone')
+      .populate('rider', 'name phone')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    const total = await Request.countDocuments(query);
+    
+    // Get summary stats
+    const summary = await Request.aggregate([
+      { $match: query },
+      { $group: {
+        _id: null,
+        totalRevenue: { $sum: '$price' },
+        avgPrice: { $avg: '$price' },
+        completed: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
+        cancelled: { $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] } }
+      }}
+    ]);
+    
+    res.json({
+      success: true,
+      data: {
+        requests,
+        summary: summary[0] || { totalRevenue: 0, avgPrice: 0, completed: 0, cancelled: 0 },
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Get requests error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch requests',
+      error: 'REQUESTS_FETCH_FAILED'
+    });
+  }
+};
+
+/**
+ * Get all transactions
+ * @route GET /api/admin/transactions
+ */
+const getAllTransactions = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, type, status, startDate, endDate } = req.query;
+    const skip = (page - 1) * limit;
+    const query = {};
+    
+    if (type) query.type = type;
+    if (status) query.status = status;
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) query.createdAt.$gte = new Date(startDate);
+      if (endDate) query.createdAt.$lte = new Date(endDate);
+    }
+    
+    const transactions = await Transaction.find(query)
+      .populate('user', 'name phone')
+      .populate('request')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    const total = await Transaction.countDocuments(query);
+    
+    // Calculate totals
+    const totals = await Transaction.aggregate([
+      { $match: query },
+      { $group: {
+        _id: '$type',
+        total: { $sum: '$amount' },
+        count: { $sum: 1 }
+      }}
+    ]);
+    
+    res.json({
+      success: true,
+      data: {
+        transactions,
+        totals,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Get transactions error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch transactions',
+      error: 'TRANSACTIONS_FETCH_FAILED'
+    });
+  }
+};
+
+/**
+ * Update pricing configuration
+ * @route PUT /api/admin/pricing
+ */
+const updatePricing = async (req, res) => {
+  try {
+    const { loadSize, basePrice, perKmPrice } = req.body;
+    
+    // In production, store in database or config file
+    // For now, update in-memory config
+    const pricingConfig = require('../utils/pricing');
+    
+    if (pricingConfig.PRICE_CONFIG[loadSize]) {
+      if (basePrice) pricingConfig.PRICE_CONFIG[loadSize].base = basePrice;
+      if (perKmPrice) pricingConfig.PRICE_CONFIG[loadSize].per_km = perKmPrice;
+    }
+    
+    // Log the change
+    console.log(`Pricing updated: ${loadSize} - Base: ${basePrice}, Per km: ${perKmPrice}`);
+    
+    res.json({
+      success: true,
+      message: 'Pricing updated successfully',
+      data: pricingConfig.PRICE_CONFIG
+    });
+    
+  } catch (error) {
+    console.error('Pricing update error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update pricing',
+      error: 'PRICING_UPDATE_FAILED'
+    });
+  }
+};
+
+/**
+ * Get rider performance analytics
+ * @route GET /api/admin/riders/performance
+ */
+const getRiderPerformance = async (req, res) => {
+  try {
+    const riders = await User.find({ role: 'rider' })
+      .select('name phone riderProfile createdAt');
+    
+    const performanceData = await Promise.all(riders.map(async (rider) => {
+      const completedRequests = await Request.countDocuments({
+        rider: rider._id,
+        status: 'completed'
+      });
+      
+      const totalEarnings = await RiderWallet.findOne({ rider: rider._id });
+      const avgRating = rider.riderProfile?.averageRating || 0;
+      const acceptanceRate = rider.riderProfile?.acceptanceRate || 100;
+      
+      // Get recent activity (last 7 days)
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      const recentRequests = await Request.countDocuments({
+        rider: rider._id,
+        'timeline.completedAt': { $gte: weekAgo }
+      });
+      
+      return {
+        id: rider._id,
+        name: rider.name,
+        phone: rider.phone,
+        totalPickups: completedRequests,
+        totalEarned: totalEarnings?.totalEarned || 0,
+        averageRating: avgRating,
+        acceptanceRate,
+        recentActivity: recentRequests,
+        isAvailable: rider.riderProfile?.isAvailable || false,
+        joinedDate: rider.createdAt
+      };
+    }));
+    
+    // Sort by performance
+    performanceData.sort((a, b) => b.totalPickups - a.totalPickups);
+    
+    res.json({
+      success: true,
+      data: {
+        riders: performanceData,
+        topPerformers: performanceData.slice(0, 5),
+        summary: {
+          totalRiders: riders.length,
+          totalPickups: performanceData.reduce((sum, r) => sum + r.totalPickups, 0),
+          totalPaidOut: performanceData.reduce((sum, r) => sum + r.totalEarned, 0),
+          averageRating: performanceData.reduce((sum, r) => sum + r.averageRating, 0) / (riders.length || 1)
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Performance error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch rider performance',
+      error: 'PERFORMANCE_FETCH_FAILED'
+    });
+  }
+};
+
+module.exports = {
+  getPlatformStats,
+  getUsers,
+  toggleUserBan,
+  updateUserRole,
+  getAllRequests,
+  getAllTransactions,
+  updatePricing,
+  getRiderPerformance
+};
+
+
+
+
+
+
+
+
+
+
+/**
  * USSD Session Model
  * Tracks state for feature phone users
  */
