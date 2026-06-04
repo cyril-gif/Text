@@ -1,4 +1,361 @@
 /**
+ * Anthropic Claude AI Client
+ * Powers smart dispatch and multilingual customer support
+ * Optimized for Ghanaian context with Twi/Pidgin support
+ */
+
+const Anthropic = require('@anthropic-ai/sdk');
+
+class AIClient {
+  constructor() {
+    this.anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+    
+    this.model = 'claude-3-sonnet-20241022';
+    this.maxTokens = 1024;
+  }
+  
+  /**
+   * Smart dispatch - optimal rider assignment
+   * Uses multiple factors: distance, rating, load capacity, traffic, incentives
+   */
+  async smartDispatch(request, availableRiders) {
+    try {
+      const prompt = this.buildDispatchPrompt(request, availableRiders);
+      
+      const response = await this.anthropic.messages.create({
+        model: this.model,
+        max_tokens: this.maxTokens,
+        temperature: 0.3, // Lower temperature for more deterministic decisions
+        system: `You are WasteGo's AI dispatch system for Ghana. Your job is to assign the optimal rider to each waste pickup request.
+        
+Consider these factors in order of importance:
+1. Distance to pickup location (primary factor for quick service)
+2. Rider rating and completion rate (quality of service)
+3. Vehicle capacity vs waste load size
+4. Current traffic conditions in Accra/Kumasi (peak hours 7-9am, 4-7pm)
+5. Rider's current earnings today (distribute work fairly)
+6. Customer's preferred rider (if any)
+
+Return ONLY valid JSON with this structure:
+{
+  "selectedRiderId": "rider_object_id",
+  "confidenceScore": 0.95,
+  "reasoning": "Brief explanation of why this rider was chosen",
+  "alternatives": ["rider_id_2", "rider_id_3"],
+  "estimatedArrivalMinutes": 15
+}
+
+Be decisive and quick - customers are waiting.`,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
+      });
+      
+      // Parse JSON response
+      const result = JSON.parse(response.content[0].text);
+      return result;
+      
+    } catch (error) {
+      console.error('AI dispatch error:', error);
+      // Fallback to proximity-based matching
+      return this.fallbackDispatch(request, availableRiders);
+    }
+  }
+  
+  /**
+   * Build prompt for dispatch AI
+   */
+  buildDispatchPrompt(request, riders) {
+    const currentHour = new Date().getHours();
+    const isPeakHour = (currentHour >= 7 && currentHour <= 9) || (currentHour >= 16 && currentHour <= 19);
+    const trafficCondition = isPeakHour ? 'heavy' : 'moderate';
+    
+    let prompt = `Pickup Request Details:
+- Location: ${request.pickupLocation.address || `Lat: ${request.pickupLocation.lat}, Lng: ${request.pickupLocation.lng}`}
+- Waste Size: ${request.wasteDetails.loadSize} (${request.wasteDetails.loadSize === 'large' ? 'needs tricycle' : 'any vehicle'})
+- Current Time: ${new Date().toLocaleTimeString()} (${trafficCondition} traffic expected)
+- Estimated Price: GHS ${request.price}
+
+Available Riders (${riders.length} found):\n\n`;
+    
+    riders.forEach((rider, index) => {
+      prompt += `Rider ${index + 1}:
+- ID: ${rider._id}
+- Name: ${rider.name}
+- Distance: ${rider.distance?.toFixed(1) || 'unknown'} km
+- Rating: ${rider.riderProfile?.averageRating || 'new'} / 5.0
+- Completion Rate: ${rider.riderProfile?.acceptanceRate || 100}%
+- Vehicle: ${rider.riderProfile?.vehicleType || 'tricycle'}
+- Today's Earnings: GHS ${rider.todayEarnings || 0}
+- Available: ${rider.riderProfile?.isAvailable ? 'Yes' : 'No'}
+
+`;
+    });
+    
+    prompt += `\nAssign the best rider for this pickup. Consider that in Ghanaian cities, customers expect pickup within 15-30 minutes.`;
+    
+    return prompt;
+  }
+  
+  /**
+   * Customer support chatbot - multilingual (English, Twi, Pidgin)
+   */
+  async chatSupport(message, userContext, conversationHistory = []) {
+    try {
+      const prompt = this.buildChatPrompt(message, userContext, conversationHistory);
+      
+      const response = await this.anthropic.messages.create({
+        model: this.model,
+        max_tokens: this.maxTokens,
+        temperature: 0.7,
+        system: `You are WasteGo's customer support AI assistant for Ghana. You help customers with waste pickup requests, tracking, payments, and general inquiries.
+
+Key abilities:
+- Respond in English, Twi (Twi), or Ghanaian Pidgin based on user's language preference
+- Be friendly, helpful, and culturally aware of Ghanaian context
+- Understand local landmarks (Circle, Madina, Tema Station, Kejetia, etc.)
+- Know Ghanaian mobile money terms (MoMo, Vodafone Cash, AirtelTigo Money)
+- Provide accurate information about pickup times, pricing, and subscriptions
+- Escalate to human support for complex issues (refunds, complaints, technical problems)
+
+When users ask about:
+- "Where is my rider?" → Check their active request and provide ETA
+- "How much?" → Explain pricing based on load size (small: GHS 5-8, medium: GHS 8-12, large: GHS 12-20)
+- "Cancel" → Guide through cancellation process
+- "Subscribe" → Explain weekly (GHS 30) and monthly (GHS 100) plans
+- "Complaint" → Collect details and flag for human review
+
+Always be solution-oriented. If you can't solve something, offer to connect with a human agent.`,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
+      });
+      
+      return {
+        success: true,
+        response: response.content[0].text,
+        language: this.detectLanguage(message)
+      };
+      
+    } catch (error) {
+      console.error('AI chat error:', error);
+      return {
+        success: false,
+        response: "Sorry, I'm having trouble connecting. Please try again or call our support team at 055 123 4567. 🇬🇭",
+        error: error.message
+      };
+    }
+  }
+  
+  /**
+   * Build chat prompt with context
+   */
+  buildChatPrompt(message, userContext, history) {
+    let prompt = `Customer Information:\n`;
+    prompt += `- Name: ${userContext.name || 'Guest'}\n`;
+    prompt += `- Phone: ${userContext.phone || 'Unknown'}\n`;
+    prompt += `- Role: ${userContext.role || 'customer'}\n`;
+    
+    if (userContext.activeRequest) {
+      prompt += `- Active Request: #${userContext.activeRequest._id?.slice(-6)}\n`;
+      prompt += `- Request Status: ${userContext.activeRequest.status}\n`;
+      prompt += `- Pickup Location: ${userContext.activeRequest.pickupLocation?.address || 'Unknown'}\n`;
+    }
+    
+    if (userContext.subscription) {
+      prompt += `- Subscription: ${userContext.subscription.plan || 'None'}\n`;
+    }
+    
+    prompt += `\nConversation History:\n`;
+    history.slice(-5).forEach(msg => {
+      prompt += `${msg.role}: ${msg.content}\n`;
+    });
+    
+    prompt += `\nCustomer Message: ${message}\n\n`;
+    prompt += `Provide a helpful, concise response (max 3 sentences unless detailed explanation needed).`;
+    
+    return prompt;
+  }
+  
+  /**
+   * Detect language from message
+   */
+  detectLanguage(message) {
+    const lowerMsg = message.toLowerCase();
+    
+    // Twi indicators
+    if (lowerMsg.includes('ɛte sɛn') || lowerMsg.includes('medaase') || 
+        lowerMsg.includes('wo ho te sɛn') || lowerMsg.includes('yoo')) {
+      return 'tw';
+    }
+    
+    // Pidgin indicators
+    if (lowerMsg.includes('how far') || lowerMsg.includes('wetin') || 
+        lowerMsg.includes('abi') || lowerMsg.includes('na wa') || 
+        lowerMsg.includes('sabi')) {
+      return 'pidgin';
+    }
+    
+    return 'en';
+  }
+  
+  /**
+   * Predict optimal pickup time based on historical data
+   */
+  async predictPickupTime(location, loadSize, currentTime) {
+    try {
+      const prompt = `Predict optimal waste pickup time in Accra, Ghana for:
+- Location: ${location.area || 'Urban area'}
+- Load Size: ${loadSize}
+- Current Time: ${currentTime}
+
+Consider:
+- Peak traffic: 7-9am and 4-7pm (avoid these times)
+- Waste collection routes: Morning (6-10am) best for residential
+- Rider availability: Lower between 12-2pm (lunch break)
+- Weather: Rainy season (May-July) causes delays
+
+Return JSON: { "recommendedTime": "HH:MM", "reasoning": "brief explanation", "confidence": 0.XX }`;
+
+      const response = await this.anthropic.messages.create({
+        model: this.model,
+        max_tokens: 200,
+        temperature: 0.5,
+        messages: [{ role: 'user', content: prompt }]
+      });
+      
+      return JSON.parse(response.content[0].text);
+      
+    } catch (error) {
+      console.error('Time prediction error:', error);
+      return {
+        recommendedTime: "08:00",
+        reasoning: "Morning hours typically have better availability",
+        confidence: 0.7
+      };
+    }
+  }
+  
+  /**
+   * Analyze customer sentiment for support prioritization
+   */
+  async analyzeSentiment(message) {
+    try {
+      const prompt = `Analyze sentiment of this customer message for WasteGo support in Ghana:
+
+Message: "${message}"
+
+Return JSON: {
+  "sentiment": "positive|neutral|negative|urgent",
+  "score": 0.0-1.0 (1.0 = very negative/urgent),
+  "keyIssues": ["issue1", "issue2"],
+  "requiresHuman": true/false,
+  "priority": "low|medium|high|critical"
+}
+
+Consider urgent keywords: "complaint", "refund", "stolen", "late", "rude", "damage", "emergency"`;
+
+      const response = await this.anthropic.messages.create({
+        model: this.model,
+        max_tokens: 300,
+        temperature: 0.2,
+        messages: [{ role: 'user', content: prompt }]
+      });
+      
+      return JSON.parse(response.content[0].text);
+      
+    } catch (error) {
+      console.error('Sentiment analysis error:', error);
+      return {
+        sentiment: 'neutral',
+        score: 0.5,
+        keyIssues: [],
+        requiresHuman: false,
+        priority: 'medium'
+      };
+    }
+  }
+  
+  /**
+   * Generate personalized promotional message
+   */
+  async generatePromotion(user, offerType = 'referral') {
+    try {
+      const prompt = `Generate a personalized WhatsApp promotion for a WasteGo customer in Ghana.
+
+Customer: ${user.name}
+Location: ${user.location?.region || 'Accra'}
+Pickups completed: ${user.totalPickups || 0}
+Subscription: ${user.hasSubscription ? 'Yes' : 'No'}
+
+Offer Type: ${offerType}
+${offerType === 'referral' ? 'Referral bonus: GHS 5 for each friend who books a pickup' : ''}
+${offerType === 'loyalty' ? 'Loyalty discount: 20% off next pickup after 10 pickups' : ''}
+
+Create a short, friendly message in English or Ghanaian Pidgin that feels personal and urgent.
+Include emojis and a call-to-action (wastego.app/request).
+Keep under 200 characters.`;
+
+      const response = await this.anthropic.messages.create({
+        model: this.model,
+        max_tokens: 300,
+        temperature: 0.8,
+        messages: [{ role: 'user', content: prompt }]
+      });
+      
+      return response.content[0].text;
+      
+    } catch (error) {
+      console.error('Promotion generation error:', error);
+      return "🎉 Refer a friend to WasteGo and get GHS 5 credit! Share code: " + user.referralCode;
+    }
+  }
+  
+  /**
+   * Fallback dispatch when AI fails
+   */
+  fallbackDispatch(request, riders) {
+    // Sort by distance and rating
+    const sorted = [...riders].sort((a, b) => {
+      // Prioritize closer riders
+      const distanceDiff = (a.distance || 999) - (b.distance || 999);
+      if (Math.abs(distanceDiff) < 1) {
+        // If similar distance, use rating
+        return (b.riderProfile?.averageRating || 0) - (a.riderProfile?.averageRating || 0);
+      }
+      return distanceDiff;
+    });
+    
+    const selected = sorted[0];
+    
+    return {
+      selectedRiderId: selected?._id || null,
+      confidenceScore: 0.5,
+      reasoning: "Fallback to proximity-based matching due to AI unavailability",
+      alternatives: sorted.slice(1, 4).map(r => r._id),
+      estimatedArrivalMinutes: selected?.distance ? Math.ceil(selected.distance * 3) : 20
+    };
+  }
+}
+
+module.exports = new AIClient();
+
+
+
+
+
+
+
+
+/**
  * Notification Utilities
  * Wrapper for Moolre SMS/WhatsApp API with Ghana-specific templates
  */
