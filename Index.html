@@ -1,4 +1,266 @@
-<!DOCTYPE html>
+/**
+ * WasteGo Service Worker
+ * Offline-first PWA for Ghanaian low-bandwidth environments
+ */
+
+const CACHE_NAME = 'wastego-v1.0.0';
+const RUNTIME_CACHE = 'wastego-runtime';
+
+// Assets to cache on install
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/auth/login.html',
+  '/auth/register.html',
+  '/customer/dashboard.html',
+  '/rider/dashboard.html',
+  '/admin/dashboard.html',
+  '/assets/css/tokens.css',
+  '/assets/css/global.css',
+  '/assets/css/components.css',
+  '/assets/js/api.js',
+  '/assets/js/auth.js',
+  '/assets/js/storage.js',
+  '/assets/js/ai-chat.js',
+  '/manifest.json',
+  '/icons/icon-72.png',
+  '/icons/icon-96.png',
+  '/icons/icon-128.png',
+  '/icons/icon-144.png',
+  '/icons/icon-152.png',
+  '/icons/icon-192.png',
+  '/icons/icon-384.png',
+  '/icons/icon-512.png'
+];
+
+// Install event - cache static assets
+self.addEventListener('install', (event) => {
+  console.log('[SW] Installing...');
+  
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('[SW] Caching static assets');
+        return cache.addAll(STATIC_ASSETS);
+      })
+      .then(() => {
+        // Force waiting service worker to become active
+        return self.skipWaiting();
+      })
+  );
+});
+
+// Activate event - clean up old caches
+self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating...');
+  
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
+            console.log('[SW] Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => {
+      // Take control of all clients
+      return self.clients.claim();
+    })
+  );
+});
+
+// Fetch event - network first with cache fallback for API
+// Cache first for static assets
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+  
+  // Skip cross-origin requests
+  if (url.origin !== location.origin) {
+    return;
+  }
+  
+  // API requests - network first
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Cache successful GET requests for offline
+          if (request.method === 'GET' && response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Offline fallback for API
+          return caches.match(request).then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // Return offline JSON response
+            return new Response(
+              JSON.stringify({
+                success: false,
+                message: 'You are offline. Please check your connection.',
+                offline: true
+              }),
+              { headers: { 'Content-Type': 'application/json' } }
+            );
+          });
+        })
+    );
+    return;
+  }
+  
+  // Static assets - cache first (fastest for Ghana networks)
+  if (STATIC_ASSETS.includes(url.pathname) || 
+      url.pathname.includes('/assets/') ||
+      url.pathname.includes('/icons/')) {
+    event.respondWith(
+      caches.match(request)
+        .then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          return fetch(request).then((response) => {
+            if (response.status === 200) {
+              const responseClone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(request, responseClone);
+              });
+            }
+            return response;
+          });
+        })
+    );
+    return;
+  }
+  
+  // HTML pages - network first, fallback to cached index
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .catch(() => {
+          return caches.match('/index.html');
+        })
+    );
+    return;
+  }
+});
+
+// Background sync for offline requests
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-requests') {
+    console.log('[SW] Syncing offline requests');
+    event.waitUntil(syncOfflineRequests());
+  }
+});
+
+async function syncOfflineRequests() {
+  const cache = await caches.open(RUNTIME_CACHE);
+  const requests = await cache.keys();
+  
+  for (const request of requests) {
+    if (request.url.includes('/api/requests/create')) {
+      try {
+        const response = await fetch(request);
+        if (response.ok) {
+          await cache.delete(request);
+          // Notify user that request was synced
+          sendNotification('Pickup request submitted offline has been processed!');
+        }
+      } catch (error) {
+        console.error('Failed to sync request:', error);
+      }
+    }
+  }
+}
+
+// Push notification handler
+self.addEventListener('push', (event) => {
+  let data = {};
+  
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data = { title: 'WasteGo', body: event.data.text() };
+    }
+  }
+  
+  const options = {
+    body: data.body || 'New update from WasteGo',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-72.png',
+    vibrate: [200, 100, 200],
+    data: {
+      url: data.url || '/',
+      dateOfArrival: Date.now()
+    },
+    actions: [
+      { action: 'open', title: 'Open App' },
+      { action: 'dismiss', title: 'Dismiss' }
+    ]
+  };
+  
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'WasteGo', options)
+  );
+});
+
+// Notification click handler
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  
+  if (event.action === 'dismiss') {
+    return;
+  }
+  
+  const urlToOpen = event.notification.data?.url || '/';
+  
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((windowClients) => {
+        // Check if there is already a window/tab open with the target URL
+        for (let client of windowClients) {
+          if (client.url === urlToOpen && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // If not, open a new window
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      })
+  );
+});
+
+// Helper: Send notification to user
+function sendNotification(body) {
+  self.registration.showNotification('WasteGo', {
+    body: body,
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-72.png',
+    vibrate: [200, 100, 200]
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
