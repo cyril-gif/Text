@@ -1,4 +1,353 @@
 /**
+ * Request Model - Tracks complete waste pickup lifecycle
+ * From creation to completion with real-time status
+ */
+
+const mongoose = require('mongoose');
+
+const requestSchema = new mongoose.Schema({
+  // References
+  customer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
+  
+  rider: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    index: true
+  },
+  
+  // Pickup details
+  pickupLocation: {
+    lat: {
+      type: Number,
+      required: true,
+      min: -90,
+      max: 90
+    },
+    lng: {
+      type: Number,
+      required: true,
+      min: -180,
+      max: 180
+    },
+    address: {
+      type: String,
+      required: true
+    },
+    landmark: String,
+    instructions: String
+  },
+  
+  dropoffLocation: {
+    lat: Number,
+    lng: Number,
+    address: String,
+    // For waste disposal sites
+    siteName: String
+  },
+  
+  wasteDetails: {
+    loadSize: {
+      type: String,
+      enum: ['small', 'medium', 'large'],
+      required: true
+    },
+    wasteType: {
+      type: String,
+      enum: ['mixed', 'recyclable', 'organic', 'hazardous', 'electronic'],
+      default: 'mixed'
+    },
+    estimatedWeight: {
+      type: Number, // in kg
+      min: 1,
+      max: 500
+    },
+    hasPhoto: {
+      type: Boolean,
+      default: false
+    },
+    photoUrl: String,
+    specialInstructions: String
+  },
+  
+  // Pricing
+  price: {
+    type: Number, // in GHS (as float, but stored as decimal)
+    required: true,
+    min: 0
+  },
+  
+  platformCommission: {
+    type: Number, // 15% default
+    default: 0.15
+  },
+  
+  riderEarnings: {
+    type: Number,
+    min: 0
+  },
+  
+  // Payment
+  paymentMethod: {
+    type: String,
+    enum: ['momo', 'card', 'cash', 'subscription'],
+    required: true
+  },
+  
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'failed', 'refunded'],
+    default: 'pending'
+  },
+  
+  moolreTransactionRef: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
+  },
+  
+  subscriptionApplied: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subscription'
+  },
+  
+  // Status tracking
+  status: {
+    type: String,
+    enum: [
+      'pending',        // Customer created, waiting for rider
+      'assigned',       // AI/rider assigned
+      'accepted',       // Rider accepted the job
+      'en_route',       // Rider on the way
+      'arrived',        // Rider at pickup location
+      'collecting',     // Loading waste
+      'completed',      // Waste collected and disposed
+      'cancelled',      // Cancelled by either party
+      'expired'         // No rider accepted within timeout
+    ],
+    default: 'pending',
+    required: true,
+    index: true
+  },
+  
+  cancellationReason: {
+    by: {
+      type: String,
+      enum: ['customer', 'rider', 'system', 'admin']
+    },
+    reason: String,
+    timestamp: Date
+  },
+  
+  // AI dispatch information
+  aiDispatchScore: {
+    type: Number,
+    min: 0,
+    max: 1
+  },
+  
+  aiDispatchReason: String,
+  
+  aiSuggestedRider: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  
+  // Timeline (all timestamps)
+  timeline: {
+    requestedAt: {
+      type: Date,
+      default: Date.now
+    },
+    assignedAt: Date,
+    acceptedAt: Date,
+    enRouteAt: Date,
+    arrivedAt: Date,
+    collectingAt: Date,
+    completedAt: Date,
+    cancelledAt: Date,
+    expiredAt: Date
+  },
+  
+  // Real-time tracking
+  riderLocations: [{
+    lat: Number,
+    lng: Number,
+    timestamp: Date
+  }],
+  
+  // Ratings & Reviews
+  rating: {
+    type: Number,
+    min: 1,
+    max: 5
+  },
+  
+  review: {
+    type: String,
+    maxlength: 500
+  },
+  
+  riderRating: {
+    type: Number,
+    min: 1,
+    max: 5
+  },
+  
+  // System metadata
+  assignedAttempts: {
+    type: Number,
+    default: 0,
+    max: 3
+  },
+  
+  emergencyFlagged: {
+    type: Boolean,
+    default: false
+  },
+  
+  notifiedAt: {
+    customer: Date,
+    rider: Date
+  },
+  
+  estimatedPickupTime: Date,
+  
+  createdAt: {
+    type: Date,
+    default: Date.now,
+    immutable: true
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true }
+});
+
+// Indexes for performance
+requestSchema.index({ status: 1, 'timeline.requestedAt': -1 });
+requestSchema.index({ customer: 1, createdAt: -1 });
+requestSchema.index({ rider: 1, status: 1 });
+requestSchema.index({ 'pickupLocation.lat': 1, 'pickupLocation.lng': 1, status: 1 });
+requestSchema.index({ aiDispatchScore: -1, status: 1 });
+
+// Calculate ride distance (haversine formula)
+requestSchema.methods.calculateDistanceToRider = async function(riderLocation) {
+  const toRad = (value) => (value * Math.PI) / 180;
+  
+  const lat1 = this.pickupLocation.lat;
+  const lon1 = this.pickupLocation.lng;
+  const lat2 = riderLocation.lat;
+  const lon2 = riderLocation.lng;
+  
+  const R = 6371; // Earth's radius in km
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+// Update status with timeline
+requestSchema.methods.updateStatus = async function(newStatus) {
+  const validTransitions = {
+    pending: ['assigned', 'cancelled', 'expired'],
+    assigned: ['accepted', 'cancelled', 'expired'],
+    accepted: ['en_route', 'cancelled'],
+    en_route: ['arrived', 'cancelled'],
+    arrived: ['collecting', 'cancelled'],
+    collecting: ['completed', 'cancelled'],
+    completed: [],
+    cancelled: [],
+    expired: []
+  };
+  
+  if (!validTransitions[this.status].includes(newStatus)) {
+    throw new Error(`Invalid status transition from ${this.status} to ${newStatus}`);
+  }
+  
+  this.status = newStatus;
+  
+  // Update timeline
+  const statusToTimelineField = {
+    assigned: 'assignedAt',
+    accepted: 'acceptedAt',
+    en_route: 'enRouteAt',
+    arrived: 'arrivedAt',
+    collecting: 'collectingAt',
+    completed: 'completedAt',
+    cancelled: 'cancelledAt',
+    expired: 'expiredAt'
+  };
+  
+  const timelineField = statusToTimelineField[newStatus];
+  if (timelineField) {
+    this.timeline[timelineField] = new Date();
+  }
+  
+  await this.save();
+  return this;
+};
+
+// Calculate rider earnings based on price and commission
+requestSchema.methods.calculateRiderEarnings = function() {
+  const commission = this.price * this.platformCommission;
+  this.riderEarnings = this.price - commission;
+  return this.riderEarnings;
+};
+
+// Check if request is eligible for AI dispatch
+requestSchema.stethods.isEligibleForAIDispatch = function() {
+  return this.status === 'pending' && 
+         !this.rider && 
+         this.assignedAttempts < 3 &&
+         (Date.now() - this.timeline.requestedAt) < 300000; // 5 minutes
+};
+
+// Static method to find pending requests for dispatch
+requestSchema.statics.findPendingForDispatch = async function(limit = 20) {
+  return await this.find({
+    status: 'pending',
+    paymentStatus: 'paid',
+    assignedAttempts: { $lt: 3 },
+    'timeline.requestedAt': { $gt: new Date(Date.now() - 15 * 60000) } // Last 15 min
+  })
+  .populate('customer', 'name phone location')
+  .sort({ aiDispatchScore: -1, 'timeline.requestedAt': 1 })
+  .limit(limit);
+};
+
+// Pre-save middleware to calculate rider earnings
+requestSchema.pre('save', function(next) {
+  if (this.isModified('price') || this.isModified('platformCommission')) {
+    this.calculateRiderEarnings();
+  }
+  next();
+});
+
+module.exports = mongoose.model('Request', requestSchema);
+
+
+
+
+
+
+
+
+
+/**
  * User Model - Customers, Riders, and Admins
  * Includes Ghana phone number validation and role-based access
  */
