@@ -1,4 +1,176 @@
 /**
+ * Messaging Controller
+ * Handles SMS and WhatsApp notifications via Moolre Messaging API
+ */
+
+const moolreClient = require('../utils/moolreClient');
+const Message = require('../models/Message');
+
+/**
+ * Send single message
+ * @route POST /api/messaging/send
+ */
+const sendMessage = async (req, res) => {
+  try {
+    const { to, message, channel = 'whatsapp' } = req.body;
+    
+    // Only admins can send broadcast messages
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only admins can send messages',
+        error: 'UNAUTHORIZED'
+      });
+    }
+    
+    const result = await moolreClient.sendMessage({
+      to,
+      message,
+      channel
+    });
+    
+    // Log message
+    const messageLog = new Message({
+      from: 'WasteGo',
+      to,
+      message,
+      channel,
+      status: result.status,
+      messageId: result.messageId,
+      sentBy: req.userId
+    });
+    await messageLog.save();
+    
+    res.json({
+      success: true,
+      message: 'Message sent successfully',
+      data: result
+    });
+    
+  } catch (error) {
+    console.error('Send message error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send message',
+      error: 'MESSAGE_SEND_FAILED'
+    });
+  }
+};
+
+/**
+ * Send broadcast message to multiple users
+ * @route POST /api/messaging/broadcast
+ */
+const sendBroadcast = async (req, res) => {
+  try {
+    const { userRole, message, channel = 'whatsapp' } = req.body;
+    
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only admins can send broadcasts',
+        error: 'UNAUTHORIZED'
+      });
+    }
+    
+    // Get users by role
+    const User = require('../models/User');
+    const users = await User.find({ 
+      role: userRole || 'customer',
+      isBanned: false,
+      'preferences.notificationEnabled': true,
+      [`preferences.${channel}Notifications`]: true
+    });
+    
+    const messages = users.map(user => ({
+      to: user.phone,
+      message,
+      channel
+    }));
+    
+    const result = await moolreClient.sendBulkMessages(messages);
+    
+    // Log broadcast
+    const messageLog = new Message({
+      from: 'WasteGo',
+      to: 'broadcast',
+      message,
+      channel,
+      status: 'sent',
+      messageId: result.batchId,
+      sentBy: req.userId,
+      metadata: { recipientCount: users.length }
+    });
+    await messageLog.save();
+    
+    res.json({
+      success: true,
+      message: `Broadcast sent to ${users.length} users`,
+      data: result
+    });
+    
+  } catch (error) {
+    console.error('Broadcast error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send broadcast',
+      error: 'BROADCAST_FAILED'
+    });
+  }
+};
+
+/**
+ * Get message logs
+ * @route GET /api/messaging/logs
+ */
+const getMessageLogs = async (req, res) => {
+  try {
+    const { limit = 50, skip = 0 } = req.query;
+    
+    const logs = await Message.find()
+      .sort({ createdAt: -1 })
+      .skip(parseInt(skip))
+      .limit(parseInt(limit))
+      .populate('sentBy', 'name');
+    
+    const total = await Message.countDocuments();
+    
+    res.json({
+      success: true,
+      data: {
+        logs,
+        pagination: {
+          limit: parseInt(limit),
+          skip: parseInt(skip),
+          total
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Get logs error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch message logs',
+      error: 'LOG_FETCH_FAILED'
+    });
+  }
+};
+
+module.exports = {
+  sendMessage,
+  sendBroadcast,
+  getMessageLogs
+};
+
+
+
+
+
+
+
+
+/**
  * Payment Routes
  * Moolre Collections API endpoints
  */
