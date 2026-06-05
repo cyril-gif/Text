@@ -1,3 +1,233 @@
+/**
+ * Transaction Model
+ * Tracks all payments, payouts, and financial activity
+ */
+
+const mongoose = require('mongoose');
+
+const transactionSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
+  
+  request: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Request',
+    index: true
+  },
+  
+  subscription: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subscription'
+  },
+  
+  type: {
+    type: String,
+    enum: ['payment', 'payout', 'refund', 'bonus', 'subscription'],
+    required: true,
+    index: true
+  },
+  
+  amount: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  
+  fee: {
+    type: Number,
+    default: 0
+  },
+  
+  netAmount: {
+    type: Number
+  },
+  
+  currency: {
+    type: String,
+    default: 'GHS'
+  },
+  
+  status: {
+    type: String,
+    enum: ['pending', 'processing', 'completed', 'failed', 'refunded'],
+    default: 'pending',
+    index: true
+  },
+  
+  paymentMethod: {
+    type: String,
+    enum: ['momo_mtn', 'momo_vodafone', 'momo_airteltigo', 'card', 'ghqr', 'cash', 'wallet'],
+    default: 'momo_mtn'
+  },
+  
+  // Moolre integration
+  moolreTransactionRef: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
+  },
+  
+  moolreSubscriptionRef: {
+    type: String,
+    index: true
+  },
+  
+  moolreResponse: {
+    type: mongoose.Schema.Types.Mixed
+  },
+  
+  // Customer details at time of transaction
+  customerSnapshot: {
+    name: String,
+    phone: String,
+    email: String
+  },
+  
+  // Metadata
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  
+  description: {
+    type: String,
+    maxlength: 500
+  },
+  
+  reference: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  
+  completedAt: {
+    type: Date
+  },
+  
+  createdAt: {
+    type: Date,
+    default: Date.now,
+    immutable: true
+  },
+  
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true }
+});
+
+// Indexes for performance
+transactionSchema.index({ user: 1, createdAt: -1 });
+transactionSchema.index({ type: 1, status: 1 });
+transactionSchema.index({ moolreTransactionRef: 1 });
+transactionSchema.index({ createdAt: -1 });
+
+// Pre-save middleware
+transactionSchema.pre('save', function(next) {
+  // Calculate net amount
+  if (this.amount !== undefined && this.fee !== undefined) {
+    this.netAmount = this.amount - this.fee;
+  }
+  this.updatedAt = new Date();
+  next();
+});
+
+// Generate unique reference if not provided
+transactionSchema.pre('save', async function(next) {
+  if (!this.reference) {
+    const prefix = this.type === 'payment' ? 'PAY' : (this.type === 'payout' ? 'OUT' : 'REF');
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substr(2, 6).toUpperCase();
+    this.reference = `${prefix}_${timestamp}_${random}`;
+  }
+  next();
+});
+
+// Virtual for formatted amount
+transactionSchema.virtual('formattedAmount').get(function() {
+  return `₵${this.amount.toFixed(2)}`;
+});
+
+// Static method to get user transaction summary
+transactionSchema.statics.getUserSummary = async function(userId) {
+  const summary = await this.aggregate([
+    { $match: { user: mongoose.Types.ObjectId.createFromHexString(userId) } },
+    { $group: {
+      _id: '$type',
+      totalAmount: { $sum: '$amount' },
+      count: { $sum: 1 },
+      completed: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } }
+    }}
+  ]);
+  
+  return summary;
+};
+
+// Static method to get daily revenue
+transactionSchema.statics.getDailyRevenue = async function(date) {
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+  
+  const revenue = await this.aggregate([
+    {
+      $match: {
+        type: 'payment',
+        status: 'completed',
+        createdAt: { $gte: startOfDay, $lte: endOfDay }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: '$amount' },
+        count: { $sum: 1 },
+        avgAmount: { $avg: '$amount' }
+      }
+    }
+  ]);
+  
+  return revenue[0] || { total: 0, count: 0, avgAmount: 0 };
+};
+
+// Static method to get platform fees collected
+transactionSchema.statics.getTotalFees = async function(startDate, endDate) {
+  const match = { type: 'payment', status: 'completed' };
+  if (startDate || endDate) {
+    match.createdAt = {};
+    if (startDate) match.createdAt.$gte = startDate;
+    if (endDate) match.createdAt.$lte = endDate;
+  }
+  
+  const fees = await this.aggregate([
+    { $match: match },
+    { $group: {
+      _id: null,
+      totalFees: { $sum: '$fee' },
+      totalAmount: { $sum: '$amount' }
+    }}
+  ]);
+  
+  return fees[0] || { totalFees: 0, totalAmount: 0 };
+};
+
+module.exports = mongoose.model('Transaction', transactionSchema);
+
+
+
+
+
+
+
 npm install express@4.18.2 cors@2.8.5 helmet@7.1.0 compression@1.7.4 morgan@1.10.0 cookie-parser@1.4.6 mongoose@8.0.0 bcryptjs@2.4.3 jsonwebtoken@9.0.2 axios@1.6.0 @anthropic-ai/sdk@0.24.0 socket.io@4.5.4 node-cron@3.0.3 express-validator@7.0.1 express-rate-limit@7.1.5 dotenv@16.3.1 && npm install -D nodemon@3.0.1 jest@29.7.0 supertest@6.3.3
 
 
