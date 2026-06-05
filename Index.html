@@ -1,4 +1,81 @@
 /**
+ * Message Model
+ * Logs all SMS and WhatsApp communications
+ */
+
+const mongoose = require('mongoose');
+
+const messageSchema = new mongoose.Schema({
+  from: {
+    type: String,
+    required: true
+  },
+  
+  to: {
+    type: String,
+    required: true,
+    index: true
+  },
+  
+  message: {
+    type: String,
+    required: true
+  },
+  
+  channel: {
+    type: String,
+    enum: ['sms', 'whatsapp', 'email', 'push'],
+    default: 'whatsapp'
+  },
+  
+  status: {
+    type: String,
+    enum: ['sent', 'delivered', 'failed', 'pending'],
+    default: 'pending'
+  },
+  
+  messageId: {
+    type: String,
+    index: true
+  },
+  
+  sentBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  
+  template: {
+    type: String
+  },
+  
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  
+  deliveredAt: Date,
+  
+  createdAt: {
+    type: Date,
+    default: Date.now,
+    index: true
+  }
+});
+
+// Index for faster queries
+messageSchema.index({ to: 1, createdAt: -1 });
+messageSchema.index({ status: 1, channel: 1 });
+
+module.exports = mongoose.model('Message', messageSchema);
+
+
+
+
+
+
+
+
+/**
  * USSD Session Model
  * Tracks state for feature phone users
  */
