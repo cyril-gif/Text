@@ -1,4 +1,69 @@
 /**
+ * JobLog Model
+ * Tracks cron job executions for audit trail
+ */
+
+const mongoose = require('mongoose');
+
+const jobLogSchema = new mongoose.Schema({
+  jobName: {
+    type: String,
+    required: true,
+    enum: ['daily_disbursement', 'subscription_renewals', 'pickup_reminders'],
+    index: true
+  },
+  
+  status: {
+    type: String,
+    enum: ['success', 'failed', 'running'],
+    required: true
+  },
+  
+  details: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  
+  error: {
+    type: String
+  },
+  
+  startedAt: {
+    type: Date,
+    default: Date.now
+  },
+  
+  completedAt: {
+    type: Date
+  },
+  
+  duration: {
+    type: Number // milliseconds
+  }
+});
+
+// Pre-save middleware to calculate duration
+jobLogSchema.pre('save', function(next) {
+  if (this.completedAt && this.startedAt) {
+    this.duration = this.completedAt - this.startedAt;
+  }
+  next();
+});
+
+// Index for cleanup (auto-delete after 30 days)
+jobLogSchema.index({ startedAt: 1 }, { expireAfterSeconds: 2592000 });
+
+module.exports = mongoose.model('JobLog', jobLogSchema);
+
+
+
+
+
+
+
+
+
+/**
  * Transaction Model
  * Tracks all payments, payouts, and financial activity
  */
