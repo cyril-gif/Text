@@ -1,4 +1,77 @@
 /**
+ * Rider Routes
+ * Rider-specific endpoints for availability and earnings
+ */
+
+const express = require('express');
+const { verifyToken, requireRole } = require('../middleware/auth');
+const User = require('../models/User');
+
+const router = express.Router();
+
+// Update rider availability
+router.put('/availability', verifyToken, requireRole('rider'), async (req, res) => {
+  try {
+    const { isAvailable } = req.body;
+    
+    await User.findByIdAndUpdate(req.userId, {
+      'riderProfile.isAvailable': isAvailable
+    });
+    
+    res.json({
+      success: true,
+      message: `You are now ${isAvailable ? 'available' : 'offline'}`,
+      data: { isAvailable }
+    });
+  } catch (error) {
+    console.error('Availability error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update availability',
+      error: 'AVAILABILITY_UPDATE_FAILED'
+    });
+  }
+});
+
+// Get rider stats
+router.get('/stats', verifyToken, requireRole('rider'), async (req, res) => {
+  try {
+    const Request = require('../models/Request');
+    const RiderWallet = require('../models/RiderWallet');
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const todaysPickups = await Request.countDocuments({
+      rider: req.userId,
+      status: 'completed',
+      'timeline.completedAt': { $gte: today }
+    });
+    
+    const wallet = await RiderWallet.findOne({ rider: req.userId });
+    
+    res.json({
+      success: true,
+      data: {
+        todaysPickups,
+        totalEarnings: wallet?.totalEarned || 0,
+        availableBalance: wallet?.currentBalance || 0
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+module.exports = router;
+
+
+
+
+
+
+
+/**
  * Disbursements Routes
  * Handles rider payouts via Moolre API
  */
