@@ -1,4 +1,66 @@
 /**
+ * USSD Session Model
+ * Tracks state for feature phone users
+ */
+
+const mongoose = require('mongoose');
+
+const ussdSessionSchema = new mongoose.Schema({
+  sessionId: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true
+  },
+  
+  phoneNumber: {
+    type: String,
+    required: true,
+    index: true
+  },
+  
+  currentMenu: {
+    type: String,
+    default: 'main'
+  },
+  
+  menuHistory: [{
+    menu: String,
+    timestamp: Date
+  }],
+  
+  pendingRequestData: {
+    loadSize: String,
+    location: String,
+    price: Number,
+    lastRequestId: mongoose.Schema.Types.ObjectId,
+    subscriptionPlan: String
+  },
+  
+  lastActivity: {
+    type: Date,
+    default: Date.now,
+    index: true
+  },
+  
+  createdAt: {
+    type: Date,
+    default: Date.now,
+    expires: 300 // Auto-delete after 5 minutes
+  }
+});
+
+// Index for cleanup
+ussdSessionSchema.index({ lastActivity: 1 }, { expireAfterSeconds: 300 });
+
+module.exports = mongoose.model('UssdSession', ussdSessionSchema);
+
+
+
+
+
+
+/**
  * RiderWallet Model
  * Tracks rider earnings, commissions, and payouts
  */
