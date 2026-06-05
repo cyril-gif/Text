@@ -1,4 +1,128 @@
 /**
+ * RiderWallet Model
+ * Tracks rider earnings, commissions, and payouts
+ */
+
+const mongoose = require('mongoose');
+
+const riderWalletSchema = new mongoose.Schema({
+  rider: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    unique: true,
+    index: true
+  },
+  
+  totalEarned: {
+    type: Number,
+    default: 0
+  },
+  
+  totalPaid: {
+    type: Number,
+    default: 0
+  },
+  
+  currentBalance: {
+    type: Number,
+    default: 0
+  },
+  
+  pendingBalance: {
+    type: Number,
+    default: 0
+  },
+  
+  commissionRate: {
+    type: Number,
+    default: 0.15 // 15% platform commission
+  },
+  
+  transactions: [{
+    amount: Number,
+    type: {
+      type: String,
+      enum: ['earning', 'payout', 'bonus', 'adjustment']
+    },
+    description: String,
+    requestId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Request'
+    },
+    date: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  
+  // Performance metrics
+  weeklyEarnings: [{
+    week: Number,
+    year: Number,
+    amount: Number
+  }],
+  
+  lastDisbursedAt: Date,
+  
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+// Add earnings
+riderWalletSchema.methods.addEarnings = async function(amount, requestId, description) {
+  this.totalEarned += amount;
+  this.pendingBalance += amount;
+  this.currentBalance += amount * (1 - this.commissionRate);
+  
+  this.transactions.push({
+    amount,
+    type: 'earning',
+    description: description || 'Pickup completion',
+    requestId,
+    date: new Date()
+  });
+  
+  await this.save();
+  return this.currentBalance;
+};
+
+// Process payout
+riderWalletSchema.methods.processPayout = async function(amount, description) {
+  if (this.currentBalance < amount) {
+    throw new Error('Insufficient balance');
+  }
+  
+  this.currentBalance -= amount;
+  this.totalPaid += amount;
+  
+  this.transactions.push({
+    amount,
+    type: 'payout',
+    description: description || 'Daily payout',
+    date: new Date()
+  });
+  
+  this.lastDisbursedAt = new Date();
+  await this.save();
+  return true;
+};
+
+module.exports = mongoose.model('RiderWallet', riderWalletSchema);
+
+
+
+
+
+
+
+/**
  * Subscription Model
  * Manages customer subscription plans and renewals
  */
