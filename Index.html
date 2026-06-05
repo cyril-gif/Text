@@ -1,4 +1,133 @@
 /**
+ * Subscription Model
+ * Manages customer subscription plans and renewals
+ */
+
+const mongoose = require('mongoose');
+
+const subscriptionSchema = new mongoose.Schema({
+  customer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
+  
+  plan: {
+    type: String,
+    enum: ['weekly', 'monthly'],
+    required: true
+  },
+  
+  amount: {
+    type: Number,
+    required: true
+  },
+  
+  status: {
+    type: String,
+    enum: ['active', 'paused', 'cancelled', 'expired'],
+    default: 'active',
+    index: true
+  },
+  
+  startDate: {
+    type: Date,
+    default: Date.now
+  },
+  
+  endDate: Date,
+  
+  nextBillingDate: {
+    type: Date,
+    required: true
+  },
+  
+  lastBilledAt: Date,
+  
+  // Pickup tracking
+  totalPickups: {
+    type: Number,
+    default: 0
+  },
+  
+  pickupsRemaining: {
+    type: Number,
+    default: 0
+  },
+  
+  // Moolre integration
+  moolreSubscriptionId: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
+  },
+  
+  moolrePlanId: String,
+  
+  // Payment method
+  paymentMethod: {
+    type: String,
+    enum: ['momo', 'card', 'wallet'],
+    default: 'momo'
+  },
+  
+  autoRenew: {
+    type: Boolean,
+    default: true
+  },
+  
+  cancelledAt: Date,
+  pausedAt: Date,
+  
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+// Indexes
+subscriptionSchema.index({ customer: 1, status: 1 });
+subscriptionSchema.index({ nextBillingDate: 1, status: 1 });
+
+// Calculate days remaining
+subscriptionSchema.virtual('daysRemaining').get(function() {
+  if (!this.nextBillingDate) return 0;
+  const diff = this.nextBillingDate - new Date();
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+});
+
+// Check if subscription is active
+subscriptionSchema.methods.isActive = function() {
+  return this.status === 'active' && this.nextBillingDate > new Date();
+};
+
+// Use pickups remaining
+subscriptionSchema.methods.usePickup = async function() {
+  if (this.pickupsRemaining > 0) {
+    this.pickupsRemaining--;
+    await this.save();
+    return true;
+  }
+  return false;
+};
+
+module.exports = mongoose.model('Subscription', subscriptionSchema);
+
+
+
+
+
+
+
+
+
+/**
  * SupportTicket Model
  * Tracks customer support issues escalated from AI chat
  */
