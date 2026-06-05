@@ -1,4 +1,34 @@
 /**
+ * Disbursements Routes
+ * Handles rider payouts via Moolre API
+ */
+
+const express = require('express');
+const { verifyToken, requireRole } = require('../middleware/auth');
+const {
+  manualDisbursement,
+  getRiderWallet,
+  getDisbursementHistory
+} = require('../controllers/disbursementController');
+
+const router = express.Router();
+
+// Rider routes
+router.get('/wallet', verifyToken, requireRole('rider'), getRiderWallet);
+
+// Admin routes
+router.post('/manual', verifyToken, requireRole('admin'), manualDisbursement);
+router.get('/history', verifyToken, requireRole('admin'), getDisbursementHistory);
+
+module.exports = router;
+
+
+
+
+
+
+
+/**
  * Message Model
  * Logs all SMS and WhatsApp communications
  */
