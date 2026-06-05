@@ -1,4 +1,88 @@
 /**
+ * SupportTicket Model
+ * Tracks customer support issues escalated from AI chat
+ */
+
+const mongoose = require('mongoose');
+
+const supportTicketSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
+  
+  message: {
+    type: String,
+    required: true
+  },
+  
+  sentiment: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high', 'critical'],
+    default: 'medium',
+    index: true
+  },
+  
+  status: {
+    type: String,
+    enum: ['open', 'in_progress', 'resolved', 'closed'],
+    default: 'open',
+    index: true
+  },
+  
+  assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  
+  source: {
+    type: String,
+    enum: ['ai_chat', 'ussd', 'app', 'whatsapp', 'phone'],
+    default: 'app'
+  },
+  
+  resolution: {
+    type: String
+  },
+  
+  resolvedAt: {
+    type: Date
+  },
+  
+  createdAt: {
+    type: Date,
+    default: Date.now,
+    index: true
+  },
+  
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+}, {
+  timestamps: true
+});
+
+// Indexes
+supportTicketSchema.index({ priority: 1, status: 1 });
+supportTicketSchema.index({ user: 1, createdAt: -1 });
+
+module.exports = mongoose.model('SupportTicket', supportTicketSchema);
+
+
+
+
+
+
+
+/**
  * JobLog Model
  * Tracks cron job executions for audit trail
  */
