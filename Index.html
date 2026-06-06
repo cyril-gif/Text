@@ -1,3 +1,88 @@
+<?php
+session_start();
+require_once 'includes/db.php';
+require_once 'vendor/autoload.php'; // Include Composer's autoloader
+
+use Yabacon\Paystack;
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+
+// Get user email from database
+$sql = "SELECT email, full_name FROM customers WHERE id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$user = $result->fetch_assoc();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['amount'])) {
+    $amount = floatval($_POST['amount']) * 100; // Convert to kobo/cents (Paystack requires amount in the smallest currency unit) [citation:4][citation:6]
+    $email = $user['email'];
+    $reference = 'TXN_' . time() . '_' . uniqid();
+    
+    // Insert pending transaction
+    $insert_sql = "INSERT INTO paystack_transactions (user_id, amount, reference, status) VALUES (?, ?, ?, 'pending')";
+    $insert_stmt = $conn->prepare($insert_sql);
+    $insert_stmt->bind_param("ids", $user_id, $_POST['amount'], $reference);
+    $insert_stmt->execute();
+    
+    try {
+        $paystack = new Paystack('YOUR_PAYSTACK_SECRET_KEY_HERE'); // Replace with your actual secret key
+        
+        $transaction = $paystack->transaction->initialize([
+            'amount' => $amount,
+            'email' => $email,
+            'reference' => $reference,
+            'callback_url' => 'https://yourdomain.epizy.com/verify_paystack.php' // Your callback URL
+        ]);
+        
+        if ($transaction->status) {
+            // Redirect to Paystack payment page
+            header('Location: ' . $transaction->data->authorization_url);
+            exit();
+        } else {
+            $error = "Could not initialize payment. Please try again.";
+        }
+    } catch (Exception $e) {
+        $error = "Payment Error: " . $e->getMessage();
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Deposit Funds via Paystack - Overview Bank</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Deposit Funds</h2>
+        <form method="POST" action="">
+            <label for="amount">Amount (GHS):</label>
+            <input type="number" name="amount" id="amount" step="0.01" min="1" required>
+            <button type="submit">Pay with Paystack</button>
+        </form>
+        <?php if (isset($error)): ?>
+            <p style="color: red;"><?php echo $error; ?></p>
+        <?php endif; ?>
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
 echo "# WasteGo" >> README.md
 git init
 git add README.md
