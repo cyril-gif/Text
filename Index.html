@@ -1,3 +1,72 @@
+<?php
+session_start();
+require_once 'includes/db.php';
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overview Bank - Welcome</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.php" class="logo">🏦 Overview Bank</a>
+            <div class="nav-links">
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    <a href="dashboard.php">Dashboard</a>
+                    <a href="logout.php">Logout</a>
+                <?php else: ?>
+                    <a href="login.php">Login</a>
+                    <a href="register.php">Register</a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="text-align: center; margin-top: 100px;">
+        <h1 style="color: white; font-size: 48px; margin-bottom: 20px;">Welcome to Overview Bank</h1>
+        <p style="color: white; font-size: 18px; margin-bottom: 40px;">Secure banking at your fingertips</p>
+        
+        <div class="stats-grid" style="max-width: 800px; margin: 0 auto;">
+            <div class="stat-card">
+                <h3>Secure Transactions</h3>
+                <div class="value">🔒 100%</div>
+            </div>
+            <div class="stat-card">
+                <h3>24/7 Support</h3>
+                <div class="value">⭐ 24/7</div>
+            </div>
+            <div class="stat-card">
+                <h3>Fast Payments</h3>
+                <div class="value">⚡ Instant</div>
+            </div>
+        </div>
+        
+        <?php if (!isset($_SESSION['user_id'])): ?>
+            <a href="register.php" class="btn" style="margin-top: 30px;">Open an Account</a>
+        <?php endif; ?>
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 * {
     margin: 0;
     padding: 0;
