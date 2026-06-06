@@ -1,4 +1,315 @@
 <?php
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+session_start();
+require_once 'includes/db.php';
+require_once 'vendor/autoload.php';
+
+use Yabacon\Paystack;
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+$error = '';
+$success = '';
+
+// Get user email and name from database
+$sql = "SELECT email, full_name FROM customers WHERE id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$user = $result->fetch_assoc();
+
+if (!$user) {
+    die("User not found");
+}
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['amount'])) {
+    $amount = floatval($_POST['amount']);
+    
+    // Validate amount
+    if ($amount < 10) {
+        $error = "Minimum deposit amount is GHS 10.00";
+    } elseif ($amount > 10000) {
+        $error = "Maximum deposit amount is GHS 10,000.00";
+    } else {
+        // Convert to pesewas (Paystack uses smallest currency unit)
+        $amount_in_pesewas = $amount * 100;
+        $email = $user['email'];
+        $reference = 'DEP_' . time() . '_' . uniqid();
+        
+        // Insert pending transaction into database
+        $insert_sql = "INSERT INTO paystack_transactions (user_id, amount, reference, status) VALUES (?, ?, ?, 'pending')";
+        $insert_stmt = $conn->prepare($insert_sql);
+        $insert_stmt->bind_param("ids", $user_id, $amount, $reference);
+        
+        if (!$insert_stmt->execute()) {
+            $error = "Database error: " . $conn->error;
+        } else {
+            try {
+                // Initialize Paystack transaction
+                // REPLACE THIS WITH YOUR ACTUAL PAYSTACK SECRET KEY
+                $paystack = new Paystack('sk_test_YOUR_SECRET_KEY_HERE');
+                
+                $transaction = $paystack->transaction->initialize([
+                    'amount' => $amount_in_pesewas,
+                    'email' => $email,
+                    'reference' => $reference,
+                    'callback_url' => 'https://' . $_SERVER['HTTP_HOST'] . '/verify_paystack.php',
+                    'metadata' => json_encode([
+                        'user_id' => $user_id,
+                        'full_name' => $user['full_name']
+                    ])
+                ]);
+                
+                if ($transaction->status) {
+                    // Redirect to Paystack payment page
+                    header('Location: ' . $transaction->data->authorization_url);
+                    exit();
+                } else {
+                    $error = "Could not initialize payment. Please try again.";
+                    // Update transaction status to failed
+                    $fail_sql = "UPDATE paystack_transactions SET status = 'failed' WHERE reference = ?";
+                    $fail_stmt = $conn->prepare($fail_sql);
+                    $fail_stmt->bind_param("s", $reference);
+                    $fail_stmt->execute();
+                }
+            } catch (Exception $e) {
+                $error = "Payment Error: " . $e->getMessage();
+                // Update transaction status to failed
+                $fail_sql = "UPDATE paystack_transactions SET status = 'failed' WHERE reference = ?";
+                $fail_stmt = $conn->prepare($fail_sql);
+                $fail_stmt->bind_param("s", $reference);
+                $fail_stmt->execute();
+            }
+        }
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deposit Funds - Overview Bank</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+            border-bottom: 2px solid #667eea;
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102,126,234,0.2);
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102,126,234,0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c33;
+        }
+        
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3c3;
+        }
+        
+        .info-box {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #667eea;
+            text-align: center;
+        }
+        
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .back-link:hover {
+            color: #667eea;
+        }
+        
+        .amount-preview {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .user-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>💰 Deposit Funds</h2>
+        <div class="subtitle">Secure payment via Paystack</div>
+        
+        <div class="user-info">
+            Welcome, <strong><?php echo htmlspecialchars($user['full_name']); ?></strong>
+        </div>
+        
+        <?php if ($error): ?>
+            <div class="error"><?php echo htmlspecialchars($error); ?></div>
+        <?php endif; ?>
+        
+        <?php if ($success): ?>
+            <div class="success"><?php echo htmlspecialchars($success); ?></div>
+        <?php endif; ?>
+        
+        <form method="POST" action="">
+            <div class="form-group">
+                <label for="amount">Enter Amount (GHS)</label>
+                <input type="number" 
+                       name="amount" 
+                       id="amount" 
+                       step="0.01" 
+                       min="10" 
+                       max="10000" 
+                       placeholder="e.g., 100.00"
+                       required>
+                <div class="amount-preview">Minimum: GHS 10.00 | Maximum: GHS 10,000.00</div>
+            </div>
+            
+            <button type="submit">Proceed to Paystack Payment →</button>
+        </form>
+        
+        <div class="info-box">
+            🔒 Secure payment processed by Paystack<br>
+            Your banking details are safe and encrypted
+        </div>
+        
+        <a href="dashboard.php" class="back-link">← Back to Dashboard</a>
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+<?php
 echo "Step 1: File is reachable<br>";
 require_once 'includes/db.php';
 echo "Step 2: Database loaded<br>";
