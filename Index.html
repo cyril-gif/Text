@@ -1,1 +1,419 @@
+<?php
+namespace App\Controllers;
 
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+use PHPMailer\PHPMailer\PHPMailer;
+use PDO;
+
+class AuthController
+{
+    private $db;
+    private $secretKey;
+    
+    public function __construct($db, $secretKey)
+    {
+        $this->db = $db;
+        $this->secretKey = $secretKey;
+    }
+    
+    // User Registration with KYC
+    public function register(Request $request, Response $response)
+    {
+        $data = json_decode($request->getBody(), true);
+        
+        // Validate input
+        $errors = $this->validateRegistration($data);
+        if (!empty($errors)) {
+            return $this->jsonResponse($response, ['errors' => $errors], 400);
+        }
+        
+        // Check if user exists
+        $stmt = $this->db->prepare("SELECT id FROM users WHERE email = ? OR phone = ?");
+        $stmt->execute([$data['email'], $data['phone']]);
+        if ($stmt->fetch()) {
+            return $this->jsonResponse($response, ['error' => 'User already exists'], 409);
+        }
+        
+        // Generate unique identifiers
+        $userUuid = $this->generateUuid();
+        $accountNumber = $this->generateAccountNumber();
+        
+        // Hash password
+        $hashedPassword = password_hash($data['password'], PASSWORD_ARGON2ID);
+        
+        // Begin transaction
+        $this->db->beginTransaction();
+        
+        try {
+            // Create user
+            $stmt = $this->db->prepare("
+                INSERT INTO users (user_uuid, email, phone, national_id, password_hash, kyc_level) 
+                VALUES (?, ?, ?, ?, ?, 'basic')
+            ");
+            $stmt->execute([$userUuid, $data['email'], $data['phone'], $data['national_id'], $hashedPassword]);
+            $userId = $this->db->lastInsertId();
+            
+            // Create account
+            $accountUuid = $this->generateUuid();
+            $stmt = $this->db->prepare("
+                INSERT INTO accounts (account_uuid, user_id, account_number, account_type, currency) 
+                VALUES (?, ?, ?, ?, 'GHS')
+            ");
+            $stmt->execute([$accountUuid, $userId, $accountNumber, $data['account_type']]);
+            
+            // Send welcome email
+            $this->sendWelcomeEmail($data['email'], $data['full_name'], $accountNumber);
+            
+            // Log audit
+            $this->logAudit($userId, 'user_registration', 'users', $userId);
+            
+            $this->db->commit();
+            
+            return $this->jsonResponse($response, [
+                'success' => true,
+                'message' => 'Registration successful',
+                'account_number' => $accountNumber
+            ], 201);
+            
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            return $this->jsonResponse($response, ['error' => 'Registration failed: ' . $e->getMessage()], 500);
+        }
+    }
+    
+    // Login with 2FA support
+    public function login(Request $request, Response $response)
+    {
+        $data = json_decode($request->getBody(), true);
+        
+        $stmt = $this->db->prepare("
+            SELECT id, user_uuid, email, password_hash, two_factor_enabled, two_factor_secret, 
+                   account_status, failed_login_attempts 
+            FROM users WHERE email = ?
+        ");
+        $stmt->execute([$data['email']]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$user || !password_verify($data['password'], $user['password_hash'])) {
+            // Track failed attempt
+            $this->trackFailedLogin($data['email']);
+            return $this->jsonResponse($response, ['error' => 'Invalid credentials'], 401);
+        }
+        
+        // Check account status
+        if ($user['account_status'] !== 'active') {
+            return $this->jsonResponse($response, ['error' => 'Account is ' . $user['account_status']], 403);
+        }
+        
+        // Reset failed attempts
+        $this->resetFailedLoginAttempts($user['id']);
+        
+        // Check for 2FA
+        if ($user['two_factor_enabled']) {
+            if (!isset($data['otp_code'])) {
+                return $this->jsonResponse($response, ['requires_2fa' => true], 200);
+            }
+            
+            if (!$this->verify2FA($user['two_factor_secret'], $data['otp_code'])) {
+                return $this->jsonResponse($response, ['error' => 'Invalid 2FA code'], 401);
+            }
+        }
+        
+        // Generate JWT tokens
+        $accessToken = $this->generateJWT($user['id'], $user['user_uuid']);
+        $refreshToken = $this->generateRefreshToken($user['id']);
+        
+        // Update last login
+        $stmt = $this->db->prepare("UPDATE users SET last_login_at = NOW(), last_login_ip = ? WHERE id = ?");
+        $stmt->execute([$request->getServerParams()['REMOTE_ADDR'], $user['id']]);
+        
+        // Log audit
+        $this->logAudit($user['id'], 'user_login', 'users', $user['id']);
+        
+        return $this->jsonResponse($response, [
+            'success' => true,
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
+            'token_type' => 'Bearer',
+            'expires_in' => 3600,
+            'user' => [
+                'id' => $user['user_uuid'],
+                'email' => $user['email']
+            ]
+        ]);
+    }
+    
+    // Transaction processing with fraud detection
+    public function transfer(Request $request, Response $response)
+    {
+        $userId = $request->getAttribute('user_id');
+        $data = json_decode($request->getBody(), true);
+        
+        // Validate amount
+        if ($data['amount'] <= 0) {
+            return $this->jsonResponse($response, ['error' => 'Invalid amount'], 400);
+        }
+        
+        $this->db->beginTransaction();
+        
+        try {
+            // Get sender account
+            $stmt = $this->db->prepare("
+                SELECT * FROM accounts WHERE user_id = ? AND is_frozen = FALSE 
+                FOR UPDATE
+            ");
+            $stmt->execute([$userId]);
+            $senderAccount = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$senderAccount) {
+                throw new \Exception('Account not found or frozen');
+            }
+            
+            // Check sufficient balance
+            if ($senderAccount['available_balance'] < $data['amount']) {
+                throw new \Exception('Insufficient funds');
+            }
+            
+            // Check daily limit
+            $dailyTotal = $this->getDailyTransactionTotal($userId);
+            if ($dailyTotal + $data['amount'] > $senderAccount['daily_transaction_limit']) {
+                throw new \Exception('Daily transaction limit exceeded');
+            }
+            
+            // Get recipient account
+            $stmt = $this->db->prepare("
+                SELECT * FROM accounts WHERE account_number = ? FOR UPDATE
+            ");
+            $stmt->execute([$data['recipient_account']]);
+            $recipientAccount = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$recipientAccount) {
+                throw new \Exception('Recipient account not found');
+            }
+            
+            // Calculate risk score
+            $riskScore = $this->calculateRiskScore($userId, $data['amount'], $recipientAccount);
+            
+            if ($riskScore >= 80) {
+                // Flag as suspicious
+                $this->createFraudAlert($userId, 'high_risk_transfer', $riskScore);
+                throw new \Exception('Transaction flagged for review');
+            }
+            
+            // Generate reference
+            $reference = 'TRF_' . time() . '_' . bin2hex(random_bytes(8));
+            
+            // Process transfer
+            $newSenderBalance = $senderAccount['balance'] - $data['amount'];
+            $stmt = $this->db->prepare("UPDATE accounts SET balance = ?, available_balance = ? WHERE id = ?");
+            $stmt->execute([$newSenderBalance, $newSenderBalance, $senderAccount['id']]);
+            
+            $newRecipientBalance = $recipientAccount['balance'] + $data['amount'];
+            $stmt = $this->db->prepare("UPDATE accounts SET balance = ?, available_balance = ? WHERE id = ?");
+            $stmt->execute([$newRecipientBalance, $newRecipientBalance, $recipientAccount['id']]);
+            
+            // Record transaction
+            $transactionUuid = $this->generateUuid();
+            $stmt = $this->db->prepare("
+                INSERT INTO transactions (transaction_uuid, user_id, account_id, transaction_type, amount, 
+                                         total_amount, reference, status, risk_score, ip_address, completed_at)
+                VALUES (?, ?, ?, 'transfer', ?, ?, ?, 'completed', ?, ?, NOW())
+            ");
+            $stmt->execute([
+                $transactionUuid, $userId, $senderAccount['id'], $data['amount'], 
+                $data['amount'], $reference, $riskScore, $request->getServerParams()['REMOTE_ADDR']
+            ]);
+            $transactionId = $this->db->lastInsertId();
+            
+            // Create notification
+            $this->createNotification($userId, 'Transfer Successful', 
+                "You transferred GHS " . number_format($data['amount'], 2) . " to account " . $data['recipient_account']);
+            
+            $this->createNotification($recipientAccount['user_id'], 'Transfer Received', 
+                "You received GHS " . number_format($data['amount'], 2) . " from account " . $senderAccount['account_number']);
+            
+            $this->db->commit();
+            
+            return $this->jsonResponse($response, [
+                'success' => true,
+                'message' => 'Transfer successful',
+                'reference' => $reference,
+                'new_balance' => $newSenderBalance
+            ]);
+            
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            return $this->jsonResponse($response, ['error' => $e->getMessage()], 400);
+        }
+    }
+    
+    // Get account statement with pagination
+    public function getStatement(Request $request, Response $response, $args)
+    {
+        $userId = $request->getAttribute('user_id');
+        $page = $request->getQueryParams()['page'] ?? 1;
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+        
+        $stmt = $this->db->prepare("
+            SELECT t.*, a.account_number 
+            FROM transactions t
+            JOIN accounts a ON t.account_id = a.id
+            WHERE t.user_id = ?
+            ORDER BY t.created_at DESC
+            LIMIT ? OFFSET ?
+        ");
+        $stmt->execute([$userId, $limit, $offset]);
+        $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Get total count
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM transactions WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        $total = $stmt->fetchColumn();
+        
+        return $this->jsonResponse($response, [
+            'data' => $transactions,
+            'meta' => [
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total' => $total,
+                'last_page' => ceil($total / $limit)
+            ]
+        ]);
+    }
+    
+    // Helper methods
+    private function generateJWT($userId, $userUuid)
+    {
+        $issuedAt = time();
+        $expire = $issuedAt + 3600;
+        
+        $payload = [
+            'iat' => $issuedAt,
+            'exp' => $expire,
+            'user_id' => $userId,
+            'user_uuid' => $userUuid
+        ];
+        
+        return JWT::encode($payload, $this->secretKey, 'HS256');
+    }
+    
+    private function generateRefreshToken($userId)
+    {
+        $token = bin2hex(random_bytes(32));
+        $expire = date('Y-m-d H:i:s', strtotime('+7 days'));
+        
+        $stmt = $this->db->prepare("
+            INSERT INTO refresh_tokens (user_id, token, expires_at) 
+            VALUES (?, ?, ?)
+        ");
+        $stmt->execute([$userId, $token, $expire]);
+        
+        return $token;
+    }
+    
+    private function generateAccountNumber()
+    {
+        do {
+            $number = 'OVB' . str_pad(mt_rand(0, 9999999), 7, '0', STR_PAD_LEFT);
+            $stmt = $this->db->prepare("SELECT id FROM accounts WHERE account_number = ?");
+            $stmt->execute([$number]);
+        } while ($stmt->fetch());
+        
+        return $number;
+    }
+    
+    private function generateUuid()
+    {
+        return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000,
+            mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
+    }
+    
+    private function calculateRiskScore($userId, $amount, $recipient)
+    {
+        $score = 0;
+        
+        // High amount risk
+        if ($amount > 10000) $score += 30;
+        if ($amount > 50000) $score += 50;
+        
+        // New recipient risk
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*) FROM transactions 
+            WHERE user_id = ? AND destination_id = ?
+        ");
+        $stmt->execute([$userId, $recipient['id']]);
+        if ($stmt->fetchColumn() == 0) $score += 20;
+        
+        // Time-based risk (late night transactions)
+        if (date('H') < 6 || date('H') > 22) $score += 15;
+        
+        return min($score, 100);
+    }
+    
+    private function createFraudAlert($userId, $type, $riskScore)
+    {
+        $stmt = $this->db->prepare("
+            INSERT INTO fraud_alerts (user_id, alert_type, severity, description, ip_address)
+            VALUES (?, ?, 'high', ?, ?)
+        ");
+        $stmt->execute([$userId, $type, "High risk transaction detected (score: $riskScore)", $_SERVER['REMOTE_ADDR']]);
+    }
+    
+    private function createNotification($userId, $title, $message)
+    {
+        $stmt = $this->db->prepare("
+            INSERT INTO notifications (user_id, type, title, message)
+            VALUES (?, 'in_app', ?, ?)
+        ");
+        $stmt->execute([$userId, $title, $message]);
+    }
+    
+    private function logAudit($userId, $action, $entityType, $entityId)
+    {
+        $stmt = $this->db->prepare("
+            INSERT INTO audit_logs (user_id, action, entity_type, entity_id, ip_address, user_agent)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([
+            $userId, $action, $entityType, $entityId,
+            $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT'] ?? null
+        ]);
+    }
+    
+    private function getDailyTransactionTotal($userId)
+    {
+        $stmt = $this->db->prepare("
+            SELECT COALESCE(SUM(amount), 0) FROM transactions 
+            WHERE user_id = ? AND DATE(created_at) = CURDATE() AND status = 'completed'
+        ");
+        $stmt->execute([$userId]);
+        return $stmt->fetchColumn();
+    }
+    
+    private function trackFailedLogin($email)
+    {
+        $stmt = $this->db->prepare("UPDATE users SET failed_login_attempts = failed_login_attempts + 1 WHERE email = ?");
+        $stmt->execute([$email]);
+    }
+    
+    private function resetFailedLoginAttempts($userId)
+    {
+        $stmt = $this->db->prepare("UPDATE users SET failed_login_attempts = 0 WHERE id = ?");
+        $stmt->execute([$userId]);
+    }
+    
+    private function jsonResponse($response, $data, $status = 200)
+    {
+        $response->getBody()->write(json_encode($data));
+        return $response->withHeader('Content-Type', 'application/json')->withStatus($status);
+    }
+}
