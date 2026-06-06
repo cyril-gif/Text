@@ -1,3 +1,365 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { api } from '../services/api';
+import {
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
+} from 'recharts';
+import {
+  Container, Grid, Paper, Typography, Box, Card, CardContent,
+  Avatar, IconButton, LinearProgress, Tabs, Tab
+} from '@mui/material';
+import {
+  AccountBalanceWallet, TrendingUp, TrendingDown, Receipt,
+  Payment, Send, History, QrCodeScanner, Notifications,
+  MoreHoriz, ArrowUpward, ArrowDownward
+} from '@mui/icons-material';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const Dashboard = () => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [tabValue, setTabValue] = useState(0);
+  const [recentTransactions, setRecentTransactions] = useState([]);
+  const [chartData, setChartData] = useState([]);
+  const [expenseData, setExpenseData] = useState([]);
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const [dashboard, transactions, charts, expenses] = await Promise.all([
+        api.get('/dashboard/stats'),
+        api.get('/transactions/recent?limit=10'),
+        api.get('/analytics/spending-chart'),
+        api.get('/analytics/expense-categories')
+      ]);
+      
+      setDashboardData(dashboard.data);
+      setRecentTransactions(transactions.data);
+      setChartData(charts.data);
+      setExpenseData(expenses.data);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-GH', { 
+      style: 'currency', 
+      currency: 'GHS' 
+    }).format(amount);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-GH', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ width: '100%', mt: 4 }}>
+        <LinearProgress />
+        <Typography align="center" sx={{ mt: 2 }}>Loading your dashboard...</Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+      {/* Welcome Section */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Paper sx={{ p: 3, mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+          <Typography variant="h4" gutterBottom>
+            Welcome back, {user?.full_name?.split(' ')[0]}!
+          </Typography>
+          <Typography variant="body1">
+            Here's your financial overview for today, {new Date().toLocaleDateString('en-GH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </Typography>
+        </Paper>
+      </motion.div>
+
+      {/* Stats Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+            <Card>
+              <CardContent>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Box>
+                    <Typography color="textSecondary" gutterBottom variant="body2">
+                      Total Balance
+                    </Typography>
+                    <Typography variant="h4" component="h2" fontWeight="bold">
+                      {formatCurrency(dashboardData?.total_balance || 0)}
+                    </Typography>
+                    <Typography variant="body2" color="success.main" sx={{ mt: 1 }}>
+                      ↑ {dashboardData?.balance_change || 0}% from last month
+                    </Typography>
+                  </Box>
+                  <Avatar sx={{ bgcolor: '#667eea', width: 56, height: 56 }}>
+                    <AccountBalanceWallet fontSize="large" />
+                  </Avatar>
+                </Box>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+            <Card>
+              <CardContent>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Box>
+                    <Typography color="textSecondary" gutterBottom variant="body2">
+                      Total Income
+                    </Typography>
+                    <Typography variant="h4" component="h2" fontWeight="bold" color="success.main">
+                      {formatCurrency(dashboardData?.total_income || 0)}
+                    </Typography>
+                    <Typography variant="body2" color="success.main" sx={{ mt: 1 }}>
+                      ↑ {dashboardData?.income_change || 0}% from last month
+                    </Typography>
+                  </Box>
+                  <Avatar sx={{ bgcolor: '#4caf50', width: 56, height: 56 }}>
+                    <TrendingUp fontSize="large" />
+                  </Avatar>
+                </Box>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+            <Card>
+              <CardContent>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Box>
+                    <Typography color="textSecondary" gutterBottom variant="body2">
+                      Total Expenses
+                    </Typography>
+                    <Typography variant="h4" component="h2" fontWeight="bold" color="error.main">
+                      {formatCurrency(dashboardData?.total_expenses || 0)}
+                    </Typography>
+                    <Typography variant="body2" color="error.main" sx={{ mt: 1 }}>
+                      ↓ {dashboardData?.expense_change || 0}% from last month
+                    </Typography>
+                  </Box>
+                  <Avatar sx={{ bgcolor: '#f44336', width: 56, height: 56 }}>
+                    <TrendingDown fontSize="large" />
+                  </Avatar>
+                </Box>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+            <Card>
+              <CardContent>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Box>
+                    <Typography color="textSecondary" gutterBottom variant="body2">
+                      Active Loans
+                    </Typography>
+                    <Typography variant="h4" component="h2" fontWeight="bold">
+                      {dashboardData?.active_loans || 0}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+                      Total: {formatCurrency(dashboardData?.loan_total || 0)}
+                    </Typography>
+                  </Box>
+                  <Avatar sx={{ bgcolor: '#ff9800', width: 56, height: 56 }}>
+                    <Receipt fontSize="large" />
+                  </Avatar>
+                </Box>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </Grid>
+      </Grid>
+
+      {/* Charts Section */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} md={8}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Spending Overview
+            </Typography>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Legend />
+                <Line type="monotone" dataKey="income" stroke="#4caf50" strokeWidth={2} />
+                <Line type="monotone" dataKey="expenses" stroke="#f44336" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Expense Categories
+            </Typography>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={expenseData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {expenseData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+              </PieChart>
+            </ResponsiveContainer>
+          </Paper>
+        </Grid>
+      </Grid>
+
+      {/* Quick Actions */}
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" gutterBottom>
+          Quick Actions
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button variant="contained" startIcon={<Send />} sx={{ bgcolor: '#667eea' }}>
+                Send Money
+              </Button>
+            </motion.div>
+          </Grid>
+          <Grid item>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button variant="outlined" startIcon={<Payment />}>
+                Request Money
+              </Button>
+            </motion.div>
+          </Grid>
+          <Grid item>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button variant="outlined" startIcon={<QrCodeScanner />}>
+                Scan & Pay
+              </Button>
+            </motion.div>
+          </Grid>
+          <Grid item>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button variant="outlined" startIcon={<History />}>
+                Full Statement
+              </Button>
+            </motion.div>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* Recent Transactions */}
+      <Paper sx={{ p: 3 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="h6">
+            Recent Transactions
+          </Typography>
+          <IconButton>
+            <MoreHoriz />
+          </IconButton>
+        </Box>
+        
+        <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} sx={{ mb: 2 }}>
+          <Tab label="All" />
+          <Tab label="Income" />
+          <Tab label="Expenses" />
+          <Tab label="Pending" />
+        </Tabs>
+
+        <AnimatePresence>
+          {recentTransactions.map((transaction, index) => (
+            <motion.div
+              key={transaction.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                p: 2,
+                borderBottom: '1px solid #eee',
+                '&:hover': { bgcolor: '#f5f5f5' }
+              }}>
+                <Box display="flex" alignItems="center" gap={2}>
+                  <Avatar sx={{ 
+                    bgcolor: transaction.type === 'credit' ? '#4caf50' : '#f44336',
+                    width: 40,
+                    height: 40
+                  }}>
+                    {transaction.type === 'credit' ? <ArrowUpward /> : <ArrowDownward />}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="body1" fontWeight="bold">
+                      {transaction.description}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      {formatDate(transaction.created_at)}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography 
+                  variant="body1" 
+                  fontWeight="bold"
+                  color={transaction.type === 'credit' ? 'success.main' : 'error.main'}
+                >
+                  {transaction.type === 'credit' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                </Typography>
+              </Box>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </Paper>
+    </Container>
+  );
+};
+
+export default Dashboard;
+
+
+
+
+
+
+
+
+
 <?php
 namespace App\Controllers;
 
