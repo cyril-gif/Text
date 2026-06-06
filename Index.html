@@ -1,3 +1,13 @@
+<?php
+echo "Step 1: File is reachable<br>";
+require_once 'includes/db.php';
+echo "Step 2: Database loaded<br>";
+require_once 'vendor/autoload.php';
+echo "Step 3: Vendor loaded<br>";
+echo "All systems go!";
+?>
+
+
 CREATE TABLE IF NOT EXISTS paystack_transactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
