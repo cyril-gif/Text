@@ -1,3 +1,69 @@
+// lib/service-worker.js
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open('hilarys-bank-v1').then((cache) => {
+      return cache.addAll([
+        '/',
+        '/dashboard',
+        '/offline.html',
+        '/manifest.json',
+      ])
+    })
+  )
+  self.skipWaiting()
+})
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      if (response) {
+        return response
+      }
+      return fetch(event.request).catch(() => {
+        if (event.request.mode === 'navigate') {
+          return caches.match('/offline.html')
+        }
+        return new Response('Offline content not available', {
+          status: 503,
+          statusText: 'Service Unavailable',
+        })
+      })
+    })
+  )
+})
+
+self.addEventListener('push', (event) => {
+  const data = event.data.json()
+  const options = {
+    body: data.body,
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/badge-icon.png',
+    vibrate: [200, 100, 200],
+    data: {
+      url: data.url,
+    },
+    actions: [
+      {
+        action: 'view',
+        title: 'View Details',
+      },
+      {
+        action: 'dismiss',
+        title: 'Dismiss',
+      },
+    ],
+  }
+  event.waitUntil(self.registration.showNotification(data.title, options))
+})
+
+
+
+
+
+
+
+
+
 // components/providers/ThemeProvider.tsx
 'use client'
 
