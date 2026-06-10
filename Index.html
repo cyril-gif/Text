@@ -1,3 +1,352 @@
+// components/dashboard/Dashboard.tsx
+'use client'
+
+import React, { useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  ArrowUpRight, 
+  ArrowDownLeft, 
+  Send, 
+  QrCode, 
+  Plus, 
+  Eye, 
+  EyeOff,
+  TrendingUp,
+  TrendingDown,
+  CreditCard,
+  Wallet,
+  PiggyBank,
+  Bell,
+  Menu,
+  Search,
+  Filter,
+  Download
+} from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { LineChart, Line, Area, AreaChart, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { format } from 'date-fns'
+
+interface DashboardStats {
+  totalBalance: number
+  availableBalance: number
+  ledgerBalance: number
+  monthlySpending: number
+  monthlyIncome: number
+}
+
+const Dashboard = () => {
+  const [showBalance, setShowBalance] = useState(true)
+  const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month')
+
+  const { data: stats, isLoading } = useQuery<DashboardStats>({
+    queryKey: ['dashboard-stats'],
+    queryFn: async () => {
+      // API call to get stats
+      return {
+        totalBalance: 25480.50,
+        availableBalance: 24800.00,
+        ledgerBalance: 25480.50,
+        monthlySpending: 3420.00,
+        monthlyIncome: 12500.00,
+      }
+    },
+  })
+
+  const spendingData = [
+    { day: 'Mon', spent: 120, income: 500 },
+    { day: 'Tue', spent: 230, income: 600 },
+    { day: 'Wed', spent: 180, income: 550 },
+    { day: 'Thu', spent: 340, income: 700 },
+    { day: 'Fri', spent: 420, income: 650 },
+    { day: 'Sat', spent: 280, income: 500 },
+    { day: 'Sun', spent: 150, income: 450 },
+  ]
+
+  const quickActions = [
+    { icon: Send, label: 'Transfer', color: 'primary', href: '/transfers' },
+    { icon: QrCode, label: 'Scan & Pay', color: 'secondary', href: '/payments/qr' },
+    { icon: Plus, label: 'Add Money', color: 'accent', href: '/deposit' },
+    { icon: CreditCard, label: 'Cards', color: 'info', href: '/cards' },
+  ]
+
+  const recentTransactions = [
+    {
+      id: 1,
+      type: 'sent',
+      amount: 250.00,
+      recipient: 'John Mensah',
+      date: new Date(),
+      status: 'completed',
+      icon: ArrowUpRight,
+    },
+    {
+      id: 2,
+      type: 'received',
+      amount: 1500.00,
+      sender: 'Salary Deposit',
+      date: new Date(),
+      status: 'completed',
+      icon: ArrowDownLeft,
+    },
+    {
+      id: 3,
+      type: 'payment',
+      amount: 75.00,
+      merchant: 'ECG Bill Payment',
+      date: new Date(),
+      status: 'completed',
+      icon: TrendingDown,
+    },
+  ]
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg dark:bg-gray-900/80">
+        <div className="mx-auto flex max-w-7xl items-center justify-between p-4">
+          <div className="flex items-center gap-3">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              <Menu className="h-5 w-5" />
+            </motion.button>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
+              Hilary's Bank
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              className="relative rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              <Bell className="h-5 w-5" />
+              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-error" />
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              <Search className="h-5 w-5" />
+            </motion.button>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-7xl space-y-6 p-4 pb-20">
+        {/* Welcome Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl bg-gradient-to-r from-primary-600 to-primary-800 p-6 text-white shadow-xl"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm opacity-90">Welcome back,</p>
+              <h2 className="text-2xl font-bold">Kwame Asare</h2>
+              <div className="mt-4">
+                <p className="text-xs opacity-75">Total Balance</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-3xl font-bold">
+                    {showBalance ? `₵${stats?.totalBalance.toLocaleString()}` : '••••••'}
+                  </p>
+                  <button
+                    onClick={() => setShowBalance(!showBalance)}
+                    className="rounded-full p-1 hover:bg-white/20"
+                  >
+                    {showBalance ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+              className="rounded-full bg-white/10 p-3"
+            >
+              <Wallet className="h-8 w-8" />
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-4 gap-3">
+          {quickActions.map((action, index) => (
+            <motion.a
+              key={index}
+              href={action.href}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex flex-col items-center gap-2 rounded-xl bg-white p-3 shadow-sm transition-shadow hover:shadow-md dark:bg-gray-800"
+            >
+              <div className={`rounded-lg bg-${action.color}-100 p-2 dark:bg-${action.color}-900/20`}>
+                <action.icon className={`h-5 w-5 text-${action.color}-600 dark:text-${action.color}-400`} />
+              </div>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                {action.label}
+              </span>
+            </motion.a>
+          ))}
+        </div>
+
+        {/* Spending Chart */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="rounded-2xl bg-white p-6 shadow-lg dark:bg-gray-800"
+        >
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Spending Overview</h3>
+            <div className="flex gap-2">
+              {(['week', 'month', 'year'] as const).map((period) => (
+                <button
+                  key={period}
+                  onClick={() => setSelectedPeriod(period)}
+                  className={`rounded-lg px-3 py-1 text-xs capitalize transition-all ${
+                    selectedPeriod === period
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {period}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={spendingData}>
+                <defs>
+                  <linearGradient id="spent" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="income" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="day" />
+                <YAxis />
+                <Tooltip />
+                <Area
+                  type="monotone"
+                  dataKey="spent"
+                  stroke="#6366f1"
+                  fill="url(#spent)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="income"
+                  stroke="#22c55e"
+                  fill="url(#income)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+
+        {/* Recent Transactions */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="rounded-2xl bg-white p-6 shadow-lg dark:bg-gray-800"
+        >
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Recent Transactions</h3>
+            <div className="flex gap-2">
+              <button className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Filter size={18} />
+              </button>
+              <button className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Download size={18} />
+              </button>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {recentTransactions.map((transaction, index) => (
+              <motion.div
+                key={transaction.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`rounded-full p-2 ${
+                    transaction.type === 'sent' 
+                      ? 'bg-error/10 text-error' 
+                      : transaction.type === 'received'
+                      ? 'bg-success/10 text-success'
+                      : 'bg-warning/10 text-warning'
+                  }`}>
+                    <transaction.icon size={20} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {transaction.recipient || transaction.sender || transaction.merchant}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {format(transaction.date, 'MMM dd, yyyy • h:mm a')}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className={`font-semibold ${
+                    transaction.type === 'sent' ? 'text-error' : 'text-success'
+                  }`}>
+                    {transaction.type === 'sent' ? '-' : '+'} ₵{transaction.amount.toFixed(2)}
+                  </p>
+                  <p className="text-xs capitalize text-gray-500">{transaction.status}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          <button className="mt-4 w-full rounded-lg border border-gray-200 py-2 text-center text-sm font-medium text-primary-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-primary-400 dark:hover:bg-gray-700">
+            View All Transactions
+          </button>
+        </motion.div>
+
+        {/* Financial Insights */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-2 gap-4"
+        >
+          <div className="rounded-2xl bg-gradient-to-br from-success-500 to-success-700 p-4 text-white shadow-lg">
+            <div className="flex items-start justify-between">
+              <PiggyBank size={24} className="opacity-80" />
+              <TrendingUp size={20} />
+            </div>
+            <p className="mt-4 text-sm opacity-90">Monthly Income</p>
+            <p className="text-xl font-bold">₵{stats?.monthlyIncome.toLocaleString()}</p>
+          </div>
+          <div className="rounded-2xl bg-gradient-to-br from-error-500 to-error-700 p-4 text-white shadow-lg">
+            <div className="flex items-start justify-between">
+              <CreditCard size={24} className="opacity-80" />
+              <TrendingDown size={20} />
+            </div>
+            <p className="mt-4 text-sm opacity-90">Monthly Spending</p>
+            <p className="text-xl font-bold">₵{stats?.monthlySpending.toLocaleString()}</p>
+          </div>
+        </motion.div>
+      </main>
+    </div>
+  )
+}
+
+export default Dashboard
+
+
+
+
+
+
+
+
 // components/auth/LoginForm.tsx
 'use client'
 
