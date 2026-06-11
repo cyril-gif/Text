@@ -1,3 +1,9 @@
+// globals.d.ts
+declare module '*.css' {
+  const content: { [className: string]: string };
+  export default content;
+}
+
 # MongoDB Connection
 # Local MongoDB (uncomment if using local)
 # MONGODB_URI="mongodb://localhost:27017/hilarys_bank"
