@@ -1,3 +1,35 @@
+# MongoDB Connection
+MONGODB_URI="mongodb://localhost:27017/hilarys_bank"
+# For MongoDB Atlas (cloud):
+# MONGODB_URI="mongodb+srv://username:password@cluster.mongodb.net/hilarys_bank"
+
+# JWT Secrets
+JWT_SECRET="hilarys-bank-super-secret-jwt-key-min-32-chars-2024"
+REFRESH_SECRET="hilarys-bank-refresh-secret-key-min-32-chars-2024"
+
+# App Configuration
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+NEXT_PUBLIC_API_URL="http://localhost:3000/api"
+
+# Security
+BCRYPT_ROUNDS=10
+
+# Email (for OTP)
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+
+
+
+
+
+
 @("app\auth\login","app\auth\register","app\auth\verify-otp","app\auth\forgot-password","app\dashboard\dashboard","app\dashboard\transfers","app\dashboard\payments","app\dashboard\cards","app\dashboard\transactions","app\dashboard\savings","app\dashboard\loans","app\dashboard\profile","app\dashboard\support","components\auth","components\dashboard","components\transfers","components\payments","components\cards","components\ui","lib\auth","lib\db","lib\utils","hooks","store","types","public\icons","public\screenshots","styles","middleware") | ForEach-Object { New-Item -ItemType Directory -Force -Path $_ }
 
 
