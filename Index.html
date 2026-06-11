@@ -1,3 +1,26 @@
+import { NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/mongodb';
+
+export async function GET() {
+  try {
+    await connectToDatabase();
+    return NextResponse.json({ 
+      success: true, 
+      message: 'MongoDB connected successfully!' 
+    });
+  } catch (error: any) {
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message 
+    }, { status: 500 });
+  }
+}
+
+
+
+
+
+
 // app/icons/route.ts
 import { NextResponse } from 'next/server';
 
