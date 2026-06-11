@@ -1,3 +1,192 @@
+     import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { Account, Transaction, Beneficiary, User } from '@/lib/db/models';
+import { verifyAuth } from '@/lib/auth/middleware';
+
+export async function POST(req: NextRequest) {
+  try {
+    await connectToDatabase();
+    
+    // Verify authentication
+    const auth = await verifyAuth(req);
+    if (!auth.userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { 
+      fromAccountId, 
+      toAccountNumber, 
+      amount, 
+      narration, 
+      transferType,
+      saveBeneficiary,
+      scheduledDate 
+    } = await req.json();
+
+    // Validate inputs
+    if (!fromAccountId || !toAccountNumber || !amount || amount <= 0) {
+      return NextResponse.json(
+        { error: 'Invalid transfer details' },
+        { status: 400 }
+      );
+    }
+
+    // Get sender's account
+    const fromAccount = await Account.findOne({
+      _id: fromAccountId,
+      userId: auth.userId
+    });
+
+    if (!fromAccount) {
+      return NextResponse.json(
+        { error: 'Sender account not found' },
+        { status: 404 }
+      );
+    }
+
+    if (fromAccount.availableBalance < amount) {
+      return NextResponse.json(
+        { error: 'Insufficient funds' },
+        { status: 400 }
+      );
+    }
+
+    // Get recipient's account
+    const toAccount = await Account.findOne({ accountNumber: toAccountNumber });
+
+    if (!toAccount) {
+      return NextResponse.json(
+        { error: 'Recipient account not found' },
+        { status: 404 }
+      );
+    }
+
+    // Calculate fee (simplified - implement your own logic)
+    const fee = transferType === 'INTERBANK' ? 25 : transferType === 'MOBILE_MONEY' ? 5 : 0;
+    const totalAmount = amount + fee;
+
+    // Generate transaction reference
+    const transactionRef = `HIL${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
+    // Create transaction
+    const transaction = await Transaction.create({
+      transactionRef,
+      fromAccountId: fromAccount._id,
+      toAccountId: toAccount._id,
+      amount,
+      fee,
+      totalAmount,
+      narration,
+      transactionType: transferType,
+      status: scheduledDate ? 'PENDING' : 'PROCESSING',
+      scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
+    });
+
+    // If not scheduled, process immediately
+    if (!scheduledDate) {
+      // Deduct from sender
+      fromAccount.availableBalance -= totalAmount;
+      fromAccount.balance -= totalAmount;
+      await fromAccount.save();
+
+      // Add to recipient
+      toAccount.balance += amount;
+      toAccount.availableBalance += amount;
+      await toAccount.save();
+
+      transaction.status = 'COMPLETED';
+      transaction.completedAt = new Date();
+      await transaction.save();
+    }
+
+    // Save as beneficiary if requested
+    if (saveBeneficiary) {
+      const existingBeneficiary = await Beneficiary.findOne({
+        userId: auth.userId,
+        accountNumber: toAccountNumber
+      });
+
+      if (!existingBeneficiary) {
+        await Beneficiary.create({
+          userId: auth.userId,
+          accountNumber: toAccountNumber,
+          accountName: toAccount.accountName,
+          bankName: transferType === 'INTERBANK' ? 'Other Bank' : 'Hilary\'s Bank',
+          nickname: narration?.substring(0, 20) || toAccount.accountName,
+          transactionType: transferType,
+        });
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: scheduledDate ? 'Transfer scheduled successfully' : 'Transfer completed successfully',
+      data: {
+        transactionRef,
+        amount,
+        fee,
+        totalAmount,
+        status: transaction.status,
+        scheduledDate: transaction.scheduledDate,
+      },
+    });
+  } catch (error: any) {
+    console.error('Transfer error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    await connectToDatabase();
+    
+    const auth = await verifyAuth(req);
+    if (!auth.userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const accounts = await Account.find({ userId: auth.userId });
+    const accountIds = accounts.map(a => a._id);
+
+    const transactions = await Transaction.find({
+      $or: [
+        { fromAccountId: { $in: accountIds } },
+        { toAccountId: { $in: accountIds } }
+      ]
+    })
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .populate('fromAccountId toAccountId');
+
+    return NextResponse.json({
+      success: true,
+      data: transactions,
+    });
+  } catch (error: any) {
+    console.error('Get transactions error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+
+
+
+
+
+
+
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { Account, Transaction } from '@/lib/db/models';
