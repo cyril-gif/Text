@@ -1,3 +1,32 @@
+# MongoDB Connection
+# Local MongoDB (uncomment if using local)
+# MONGODB_URI="mongodb://localhost:27017/hilarys_bank"
+
+# MongoDB Atlas (cloud) - FIXED connection string
+MONGODB_URI="mongodb+srv://zaaki2374_db_user:1122pascal@myfirstcluster.f0ewc1x.mongodb.net/backendDB?retryWrites=true&w=majority&appName=myfirstcluster"
+
+# JWT Secrets
+JWT_SECRET="hilarys-bank-super-secret-jwt-key-min-32-chars-2024"
+REFRESH_SECRET="hilarys-bank-refresh-secret-key-min-32-chars-2024"
+
+# App Configuration
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+NEXT_PUBLIC_API_URL="http://localhost:3000/api"
+
+# Security
+BCRYPT_ROUNDS=10
+
+# Email (for OTP)
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
+
+
+
+
+
+
 {
   "compilerOptions": {
     "target": "ES2017",
