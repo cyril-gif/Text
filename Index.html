@@ -1,3 +1,198 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { Account, Transaction, User, TransferRecipient } from '@/lib/db/models';
+import { verifyAuth } from '@/lib/auth/middleware';
+import { PaystackClient } from 'paystack-sdk-node';
+
+const paystack = new PaystackClient({
+  secretKey: process.env.PAYSTACK_SECRET_KEY!,
+});
+
+// Fee calculation
+const calculateFee = (amount: number, transferType: string): number => {
+  if (transferType === 'interbank') return 25;
+  if (transferType === 'mobile') {
+    const percentage = parseFloat(process.env.MOMO_TRANSFER_FEE_PERCENTAGE || '1.5');
+    const flatFee = parseFloat(process.env.MOMO_TRANSFER_FEE_FLAT || '0.50');
+    return (amount * percentage / 100) + flatFee;
+  }
+  return 0;
+};
+
+export async function POST(req: NextRequest) {
+  try {
+    await connectToDatabase();
+    
+    const auth = await verifyAuth(req);
+    if (!auth.userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { 
+      fromAccountId, 
+      toAccountNumber, 
+      amount, 
+      narration, 
+      transferType,
+      mobileNumber,
+      mobileProvider,
+      saveBeneficiary 
+    } = await req.json();
+
+    if (!amount || amount <= 0) {
+      return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
+    }
+
+    // Get sender's account
+    const fromAccount = await Account.findOne({
+      _id: fromAccountId,
+      userId: auth.userId
+    });
+
+    if (!fromAccount) {
+      return NextResponse.json({ error: 'Sender account not found' }, { status: 404 });
+    }
+
+    const fee = calculateFee(amount, transferType);
+    const totalAmount = amount + fee;
+
+    if (fromAccount.availableBalance < totalAmount) {
+      return NextResponse.json({ error: 'Insufficient funds' }, { status: 400 });
+    }
+
+    let recipientCode: string | null = null;
+    let externalTransferReference: string | null = null;
+
+    // For mobile money transfers - ACTUAL API CALL
+    if (transferType === 'mobile') {
+      if (!mobileNumber || !mobileProvider) {
+        return NextResponse.json({ error: 'Mobile number and provider required' }, { status: 400 });
+      }
+
+      // Check if we already have a recipient_code for this user's mobile number
+      let recipient = await TransferRecipient.findOne({
+        userId: auth.userId,
+        type: 'mobile_money',
+        accountNumber: mobileNumber,
+      });
+
+      // Create new recipient if not exists (one-time per mobile number)
+      if (!recipient) {
+        const createResponse = await paystack.transferRecipient.create({
+          type: 'mobile_money',
+          name: `${fromAccount.accountName} - Mobile Money`,
+          account_number: mobileNumber,
+          bank_code: mobileProvider, // MTN, VOD, or ATL
+          currency: 'GHS',
+        });
+
+        if (!createResponse.status) {
+          return NextResponse.json({ 
+            error: `Failed to create recipient: ${createResponse.message}` 
+          }, { status: 400 });
+        }
+
+        recipientCode = createResponse.data.recipient_code;
+
+        // Save to database for future transfers
+        recipient = await TransferRecipient.create({
+          userId: auth.userId,
+          recipientCode: recipientCode,
+          type: 'mobile_money',
+          provider: mobileProvider,
+          accountNumber: mobileNumber,
+          accountName: fromAccount.accountName,
+        });
+      } else {
+        recipientCode = recipient.recipientCode;
+      }
+
+      // INITIATE REAL TRANSFER via Paystack API
+      const transferResponse = await paystack.transfer.initiate({
+        source: 'balance',
+        amount: amount * 100, // Convert to pesewas (GHS minor units)
+        recipient: recipientCode,
+        reason: narration || `Transfer to ${mobileNumber}`,
+        currency: 'GHS',
+      });
+
+      if (!transferResponse.status) {
+        return NextResponse.json({ 
+          error: `Transfer failed: ${transferResponse.message}` 
+        }, { status: 400 });
+      }
+
+      externalTransferReference = transferResponse.data.reference;
+    }
+
+    // Generate transaction reference
+    const transactionRef = `HIL${Date.now()}${Math.floor(Math.random() * 10000)}`;
+
+    // Deduct from sender's account (in your database)
+    fromAccount.availableBalance -= totalAmount;
+    fromAccount.balance -= totalAmount;
+    await fromAccount.save();
+
+    // Create transaction record
+    const transaction = await Transaction.create({
+      transactionRef,
+      fromAccountId: fromAccount._id,
+      toAccountId: null, // External transfer
+      amount,
+      fee,
+      totalAmount,
+      narration,
+      transactionType: transferType === 'mobile' ? 'MOBILE_MONEY' : transferType === 'interbank' ? 'INTERBANK' : 'TRANSFER',
+      status: 'COMPLETED',
+      completedAt: new Date(),
+      externalReference: externalTransferReference,
+      recipientDetails: transferType === 'mobile' ? {
+        mobileNumber,
+        provider: mobileProvider,
+      } : null,
+    });
+
+    // Audit log
+    await AuditLog.create({
+      userId: auth.userId,
+      action: 'TRANSFER',
+      details: {
+        amount,
+        fee,
+        totalAmount,
+        transferType,
+        reference: transactionRef,
+        externalReference: externalTransferReference,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Transfer completed successfully',
+      data: {
+        transactionRef,
+        amount,
+        fee,
+        totalAmount,
+        externalReference: externalTransferReference,
+      },
+    });
+  } catch (error: any) {
+    console.error('Transfer error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+
+
+
+
+
+
+
 // Add to your existing models
 const TransferRecipientSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
