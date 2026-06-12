@@ -1,3 +1,32 @@
+# Initialize git (if not already done)
+git init
+
+# Create .gitignore file
+echo "node_modules/
+.next/
+.env
+.env.local
+.DS_Store
+*.log" > .gitignore
+
+# Add all files
+git add .
+
+# Commit
+git commit -m "Initial commit: Hilary's Bank PWA"
+
+# Create repository on GitHub first, then:
+git remote add origin https://github.com/cyril-gif/hilarys-bank.git
+git branch -M main
+git push -u origin main
+
+
+
+
+
+
+
+
 // Add to your transfer component
 const [showLiveWarning, setShowLiveWarning] = useState(false);
 
