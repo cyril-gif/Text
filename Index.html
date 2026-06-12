@@ -1,3 +1,28 @@
+// Add at the beginning of your POST function
+import { validateTransferSafety } from '@/lib/paystack/safety';
+
+// After validating amount, add:
+const safetyCheck = validateTransferSafety(amount, transferType);
+if (!safetyCheck.valid) {
+  return NextResponse.json({ error: safetyCheck.error }, { status: 400 });
+}
+
+// For large transfers, require additional confirmation
+if (amount > 500 && process.env.PAYSTACK_LIVE_MODE === 'true') {
+  // Check if user confirmed the warning
+  const { confirmed } = await req.json();
+  if (!confirmed) {
+    return NextResponse.json({ 
+      warning: safetyCheck.error,
+      requiresConfirmation: true 
+    }, { status: 422 });
+  }
+}
+
+
+
+
+
 // Safety limits for live mode
 export const SAFETY_LIMITS = {
   MAX_TRANSFER_AMOUNT: 1000, // Max ₵1000 per transfer initially
