@@ -1,5 +1,148 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Users, Building2, Smartphone, Search, Star, Shield } from 'lucide-react';
+import Link from 'next/link';
+
+export default function TransfersPage() {
+  const router = useRouter();
+  const [transferType, setTransferType] = useState('internal');
+  const [amount, setAmount] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [narration, setNarration] = useState('');
+
+  const handleTransfer = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Store transaction in localStorage
+    const newTransaction = {
+      id: Date.now(),
+      type: 'sent',
+      amount: parseFloat(amount),
+      recipient: accountNumber,
+      date: new Date(),
+      status: 'completed',
+    };
+    
+    const existingTransactions = localStorage.getItem('userTransactions');
+    const transactions = existingTransactions ? JSON.parse(existingTransactions) : [];
+    transactions.unshift(newTransaction);
+    localStorage.setItem('userTransactions', JSON.stringify(transactions));
+    
+    // Update balance
+    const currentBalance = localStorage.getItem('userBalance');
+    if (currentBalance) {
+      const newBalance = parseFloat(currentBalance) - parseFloat(amount);
+      localStorage.setItem('userBalance', newBalance.toString());
+    }
+    
+    alert('Transfer successful!');
+    router.push('/dashboard');
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="container mx-auto max-w-4xl p-4">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <Link href="/dashboard" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <h1 className="text-2xl font-bold">Send Money</h1>
+        </div>
+
+        {/* Transfer Type Selection */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          {[
+            { id: 'internal', label: 'Internal', icon: Users, description: 'Hilary\'s Bank' },
+            { id: 'interbank', label: 'Interbank', icon: Building2, description: 'Other Banks' },
+            { id: 'mobile', label: 'Mobile Money', icon: Smartphone, description: 'MTN, Vodafone' },
+          ].map((type) => (
+            <button
+              key={type.id}
+              onClick={() => setTransferType(type.id)}
+              className={`p-4 rounded-xl text-left transition-all ${
+                transferType === type.id
+                  ? 'bg-primary-600 text-white shadow-lg'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-sm'
+              }`}
+            >
+              <type.icon className="h-6 w-6 mb-2" />
+              <p className="font-semibold text-sm">{type.label}</p>
+              <p className="text-xs opacity-80">{type.description}</p>
+            </button>
+          ))}
+        </div>
+
+        {/* Transfer Form */}
+        <form onSubmit={handleTransfer} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Account Number</label>
+            <input
+              type="text"
+              value={accountNumber}
+              onChange={(e) => setAccountNumber(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500"
+              placeholder="Enter account number"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Amount (GHS)</label>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500"
+              placeholder="0.00"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Narration (Optional)</label>
+            <textarea
+              value={narration}
+              onChange={(e) => setNarration(e.target.value)}
+              rows={3}
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500"
+              placeholder="Add a reference"
+            />
+          </div>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="submit"
+            className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-4 rounded-xl font-semibold shadow-lg"
+          >
+            Continue to Pay
+          </motion.button>
+        </form>
+
+        {/* Security Notice */}
+        <div className="mt-6 bg-blue-50 dark:bg-blue-950/20 rounded-xl p-4">
+          <div className="flex gap-3">
+            <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div className="text-sm text-blue-800 dark:text-blue-200">
+              <p className="font-semibold">Secure Transfer</p>
+              <p>Your transaction is protected by bank-grade encryption.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+
+'use client';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
