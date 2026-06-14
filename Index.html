@@ -1,4 +1,21 @@
-    at require (node:internal/modules/helpers:153:16)
+Failed to compile.
+./app/api/webhooks/paystack/route.ts:9:36
+Type error: Cannot find name 'verifyPaystackNextjsRequest'.
+   7 |   try {
+   8 |     // Verify webhook signature for security
+>  9 |     const { valid, event } = await verifyPaystackNextjsRequest(req, {
+     |                                    ^
+  10 |       secretKey: process.env.PAYSTACK_SECRET_KEY!,
+  11 |     });
+  12 |
+Error: Command "npm run build" exited with 1
+
+
+
+
+
+
+at require (node:internal/modules/helpers:153:16)
 Error occurred prerendering page "/500". Read more: https://nextjs.org/docs/messages/prerender-error
 TypeError: r(...) is not a constructor
     at /vercel/path0/node_modules/next/dist/compiled/next-server/pages.runtime.prod.js:14:12583
