@@ -1,3 +1,19 @@
+Failed to compile.
+./app/api/paystack/balance/route.ts:1:32
+Type error: Cannot find name 'NextRequest'.
+> 1 | export async function GET(req: NextRequest) {
+    |                                ^
+  2 |   const auth = await verifyAuth(req);
+  3 |   if (auth.role !== 'ADMIN') {
+  4 |     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+Error: Command "npm run build" exited with 1
+
+
+
+
+
+
+
 // app/api/transfers/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
