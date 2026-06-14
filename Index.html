@@ -1,4 +1,19 @@
 Failed to compile.
+./lib/paystack/recipients.ts:4:3
+Type error: Object literal may only specify known properties, and 'secretKey' does not exist in type 'PaystackClientConfig'.
+  2 |
+  3 | const paystack = new PaystackClient({
+> 4 |   secretKey: process.env.PAYSTACK_SECRET_KEY!,
+    |   ^
+  5 | });
+  6 |
+  7 | interface MobileMoneyRecipient {
+Error: Command "npm run build" exited with 1
+
+
+
+
+Failed to compile.
 ./app/api/webhooks/paystack/route.ts:60:35
 Type error: Cannot find name 'Account'.
   58 |
