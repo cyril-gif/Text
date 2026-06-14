@@ -1,4 +1,21 @@
 Failed to compile.
+./app/api/webhooks/paystack/route.ts:60:35
+Type error: Cannot find name 'Account'.
+  58 |
+  59 |         // Reverse the funds
+> 60 |         const fromAccount = await Account.findById(transaction.fromAccountId);
+     |                                   ^
+  61 |         if (fromAccount) {
+  62 |           fromAccount.availableBalance += transaction.totalAmount;
+  63 |           fromAccount.balance += transaction.totalAmount;
+Error: Command "npm run build" exited with 1
+
+
+
+
+
+
+Failed to compile.
 ./app/api/transfers/route.ts:208:9
 Type error: Argument of type 'string | null' is not assignable to parameter of type 'string'.
   Type 'null' is not assignable to type 'string'.
