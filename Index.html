@@ -1,5 +1,41 @@
 
+Error occurred prerendering page "/404". Read more: https://nextjs.org/docs/messages/prerender-error
+Error: Cannot find module 'critters'
+Require stack:
+- /vercel/path0/node_modules/next/dist/compiled/next-server/pages.runtime.prod.js
+- /vercel/path0/.next/server/pages/_document.js
+- /vercel/path0/node_modules/next/dist/server/require.js
+- /vercel/path0/node_modules/next/dist/server/load-components.js
+- /vercel/path0/node_modules/next/dist/build/utils.js
+- /vercel/path0/node_modules/next/dist/build/worker.js
+- /vercel/path0/node_modules/next/dist/compiled/jest-worker/processChild.js
+    at async Span.traceAsyncFn (/vercel/path0/node_modules/next/dist/trace/trace.js:157:20)
+    at async exportPage (/vercel/path0/node_modules/next/dist/export/worker.js:348:18)
+    at async exportPageWithRetry (/vercel/path0/node_modules/next/dist/export/worker.js:237:26)
+    at async Promise.all (index 1)
+Failed to build /_error: /404 after 1 attempts.
+Failed to build /_error: /500 after 1 attempts.
+
 > Build error occurred
+Error: Export encountered an error on /_error: /404, exiting the build.
+    at exportPageWithRetry (/vercel/path0/node_modules/next/dist/export/worker.js:289:31)
+    at async Promise.all (index 0)
+    at async /vercel/path0/node_modules/next/dist/export/worker.js:319:35
+    at async Object.exportPages (/vercel/path0/node_modules/next/dist/export/worker.js:314:5) {
+  type: 'ExportPageError',
+  code: 'NEXT_EXPORT_PAGE_ERROR'
+}
+Error: Command "npm run build" exited with 1
+
+
+
+
+
+
+
+
+
+Build error occurred
 Error: Export encountered an error on /_error: /404, exiting the build.
     at exportPageWithRetry (/vercel/path0/node_modules/next/dist/export/worker.js:289:31)
     at async Promise.all (index 0)
